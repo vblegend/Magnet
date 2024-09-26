@@ -4,12 +4,13 @@ using System.Runtime.InteropServices;
 
 
 
-[Script("ScriptA")]
+[Script(nameof(ScriptA))]
 public class ScriptA : BaseScript
 {
 
-    [DllImport("demo.dll")]
-    public static extern bool OpenDemo();
+
+
+
 
     [Function("Login")]
     public void Login(string message)
@@ -35,7 +36,7 @@ public class ScriptA : BaseScript
             //Process.Start("xxx");
 
 
-            CALL("ScriptB", "PrintMessage","Help");
+            CALL("ScriptB", "PrintMessage", "Help");
 
             SCRIPT<ScriptB>().PrintMessage("aaa");
 
@@ -47,7 +48,8 @@ public class ScriptA : BaseScript
 
 
         }
-        catch(Exception ex) {
+        catch (Exception ex)
+        {
             Console.WriteLine(ex);
         }
         //ScriptB.PrintMessage(message);
