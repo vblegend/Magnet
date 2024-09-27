@@ -1,9 +1,10 @@
 ﻿using Magnet.Context;
+using System;
 
 
 
 [Script(nameof(Systems))]
-internal class Systems
+public class Systems :BaseScript
 {
 
 
@@ -14,6 +15,10 @@ internal class Systems
     }
 
 
+    protected override void Initialize()
+    {
+        DEBUG("Systems.Initialize");
+    }
 
 
 

@@ -11,14 +11,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Extends.cs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Compile Update="Librarys\Extends.cs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="Librarys\Systems.cs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Update="ScriptA.cs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Update="ScriptB.cs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>
 

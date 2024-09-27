@@ -2,6 +2,10 @@
 {
     public sealed class ScriptAttribute : Attribute
     {
+        public ScriptAttribute()
+        {
+        }
+
         public ScriptAttribute(string name)
         {
             this.Name = name;

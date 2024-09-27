@@ -1,7 +1,6 @@
 using Magnet.Context;
-using System.Reflection;
-using System.Runtime.InteropServices;
-
+//using System;
+//using System.Threading;
 
 
 [Script(nameof(ScriptA))]
@@ -9,7 +8,10 @@ public class ScriptA : BaseScript
 {
 
 
-
+    protected override void Initialize()
+    {
+        DEBUG("ScriptA.Initialize");
+    }
 
 
     [Function("Login")]
@@ -18,32 +20,19 @@ public class ScriptA : BaseScript
         try
         {
             //File.Create("");
-            Assembly.GetAssembly(typeof(ScriptA));
-            var ms = typeof(Assembly).GetMethods();
-            var sss = new ScriptB();
-            //var ss = new System.Net.Sockets.Socket();
-            sss.PrintMessage(message);
-
-            foreach (var item in ms)
-            {
-                Console.WriteLine(item.Name);
-            }
             this.Test("this.Test");
+            new Thread(new ThreadStart(() => { }));
 
-            Console.WriteLine("System.Drawing.dll");
-            //
-            //System.Reflection.Assembly.LoadFrom("System.Drawing.dll");
-            //Process.Start("xxx");
-
+            PRINT("System.Drawing.dll");
 
             CALL("ScriptB", "PrintMessage", "Help");
+
 
             SCRIPT<ScriptB>().PrintMessage("aaa");
 
             SCRIPT<ScriptB>((script) =>
             {
                 script.PrintMessage("");
-
             });
 
 
