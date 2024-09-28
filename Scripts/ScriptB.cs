@@ -1,7 +1,5 @@
 
 using Magnet.Context;
-using System;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 
@@ -13,7 +11,7 @@ public class ScriptB : BaseScript
     public static extern bool OpenDemo();
 
 
-    public Double Value = Math.PI;
+    public static Double Value = Math.PI;
 
 
     protected override void Initialize()

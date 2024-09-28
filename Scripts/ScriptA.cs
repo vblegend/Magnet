@@ -1,6 +1,6 @@
+using App.Core;
 using Magnet.Context;
-//using System;
-//using System.Threading;
+using TTTTT = System.Threading.Thread;
 
 
 [Script(nameof(ScriptA))]
@@ -15,19 +15,31 @@ public class ScriptA : BaseScript
 
 
     [Function("Login")]
-    public void Login(string message)
+    public void Login(LoginContext context)
     {
         try
         {
             //File.Create("");
-            this.Test("this.Test");
-            new Thread(new ThreadStart(() => { }));
+            this.Test(context.UserName);
+
+            File.WriteAllText("1","1");
+            Directory.EnumerateFiles("..");
+            
+            TTTTT.Sleep(0);
+ 
+
+            typeof(ScriptA).GetNestedTypes();
+            ThreadPool.QueueUserWorkItem((e) => { });
+
+
+            new TTTTT(new ThreadStart(() => { }));
+
 
             PRINT("System.Drawing.dll");
 
             CALL("ScriptB", "PrintMessage", "Help");
 
-
+            
             SCRIPT<ScriptB>().PrintMessage("aaa");
 
             SCRIPT<ScriptB>((script) =>

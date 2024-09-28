@@ -3,15 +3,27 @@ using System.Reflection;
 
 namespace Magnet.Context
 {
-    public abstract class BaseScript
+    public abstract class BaseScript : IScriptInstance
     {
         private IScriptCollection scriptCollection;
+
+
+        void IScriptInstance.InjectedContext(IScriptCollection scriptCollection)
+        {
+            this.scriptCollection = scriptCollection;
+        }
+
+        void IScriptInstance.Initialize()
+        {
+            this.Initialize();
+        }
+
 
         protected virtual void Initialize()
         {
         }
 
-        
+
         protected void PRINT(string format, params object?[] args)
         {
             PRINT(String.Format(format, args));
@@ -70,6 +82,7 @@ namespace Magnet.Context
             var script = SCRIPT<T>();
             if (script != null) callback(script);
         }
+
 
     }
 }
