@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.Emit;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using System.Text;
-using Magnet.Context;
+using Magnet.Core;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Immutable;
 
@@ -13,7 +13,7 @@ namespace Magnet
 {
     public class MagnetEngine
     {
-        private String[] baseUsing = new String[] { "System", "Magnet.Context"};
+        private String[] baseUsing = new String[] { "System", "Magnet.Core" };
         public ScriptOptions Options { get; private set; }
 
         public PortableExecutableReference[] referencesForCodegen = [];
@@ -34,7 +34,7 @@ namespace Magnet
             Assembly.Load("System.Runtime"),
             Assembly.Load("System.Private.CoreLib"),
             Assembly.Load("System.Console"),
-            //Assembly.Load("Magnet.Context"),
+            //Assembly.Load("Magnet.Core"),
             typeof(ScriptAttribute).Assembly,
         };
 
@@ -54,6 +54,7 @@ namespace Magnet
             this.compilationOptions = this.compilationOptions.WithAllowUnsafe(false);
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
+            this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             scriptLoadContext.Unloading += ScriptLoadContext_Unloading;
         }
 
@@ -203,9 +204,9 @@ namespace Magnet
                 compilation = compilation.ReplaceSyntaxTree(syntaxTree, newSyntaxTree);
             }
 
-            Console.WriteLine("===============================================================");
-            Console.WriteLine(compilation.SyntaxTrees.FirstOrDefault()?.GetRoot().ToFullString());
-            Console.WriteLine("===============================================================");
+            //Console.WriteLine("===============================================================");
+            //Console.WriteLine(compilation.SyntaxTrees.FirstOrDefault()?.GetRoot().ToFullString());
+            //Console.WriteLine("===============================================================");
 
             foreach (var tree in compilation.SyntaxTrees)
             {

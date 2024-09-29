@@ -12,11 +12,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Magnet", "Magnet\Magnet.csproj", "{D24A1771-B57F-4A5B-9BDC-B80929A411A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Magnet.Context", "Magnet.Context\Magnet.Context.csproj", "{6506C425-6DC2-41C9-9AE5-75DCCAB17282}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Magnet.Core", "Magnet.Core\Magnet.Core.csproj", "{6506C425-6DC2-41C9-9AE5-75DCCAB17282}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scripts", "Scripts\Scripts.csproj", "{1145AE19-0FDB-442A-A1C5-109F1553929F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scripts", "Scripts\Scripts.csproj", "{1145AE19-0FDB-442A-A1C5-109F1553929F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App.Core", "App.Core\App.Core.csproj", "{DF8E460E-C607-4EC7-8B47-3739D2F215F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "App.Core", "App.Core\App.Core.csproj", "{DF8E460E-C607-4EC7-8B47-3739D2F215F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

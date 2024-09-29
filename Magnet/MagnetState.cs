@@ -1,4 +1,5 @@
-﻿using Magnet.Context;
+﻿using Magnet.Core;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -8,11 +9,12 @@ namespace Magnet
     public class MagnetState : IDisposable
     {
         private MagnetEngine engine;
-        private ScriptCollection scriptCollection = new ScriptCollection();
-        // ScriptLoadContext scriptLoadContext,
+        private MagnetStateContext stateContext;
+
         internal MagnetState(MagnetEngine engine)
         {
             this.engine = engine;
+            this.stateContext = new MagnetStateContext(engine);
             this.CreateState();
         }
 
@@ -20,26 +22,49 @@ namespace Magnet
 
         private void CreateState()
         {
-            ScriptCollection scriptCollection = new ScriptCollection();
             List<IScriptInstance> instances = new List<IScriptInstance>();
             foreach (var meta in this.engine.scriptMetaInfos)
             {
                 var instance = (BaseScript)Activator.CreateInstance(meta.Type);
-                scriptCollection.Add(meta.Attribute, instance);
+                this.stateContext.AddInstance(meta.Attribute, instance);
+                this.Autowired(instance, engine.Options.InjectedObjectMap);
                 instances.Add(instance);
             }
             // Injected Data
             foreach (var instance in instances)
             {
-                instance.InjectedContext(scriptCollection);
+                instance.InjectedContext(this.stateContext);
+
             }
             // Exec Init Function
             foreach (var instance in instances)
             {
                 instance.Initialize();
             }
-            this.scriptCollection = scriptCollection;
         }
+
+
+
+        private void Autowired(BaseScript instance, ConcurrentDictionary<Type, Object> objectMap)
+        {
+            var type = instance.GetType();
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            foreach (var field in fields)
+            {
+                var attribute = field.GetCustomAttribute<AutowiredAttribute>();
+                if (attribute != null)
+                {
+                    if (objectMap.TryGetValue(field.FieldType, out Object value))
+                    {
+                        field.SetValue(instance, value);
+                    }
+                }
+            }
+        }
+
+
+
+
 
 
 
@@ -47,7 +72,7 @@ namespace Magnet
 
         public T GetDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
-            BaseScript script = scriptCollection.NameOf(scriptName);
+            BaseScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 // 获取对象的类型
@@ -66,7 +91,7 @@ namespace Magnet
 
         public object GetVariable(string scriptName, string variableName)
         {
-            BaseScript script = scriptCollection.NameOf(scriptName);
+            BaseScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -80,7 +105,7 @@ namespace Magnet
 
         public void SetVariable(string scriptName, string variableName, object value)
         {
-            BaseScript script = scriptCollection.NameOf(scriptName);
+            BaseScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -92,7 +117,12 @@ namespace Magnet
 
         public void Dispose()
         {
-            this.scriptCollection.Clear();
+            if (this.stateContext != null)
+            {
+                this.stateContext.Dispose();
+                this.stateContext = null;
+            }
+
         }
     }
 }

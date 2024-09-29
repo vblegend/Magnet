@@ -1,5 +1,6 @@
 using App.Core;
-using Magnet.Context;
+using Magnet.Core;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,7 +11,7 @@ using System.Threading;
 public class ScriptA : BaseScript
 {
     [Autowired]
-    private Int32 value;
+    private IKilledContext KilledContext;
 
 
 
@@ -25,22 +26,24 @@ public class ScriptA : BaseScript
     {
         try
         {
-            //File.Create("");
+
+            this.DEBUG("xxl");
             this.Test(context.UserName);
 
             File.WriteAllText("1","1");
             Directory.EnumerateFiles("..");
             var s = new Thread(() => { });
             s.Start();
-            Thread.Sleep(0);            
+            Thread.Sleep(0);
             var t = Thread.CurrentThread;
             Console.WriteLine($"GetCurrentProcessorId = {t};");
             typeof(ScriptA).GetNestedTypes();
+
+
             ThreadPool.QueueUserWorkItem((e) => { });
 
             var list = new List<string>();
 
-            //new TTTTT(() => { });
             debugger();
 
             PRINT("System.Drawing.dll");

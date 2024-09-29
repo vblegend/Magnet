@@ -1,34 +1,35 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 
-namespace Magnet.Context
+namespace Magnet.Core
 {
     public abstract class BaseScript : IScriptInstance
     {
-        private IScriptCollection scriptCollection;
-        private Action _debugger = () => { };
+
+        [Autowired]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private IStateContext stateContext;
+
+        protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
+
         /// <summary>
         /// Enter the debug breakpoint in debug mode
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         protected Action debugger
         {
-            get
-            {
-                return _debugger;
-            }
+            get;
+            private set;
         }
 
 
-        void IScriptInstance.InjectedContext(IScriptCollection scriptCollection)
+        void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
-            this.scriptCollection = scriptCollection;
-
-#if DEBUG
-            //_debugger = Debugger.Break;
-#endif
-
-
+            this.stateContext = stateContext;
+            this.debugger = this.stateContext.UseDebuggerBreak ? Debugger.Break : () => { };
         }
+
+
 
         void IScriptInstance.Initialize()
         {
@@ -70,12 +71,13 @@ namespace Magnet.Context
 
         public void CALL(String scriptName, String method, params Object[] objects)
         {
-            var script = scriptCollection.NameOf(scriptName);
+            var script = stateContext.InstanceOfName(scriptName);
             script.GetType().GetMethod(method).Invoke(script, objects);
         }
+
         public void TRY_CALL(String scriptName, String method, params Object[] objects)
         {
-            var script = scriptCollection.NameOf(scriptName);
+            var script = stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 try
@@ -91,7 +93,7 @@ namespace Magnet.Context
 
         public T? SCRIPT<T>() where T : BaseScript
         {
-            return scriptCollection.TypeOf<T>();
+            return stateContext.InstanceOfType<T>();
         }
 
         public void SCRIPT<T>(Action<T> callback) where T : BaseScript

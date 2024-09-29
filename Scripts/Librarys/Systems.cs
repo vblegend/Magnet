@@ -1,4 +1,4 @@
-﻿using Magnet.Context;
+﻿using Magnet.Core;
 using System;
 using System.Runtime.CompilerServices;
 

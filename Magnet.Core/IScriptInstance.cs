@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Magnet.Context
+namespace Magnet.Core
 {
     public interface IScriptInstance
     {
-        void InjectedContext(IScriptCollection scriptCollection); 
+        void InjectedContext(IStateContext stateContext); 
         void Initialize();
     }
 }

@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Magnet.Context
+namespace Magnet.Core
 {
-    public enum ScriptRunMode
+    public class AutowiredAttribute : Attribute
     {
-        Debug = 0,
-        Release = 1,
     }
 }

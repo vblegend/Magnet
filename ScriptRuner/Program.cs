@@ -17,15 +17,20 @@ public static class Program
         RemoveDir("../../../../Scripts/bin");
 
         ScriptOptions options = new ScriptOptions();
-        options.WithDebug();
+        options.WithDebug(false);
 
         //options.WithRelease();
-        options.AddUsings("Magnet.Proxy", "System.Threading");
+        options.AddUsings("Magnet.Proxy");
         options.AddReferences("System.Threading.Thread");
         options.AddReferences<MagnetEngine>();
         options.AddReferences<LoginContext>();
-        options.WithDirectory("../../../../Scripts"); 
-        
+        options.WithDirectory("../../../../Scripts");
+
+
+
+        var v = new ObjectKilledContext();
+
+        options.AddInjectedObject<IKilledContext>(v);
 
         MagnetEngine scriptManager = new MagnetEngine(options);
         var result = scriptManager.Compile();

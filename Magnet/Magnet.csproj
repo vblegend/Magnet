@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Magnet.Context\Magnet.Context.csproj" />
+    <ProjectReference Include="..\Magnet.Core\Magnet.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Magnet.Context
+namespace App.Core
 {
-    public class AutowiredAttribute : Attribute
+    public interface IObjectContext
     {
     }
 }

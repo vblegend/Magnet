@@ -1,18 +1,13 @@
-﻿using Magnet.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Magnet.Core;
+using System.Collections.Concurrent;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Magnet
 {
     public class ScriptOptions
     {
 
-        public String  Name { get; set; }
-
+        public String Name { get; set; }
 
         public ScriptRunMode Mode { get; set; } = ScriptRunMode.Release;
 
@@ -28,8 +23,9 @@ namespace Magnet
         /// <summary>
         /// import Assemblys
         /// </summary>
-        public  List<Assembly> References { get; private set; } = [];
+        public List<Assembly> References { get; private set; } = [];
 
+        public Boolean UseDebugger { get; set; }
 
 
 
@@ -44,10 +40,23 @@ namespace Magnet
             return this;
         }
 
+        public ConcurrentDictionary<Type, Object> InjectedObjectMap { get; private set; } = [];
+
+        public ScriptOptions AddInjectedObject<T>(T value)
+        {
+            var type = typeof(T);
+            if (InjectedObjectMap.ContainsKey(type))
+            {
+                throw new InvalidOperationException();
+            }
+            InjectedObjectMap.TryAdd(type, value);
+            return this;
+        }
 
 
 
-        public ScriptOptions AddReferences( params Assembly[] assemblies)
+
+        public ScriptOptions AddReferences(params Assembly[] assemblies)
         {
             this.References.AddRange(assemblies);
             return this;
@@ -56,14 +65,15 @@ namespace Magnet
 
         public ScriptOptions AddReferences(params Type[] typeOfAssembles)
         {
-            foreach (var type in typeOfAssembles) {
+            foreach (var type in typeOfAssembles)
+            {
                 this.References.Add(type.Assembly);
             }
             return this;
         }
 
 
-        public ScriptOptions AddReferences<T>() where T : class 
+        public ScriptOptions AddReferences<T>() where T : class
         {
             this.References.Add(typeof(T).Assembly);
             return this;
@@ -88,16 +98,18 @@ namespace Magnet
             return this;
         }
 
-        public ScriptOptions WithDebug()
+        public ScriptOptions WithDebug(Boolean useDebuggerBreak = true)
         {
             this.Mode = ScriptRunMode.Debug;
+            this.UseDebugger = useDebuggerBreak;
             return this;
         }
 
 
-        public ScriptOptions WithRelease()
+        public ScriptOptions WithRelease(Boolean useDebuggerBreak = false)
         {
             this.Mode = ScriptRunMode.Release;
+            this.UseDebugger = useDebuggerBreak;
             return this;
         }
 

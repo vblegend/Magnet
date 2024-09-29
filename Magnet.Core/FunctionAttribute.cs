@@ -1,4 +1,4 @@
-﻿namespace Magnet.Context
+﻿namespace Magnet.Core
 {
     public sealed class FunctionAttribute : Attribute
     {
