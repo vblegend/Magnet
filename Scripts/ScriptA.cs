@@ -24,46 +24,38 @@ public class ScriptA : BaseScript
     [Function("Login")]
     public void Login(LoginContext context)
     {
-        try
+
+        this.DEBUG("xxl");
+        this.Test(context.UserName);
+
+        File.WriteAllText("1", "1");
+        Directory.EnumerateFiles("..");
+        var s = new Thread(() => { });
+        s.Start();
+        Thread.Sleep(0);
+        var t = Thread.CurrentThread;
+        Console.WriteLine($"GetCurrentProcessorId = {t};");
+        typeof(ScriptA).GetNestedTypes();
+
+
+        ThreadPool.QueueUserWorkItem((e) => { });
+
+        var list = new List<string>();
+
+        debugger();
+
+        PRINT("System.Drawing.dll");
+
+        CALL("ScriptB", "PrintMessage", "Help");
+
+
+        SCRIPT<ScriptB>().PrintMessage("aaa");
+
+        SCRIPT<ScriptB>((script) =>
         {
+            script.PrintMessage("");
+        });
 
-            this.DEBUG("xxl");
-            this.Test(context.UserName);
-
-            File.WriteAllText("1","1");
-            Directory.EnumerateFiles("..");
-            var s = new Thread(() => { });
-            s.Start();
-            Thread.Sleep(0);
-            var t = Thread.CurrentThread;
-            Console.WriteLine($"GetCurrentProcessorId = {t};");
-            typeof(ScriptA).GetNestedTypes();
-
-
-            ThreadPool.QueueUserWorkItem((e) => { });
-
-            var list = new List<string>();
-
-            debugger();
-
-            PRINT("System.Drawing.dll");
-
-            CALL("ScriptB", "PrintMessage", "Help");
-            
-            
-            SCRIPT<ScriptB>().PrintMessage("aaa");
-
-            SCRIPT<ScriptB>((script) =>
-            {
-                script.PrintMessage("");
-            });
-
-
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
         //ScriptB.PrintMessage(message);
     }
 }

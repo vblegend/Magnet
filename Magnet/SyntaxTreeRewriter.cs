@@ -118,7 +118,7 @@ namespace Magnet
                         SyntaxFactory.IdentifierName(memberSymbol.Name)
                     );
                     var result = node.WithExpression(MakeNameSyntax("Magnet.Proxy.ThreadProxy"));
-                    Console.WriteLine(result.ToFullString());
+                    //Console.WriteLine(result.ToFullString());
                     return result;
                 }
             }
