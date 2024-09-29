@@ -6,11 +6,28 @@ namespace Magnet.Context
     public abstract class BaseScript : IScriptInstance
     {
         private IScriptCollection scriptCollection;
+        private Action _debugger = () => { };
+        /// <summary>
+        /// Enter the debug breakpoint in debug mode
+        /// </summary>
+        protected Action debugger
+        {
+            get
+            {
+                return _debugger;
+            }
+        }
 
 
         void IScriptInstance.InjectedContext(IScriptCollection scriptCollection)
         {
             this.scriptCollection = scriptCollection;
+
+#if DEBUG
+            //_debugger = Debugger.Break;
+#endif
+
+
         }
 
         void IScriptInstance.Initialize()

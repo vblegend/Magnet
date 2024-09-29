@@ -1,9 +1,5 @@
 ﻿using Magnet.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Magnet
 {
@@ -12,7 +8,14 @@ namespace Magnet
 
         private Dictionary<Type, BaseScript> instances = new Dictionary<Type, BaseScript>();
         private Dictionary<String, BaseScript> instancesByString = new Dictionary<String, BaseScript>();
-        public List<BaseScript> scripts = new List<BaseScript>();
+
+        public void Foreach(Action<BaseScript> callback)
+        {
+            foreach (var instance in instances)
+            {
+                callback(instance.Value);
+            }
+        }
 
         public BaseScript NameOf(string scriptName)
         {
@@ -36,10 +39,15 @@ namespace Magnet
         public void Add(ScriptAttribute attribute, BaseScript script) {
             instances.Add(script.GetType(), script);
             instancesByString.Add(attribute.Name, script);
-            scripts.Add(script);
         }
 
 
+
+        public void Clear()
+        {
+            instances.Clear(); 
+            instancesByString.Clear();
+        }
 
     }
 }

@@ -5,7 +5,6 @@ using App.Core;
 using Magnet;
 
 using ScriptRuner;
-using System.Reflection;
 
 
 public static class Program
@@ -14,22 +13,26 @@ public static class Program
     public static void Main()
     {
 
-        RemoveDir("../../../../Scripts", "obj");
-        RemoveDir("../../../../Scripts", "bin");
-
-        //
+        RemoveDir("../../../../Scripts/obj");
+        RemoveDir("../../../../Scripts/bin");
 
         ScriptOptions options = new ScriptOptions();
         options.WithDebug();
+
         //options.WithRelease();
+        options.AddUsings("Magnet.Proxy", "System.Threading");
+        options.AddReferences("System.Threading.Thread");
+        options.AddReferences<MagnetEngine>();
         options.AddReferences<LoginContext>();
-        options.WithDirectory("../../../../Scripts");
+        options.WithDirectory("../../../../Scripts"); 
+        
+
         MagnetEngine scriptManager = new MagnetEngine(options);
         var result = scriptManager.Compile();
         if (result.Success)
         {
             Console.WriteLine(  );
-            using (new WitchTimer("CreateScriptEnvironment"))
+            using (new WitchTimer("CreateScriptState"))
             {
                 var state = scriptManager.CreateScriptState();
                 state.SetVariable("ScriptB", "Value",1.23456);
@@ -37,7 +40,7 @@ public static class Program
                 CallLogin(state);
             }
 
-            using (new WitchTimer("CreateScriptEnvironment"))
+            using (new WitchTimer("CreateScriptState"))
             {
                 var state = scriptManager.CreateScriptState();
                 var value = state.GetVariable("ScriptB", "Value");
@@ -46,10 +49,7 @@ public static class Program
             }
 
             var stateTest = scriptManager.CreateScriptState();
-
-
             scriptManager.Unload();
-
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -79,13 +79,12 @@ public static class Program
     }
 
 
-    private static void RemoveDir(String baseDir, String dirName)
+    private static void RemoveDir(String dirPath)
     {
-        var rootDir = Path.GetFullPath(baseDir);
-        var path = Path.Join(rootDir, dirName);
-        if (Directory.Exists(path))
+        var rootDir = Path.GetFullPath(dirPath);
+        if (Directory.Exists(rootDir))
         {
-            Directory.Delete(path, true);
+            Directory.Delete(rootDir, true);
         }
     }
 

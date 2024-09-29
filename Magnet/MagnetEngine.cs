@@ -13,14 +13,14 @@ namespace Magnet
 {
     public class MagnetEngine
     {
-        private String[] baseUsing = new String[] { "System", "Magnet.Context", "System.Threading" };
+        private String[] baseUsing = new String[] { "System", "Magnet.Context"};
         public ScriptOptions Options { get; private set; }
 
         public PortableExecutableReference[] referencesForCodegen = [];
 
         private List<String> diagnostics;
 
-        private IReadOnlyList<ScriptMetaInfo> scriptMetaInfos = new List<ScriptMetaInfo>();
+        internal IReadOnlyList<ScriptMetaInfo> scriptMetaInfos = new List<ScriptMetaInfo>();
 
         private Assembly scriptAssembly;
 
@@ -32,11 +32,10 @@ namespace Magnet
         public static readonly Assembly[] ImportantAssemblies = new[]
         {
             Assembly.Load("System.Runtime"),
-            typeof(Object).Assembly,
-            typeof(Console).Assembly,
+            Assembly.Load("System.Private.CoreLib"),
+            Assembly.Load("System.Console"),
+            //Assembly.Load("Magnet.Context"),
             typeof(ScriptAttribute).Assembly,
-            typeof(List<>).Assembly,
-            typeof(Enumerable).Assembly,
         };
 
 
@@ -95,6 +94,10 @@ namespace Magnet
         }
 
 
+
+
+
+
         private UsingDirectiveSyntax MakeUsingDirective(string usingName)
         {
             var names = usingName.Split('.');
@@ -138,14 +141,7 @@ namespace Magnet
         public MagnetState CreateScriptState()
         {
             if (this.scriptAssembly == null) throw new Exception("没有可用的脚本程序集");
-            ScriptCollection scriptCollection = new ScriptCollection();
-            foreach (var meta in this.scriptMetaInfos)
-            {
-                var instance = (BaseScript)Activator.CreateInstance(meta.Type);
-                if (instance is IScriptInstance scriptInstance) scriptInstance.InjectedContext(scriptCollection);
-                scriptCollection.Add(meta.Attribute, instance);
-            }
-            return new MagnetState(scriptCollection);
+            return new MagnetState(this);
         }
 
 
@@ -192,16 +188,33 @@ namespace Magnet
 
             // 检查是否有不允许的 API 调用
             var walker = new ForbiddenApiWalker();
-
-            //Console.WriteLine("===============================================================");
-            //Console.WriteLine(compilation.SyntaxTrees.FirstOrDefault()?.GetRoot().ToFullString());
-            //Console.WriteLine("===============================================================");
-
-            foreach (var syntaxTree in syntaxTrees)
+            var rewriter = new SyntaxTreeRewriter();
+            for (int i = 0; i < syntaxTrees.Length; i++)
             {
+                var syntaxTree = syntaxTrees[i];    
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
                 walker.VisitWith(semanticModel, syntaxTree.GetRoot());
+                var newRoot = rewriter.VisitWith(semanticModel, syntaxTree.GetRoot());
+                var newSyntaxTree = newRoot.SyntaxTree;
+                if (String.IsNullOrEmpty(newSyntaxTree.FilePath))
+                {
+                    newSyntaxTree = CSharpSyntaxTree.Create((CSharpSyntaxNode)newRoot, (CSharpParseOptions)syntaxTree.Options, syntaxTree.FilePath, Encoding.UTF8);
+                }
+                compilation = compilation.ReplaceSyntaxTree(syntaxTree, newSyntaxTree);
             }
+
+            Console.WriteLine("===============================================================");
+            Console.WriteLine(compilation.SyntaxTrees.FirstOrDefault()?.GetRoot().ToFullString());
+            Console.WriteLine("===============================================================");
+
+            foreach (var tree in compilation.SyntaxTrees)
+            {
+                if (string.IsNullOrEmpty(tree.FilePath))
+                {
+                    //throw new InvalidOperationException("SyntaxTree 文件路径为空");
+                }
+            }
+
             if (walker.HasForbiddenApis)
             {
                 diagnostics.AddRange(walker.ForbiddenApis);
@@ -225,6 +238,11 @@ namespace Magnet
                 pdbStream = new MemoryStream();
                 emitOptions = emitOptions.WithDebugInformationFormat(DebugInformationFormat.PortablePdb);
             }
+
+
+            
+
+
             EmitResult result = compilation.Emit(execStream, pdbStream, options: emitOptions);
             if (result.Success)
             {

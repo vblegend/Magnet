@@ -5,14 +5,11 @@ using System.Reflection;
 
 namespace Magnet
 {
-
-
     public class ForbiddenSymbols
     {
         public String Method;
         public String Typed;
     }
-
 
     // ms
 
@@ -22,7 +19,6 @@ namespace Magnet
         private SemanticModel semanticModel;
         public readonly List<String> ForbiddenApis = new List<String>();
 
-
         public bool HasForbiddenApis
         {
             get
@@ -31,17 +27,11 @@ namespace Magnet
             }
         }
 
-
         public void VisitWith(SemanticModel model, SyntaxNode root)
         {
             this.semanticModel = model;
             base.Visit(root);
         }
-
-
-
-
-
 
         private List<ForbiddenSymbols> forbiddenSymbols = new List<ForbiddenSymbols>()
         {
@@ -53,10 +43,6 @@ namespace Magnet
             new ForbiddenSymbols(){ Method = "GetMethods", Typed = "Type"},
             new ForbiddenSymbols(){ Method = "GetMethod", Typed = "Type"},
 
-
-
-            
-
             new ForbiddenSymbols(){ Typed = "FileStream"},
             new ForbiddenSymbols(){ Typed = "File"},
             new ForbiddenSymbols(){ Typed = "Directory"},
@@ -65,7 +51,6 @@ namespace Magnet
             new ForbiddenSymbols(){ Typed = "Process"},
             new ForbiddenSymbols(){ Typed = "Assembly"},
         };
-
 
         public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
@@ -77,8 +62,6 @@ namespace Magnet
             {
                 if (type == "System.Net" || type == "System.Net.Sockets")
                 {
-
-
                     var location = node.GetLocation();
                     var lineSpan = location.GetLineSpan();
                     Console.WriteLine($"Forbidden API 'Socket' accessed at line {lineSpan.StartLinePosition.Line + 1}, " +
@@ -95,10 +78,13 @@ namespace Magnet
             var symbol = this.semanticModel.GetDeclaredSymbol(node);
             if (symbol != null)
             {
-                // 检查方法的特性是否包含 DllImport
+                var ModuleInitializerAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.CompilerServices.ModuleInitializerAttribute");
+                if (ModuleInitializerAttribute != null)
+                {
+                    this.AddReport(node, $"ModuleInitializer");
+                }
 
-                // System.Runtime.CompilerServices.ModuleInitializer
-                // System.Runtime.InteropServices.DllImportAttribute
+                // 检查方法的特性是否包含 DllImport
                 var dllImportAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.InteropServices.DllImportAttribute");
                 if (dllImportAttribute != null)
                 {
@@ -109,17 +95,13 @@ namespace Magnet
             base.VisitMethodDeclaration(node);
         }
 
-
         public override void VisitTypeOfExpression(TypeOfExpressionSyntax node)
         {
             DefaultVisit(node);
         }
 
-
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-
-
             // 获取调用表达式的标识符或成员访问表达式
             //var expression = node.Expression;
 
@@ -147,26 +129,19 @@ namespace Magnet
                         typeName = typeInfo.Type.Name;
                     }
                 }
-                var symbols = forbiddenSymbols.Find(e =>  e.Typed == typeName && (String.IsNullOrEmpty(e.Method) ||  e.Method == methodName )  );
+                var symbols = forbiddenSymbols.Find(e => e.Typed == typeName && (String.IsNullOrEmpty(e.Method) || e.Method == methodName));
                 if (symbols != null)
                 {
                     this.AddReport(node, $"{typeName}.{methodName}");
                 }
-
             }
 
             //// 获取左侧表达式的类型信息
             //var typeInfo = this.semanticModel.GetTypeInfo(node.Expression);
             //var type = typeInfo.Type?.ToString();
 
-
             base.VisitInvocationExpression(node);
         }
-
-
-
-
-
 
         public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
@@ -184,17 +159,13 @@ namespace Magnet
             base.VisitObjectCreationExpression(node);
         }
 
-
-
-
         private void AddReport(CSharpSyntaxNode node, String keyword)
         {
             // 获取位置并打印行列信息
             var location = node.GetLocation();
             var lineSpan = location.GetLineSpan();
             // 输出错误信息，包含行列
-            Console.WriteLine($"({lineSpan.StartLinePosition.Line + 1},{lineSpan.StartLinePosition.Character + 1}) Error: Forbidden API '{keyword}' detected in script.");
+            Console.WriteLine($"({lineSpan.StartLinePosition.Line + 1},{lineSpan.StartLinePosition.Character + 1}) Warning: Forbidden API '{keyword}' detected in script.");
         }
-
     }
 }

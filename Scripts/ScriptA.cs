@@ -1,11 +1,17 @@
 using App.Core;
 using Magnet.Context;
-using TTTTT = System.Threading.Thread;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
 
 
 [Script(nameof(ScriptA))]
 public class ScriptA : BaseScript
 {
+    [Autowired]
+    private Int32 value;
+
 
 
     protected override void Initialize()
@@ -24,21 +30,23 @@ public class ScriptA : BaseScript
 
             File.WriteAllText("1","1");
             Directory.EnumerateFiles("..");
-            
-            TTTTT.Sleep(0);
- 
-
+            var s = new Thread(() => { });
+            s.Start();
+            Thread.Sleep(0);            
+            var t = Thread.CurrentThread;
+            Console.WriteLine($"GetCurrentProcessorId = {t};");
             typeof(ScriptA).GetNestedTypes();
             ThreadPool.QueueUserWorkItem((e) => { });
 
+            var list = new List<string>();
 
-            new TTTTT(new ThreadStart(() => { }));
-
+            //new TTTTT(() => { });
+            debugger();
 
             PRINT("System.Drawing.dll");
 
             CALL("ScriptB", "PrintMessage", "Help");
-
+            
             
             SCRIPT<ScriptB>().PrintMessage("aaa");
 

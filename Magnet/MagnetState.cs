@@ -1,26 +1,49 @@
 ﻿using Magnet.Context;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 
 namespace Magnet
 {
-    public class MagnetState
+    public class MagnetState : IDisposable
     {
-        private Assembly assembly = null;
+        private MagnetEngine engine;
         private ScriptCollection scriptCollection = new ScriptCollection();
-
-
-        internal MagnetState(ScriptCollection scriptCollection)
+        // ScriptLoadContext scriptLoadContext,
+        internal MagnetState(MagnetEngine engine)
         {
-            this.scriptCollection = scriptCollection;
-            foreach (var item in this.scriptCollection.scripts)
-            {
-                if (item is IScriptInstance scriptInstance)
-                {
-                    scriptInstance.Initialize();
-                }
-            }
+            this.engine = engine;
+            this.CreateState();
         }
+
+
+
+        private void CreateState()
+        {
+            ScriptCollection scriptCollection = new ScriptCollection();
+            List<IScriptInstance> instances = new List<IScriptInstance>();
+            foreach (var meta in this.engine.scriptMetaInfos)
+            {
+                var instance = (BaseScript)Activator.CreateInstance(meta.Type);
+                scriptCollection.Add(meta.Attribute, instance);
+                instances.Add(instance);
+            }
+            // Injected Data
+            foreach (var instance in instances)
+            {
+                instance.InjectedContext(scriptCollection);
+            }
+            // Exec Init Function
+            foreach (var instance in instances)
+            {
+                instance.Initialize();
+            }
+            this.scriptCollection = scriptCollection;
+        }
+
+
+
+
 
         public T GetDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
@@ -35,8 +58,10 @@ namespace Magnet
                 return (T)Delegate.CreateDelegate(typeof(T), script, methodInfo);
             }
             throw new Exception("not found script.");
-
         }
+
+
+
 
 
         public object GetVariable(string scriptName, string variableName)
@@ -65,5 +90,9 @@ namespace Magnet
             }
         }
 
+        public void Dispose()
+        {
+            this.scriptCollection.Clear();
+        }
     }
 }

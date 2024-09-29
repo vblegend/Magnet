@@ -1,5 +1,6 @@
 ﻿using Magnet.Context;
 using System;
+using System.Runtime.CompilerServices;
 
 
 
@@ -20,6 +21,9 @@ public class Systems :BaseScript
         DEBUG("Systems.Initialize");
     }
 
-
-
+    [ModuleInitializer]
+    public static void Module()
+    {
+  
+    }
 }
