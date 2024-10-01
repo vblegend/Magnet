@@ -16,7 +16,7 @@ public class ScriptB : BaseScript
 
     protected override void Initialize()
     {
-        DEBUG("ScriptB.Initialize");
+        //DEBUG("ScriptB.Initialize");
     }
 
 

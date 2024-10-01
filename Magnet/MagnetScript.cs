@@ -11,7 +11,7 @@ using System.Collections.Immutable;
 
 namespace Magnet
 {
-    public class MagnetEngine
+    public class MagnetScript
     {
         private String[] baseUsing = new String[] { "System", "Magnet.Core" };
         public ScriptOptions Options { get; private set; }
@@ -39,7 +39,7 @@ namespace Magnet
         };
 
 
-        public MagnetEngine(ScriptOptions options)
+        public MagnetScript(ScriptOptions options)
         {
             this.diagnostics = new List<String>();
             this.Options = options;
@@ -130,8 +130,11 @@ namespace Magnet
                 this.scriptMetaInfos = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
                                         .Select(type =>
                                         {
+            
                                             var attribute = type.GetCustomAttribute<ScriptAttribute>();
                                             if (String.IsNullOrEmpty(attribute.Name)) attribute.Name = type.Name;
+
+                                            Console.WriteLine($"Found Script：{type.Name}");
                                             return new ScriptMetaInfo(attribute, type);
                                         }).ToImmutableList();
             }

@@ -5,9 +5,23 @@ using System.Runtime.CompilerServices;
 
 
 [Script(nameof(Systems))]
-public class Systems :BaseScript
+public class Systems : BaseScript
 {
+    public static AttributeTargets Target1 { get; set; }
 
+    public static AttributeTargets Target2;
+
+    public static AttributeTargets Target3
+    {
+        get
+        {
+            return AttributeTargets.Class;
+        }
+        set
+        {
+
+        }
+    }
 
     [Function("Login")]
     public void SystemInitialize(Object args)
@@ -18,12 +32,12 @@ public class Systems :BaseScript
 
     protected override void Initialize()
     {
-        DEBUG("Systems.Initialize");
+        //DEBUG("Systems.Initialize");
     }
 
     [ModuleInitializer]
     public static void Module()
     {
-  
+
     }
 }

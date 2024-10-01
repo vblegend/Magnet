@@ -18,8 +18,20 @@ namespace ScriptRuner
         {
             if (this.stopwatch == null) throw new Exception();
             this.stopwatch.Stop();
+            var f = Console.ForegroundColor;
+            var b = Console.BackgroundColor;
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor= ConsoleColor.Red;
+
+
             Console.WriteLine($"Task:{this.name} use {this.stopwatch.ElapsedMilliseconds}ms");
             this.stopwatch = null;
+
+
+
+            Console.ForegroundColor = f;
+            Console.BackgroundColor = b;
         }
     }
 }

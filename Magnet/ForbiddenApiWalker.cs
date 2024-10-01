@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Reflection;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Magnet
 {
@@ -70,6 +71,42 @@ namespace Magnet
             }
 
             base.VisitMemberAccessExpression(node);
+        }
+
+
+        public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
+        {
+            // 检查是否有 static 修饰符
+            if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
+            {
+                // 提取字段类型和字段名
+                var variableDeclaration = node.Declaration;
+                var fieldType = variableDeclaration.Type.ToString();
+
+                foreach (var variable in variableDeclaration.Variables)
+                {
+                    var fieldName = variable.Identifier.Text;
+
+                    this.AddReport(node, $"静态字段: {fieldName}，类型: {fieldType}");
+                }
+            }
+
+            // 调用基类方法以继续遍历
+            base.VisitFieldDeclaration(node);
+        }
+
+        // 重写方法以检测属性声明
+        public override void VisitPropertyDeclaration(PropertyDeclarationSyntax node)
+        {
+            // 检查是否有 static 修饰符
+            if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
+            {
+                var propertyType = node.Type.ToString();
+                var propertyName = node.Identifier.Text;
+                this.AddReport(node, $"静态字段: {propertyName}，类型: {propertyType}");
+            }
+
+            base.VisitPropertyDeclaration(node);
         }
 
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
@@ -161,11 +198,12 @@ namespace Magnet
 
         private void AddReport(CSharpSyntaxNode node, String keyword)
         {
+            
             // 获取位置并打印行列信息
             var location = node.GetLocation();
             var lineSpan = location.GetLineSpan();
             // 输出错误信息，包含行列
-            Console.WriteLine($"({lineSpan.StartLinePosition.Line + 1},{lineSpan.StartLinePosition.Character + 1}) Warning: Forbidden API '{keyword}' detected in script.");
+            Console.WriteLine($"{node.SyntaxTree.FilePath}({lineSpan.StartLinePosition.Line + 1},{lineSpan.StartLinePosition.Character + 1}) Warning: Forbidden API '{keyword}' detected in script.");
         }
     }
 }

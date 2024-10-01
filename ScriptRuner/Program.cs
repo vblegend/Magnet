@@ -12,7 +12,6 @@ public static class Program
     public delegate void LoginHandler(LoginContext context);
     public static void Main()
     {
-
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
@@ -22,25 +21,23 @@ public static class Program
         //options.WithRelease();
         options.AddUsings("Magnet.Proxy");
         options.AddReferences("System.Threading.Thread");
-        options.AddReferences<MagnetEngine>();
+        options.AddReferences<MagnetScript>();
         options.AddReferences<LoginContext>();
         options.WithDirectory("../../../../Scripts");
 
 
 
-        var v = new ObjectKilledContext();
+        options.AddInjectedObject<IKilledContext>(new ObjectKilledContext());
 
-        options.AddInjectedObject<IKilledContext>(v);
-
-        MagnetEngine scriptManager = new MagnetEngine(options);
+        MagnetScript scriptManager = new MagnetScript(options);
         var result = scriptManager.Compile();
         if (result.Success)
         {
-            Console.WriteLine(  );
+            Console.WriteLine();
             using (new WitchTimer("CreateScriptState"))
             {
                 var state = scriptManager.CreateScriptState();
-                state.SetVariable("ScriptB", "Value",1.23456);
+                state.SetVariable("ScriptB", "Value", 1.23456);
                 Console.WriteLine($"Set ScriptB.Value = {1.23456};");
                 CallLogin(state);
             }
@@ -52,6 +49,30 @@ public static class Program
                 Console.WriteLine($"ScriptB.Value = {value};");
                 CallLogin(state);
             }
+
+
+            using (new WitchTimer("Create Delegate 10000"))
+            {
+                for (int i = 0; i < 10000; i++)
+                {
+                    var state = scriptManager.CreateScriptState();
+                    state.GetDelegate<LoginHandler>("ScriptA", "Login");
+                }
+            }
+
+
+
+
+            List<MagnetState> states = new List<MagnetState>();
+            using (new WitchTimer("Create State 10000"))
+            {
+                for (int i = 0; i < 10000; i++)
+                {
+                    var state = scriptManager.CreateScriptState();
+                    states.Add(state);
+                }
+            }
+
 
             var stateTest = scriptManager.CreateScriptState();
             scriptManager.Unload();
@@ -69,6 +90,15 @@ public static class Program
             //}
 
 
+
+
+
+
+
+
+
+
+            Console.WriteLine($"HOST GLOBAL.VAR = {GLOBAL.STR[1]}");
         }
 
         else

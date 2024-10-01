@@ -1,11 +1,11 @@
 using App.Core;
 using Magnet.Core;
+
+using System.IO;
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Threading;
-
 
 [Script(nameof(ScriptA))]
 public class ScriptA : BaseScript
@@ -13,11 +13,13 @@ public class ScriptA : BaseScript
     [Autowired]
     private IKilledContext KilledContext;
 
+    //[Autowired]
+    private IKilledContext KilledContext2 { get; set; }
 
 
     protected override void Initialize()
     {
-        DEBUG("ScriptA.Initialize");
+        //DEBUG("ScriptA.Initialize");
     }
 
 
@@ -25,7 +27,8 @@ public class ScriptA : BaseScript
     public void Login(LoginContext context)
     {
 
-        this.DEBUG("xxl");
+        this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.STR[1]}");
+        GLOBAL.STR.Set(1,"Hello Wrold");
         this.Test(context.UserName);
 
         File.WriteAllText("1", "1");

@@ -1,5 +1,7 @@
 ﻿using Magnet.Core;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
+using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -8,10 +10,10 @@ namespace Magnet
 {
     public class MagnetState : IDisposable
     {
-        private MagnetEngine engine;
+        private MagnetScript engine;
         private MagnetStateContext stateContext;
 
-        internal MagnetState(MagnetEngine engine)
+        internal MagnetState(MagnetScript engine)
         {
             this.engine = engine;
             this.stateContext = new MagnetStateContext(engine);
@@ -22,33 +24,38 @@ namespace Magnet
 
         private void CreateState()
         {
-            List<IScriptInstance> instances = new List<IScriptInstance>();
             foreach (var meta in this.engine.scriptMetaInfos)
             {
                 var instance = (BaseScript)Activator.CreateInstance(meta.Type);
                 this.stateContext.AddInstance(meta.Attribute, instance);
                 this.Autowired(instance, engine.Options.InjectedObjectMap);
-                instances.Add(instance);
             }
             // Injected Data
-            foreach (var instance in instances)
+            foreach (var instance in this.stateContext.Instances)
             {
                 instance.InjectedContext(this.stateContext);
-
             }
             // Exec Init Function
-            foreach (var instance in instances)
+            foreach (var instance in this.stateContext.Instances)
             {
                 instance.Initialize();
             }
         }
 
 
+        public void Inject<TYPE>(TYPE obj, IReadOnlyDictionary<Type, Object> objectMap)
+        {
+            foreach (var instance in this.stateContext.Instances)
+            {
+                this.Autowired(instance as BaseScript, objectMap);
+            }
+        }
 
-        private void Autowired(BaseScript instance, ConcurrentDictionary<Type, Object> objectMap)
+
+        private void Autowired(BaseScript instance, IReadOnlyDictionary <Type, Object> objectMap)
         {
             var type = instance.GetType();
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public );
             foreach (var field in fields)
             {
                 var attribute = field.GetCustomAttribute<AutowiredAttribute>();
@@ -61,13 +68,6 @@ namespace Magnet
                 }
             }
         }
-
-
-
-
-
-
-
 
 
         public T GetDelegate<T>(String scriptName, String methodName) where T : Delegate

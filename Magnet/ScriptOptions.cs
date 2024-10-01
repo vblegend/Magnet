@@ -40,7 +40,7 @@ namespace Magnet
             return this;
         }
 
-        public ConcurrentDictionary<Type, Object> InjectedObjectMap { get; private set; } = [];
+        internal ConcurrentDictionary<Type, Object> InjectedObjectMap {  get; private set; } = [];
 
         public ScriptOptions AddInjectedObject<T>(T value)
         {

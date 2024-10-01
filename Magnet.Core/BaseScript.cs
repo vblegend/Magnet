@@ -3,10 +3,13 @@ using System.Reflection;
 
 namespace Magnet.Core
 {
+
+    /// <summary>
+    /// Base script object, script object needs to inherit this type, provides some basic scripting mechanisms
+    /// </summary>
     public abstract class BaseScript : IScriptInstance
     {
 
-        [Autowired]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IStateContext stateContext;
 
@@ -54,6 +57,7 @@ namespace Magnet.Core
 
         protected void DEBUG(String message)
         {
+            if (stateContext.RunMode != ScriptRunMode.Debug) return;
             StackTrace stackTrace = new StackTrace(1, true);
             StackFrame callerFrame = stackTrace.GetFrame(0);
             var method = callerFrame.GetMethod();
@@ -66,6 +70,7 @@ namespace Magnet.Core
 
         protected void DEBUG(string format, params object?[] args)
         {
+            if (stateContext.RunMode != ScriptRunMode.Debug) return;
             DEBUG(String.Format(format, args));
         }
 

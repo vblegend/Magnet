@@ -7,11 +7,11 @@ namespace Magnet
     internal class MagnetStateContext : IStateContext, IDisposable
     {
 
-        private MagnetEngine engine;
+        private MagnetScript engine;
 
 
 
-        internal MagnetStateContext(MagnetEngine engine)
+        internal MagnetStateContext(MagnetScript engine)
         {
             this.engine = engine;
         }
@@ -37,12 +37,13 @@ namespace Magnet
 
 
         #region Instances
-
+        private List<IScriptInstance> instances = new List<IScriptInstance>();
         private Dictionary<Type, BaseScript> instancesByType = new Dictionary<Type, BaseScript>();
         private Dictionary<String, BaseScript> instancesByString = new Dictionary<String, BaseScript>();
 
         internal void AddInstance(ScriptAttribute attribute, BaseScript script)
         {
+            instances.Add(script);
             instancesByType.Add(script.GetType(), script);
             instancesByString.Add(attribute.Name, script);
         }
@@ -63,6 +64,8 @@ namespace Magnet
             instancesByType.TryGetValue(type, out BaseScript script);
             return script;
         }
+
+        public IReadOnlyList<IScriptInstance> Instances => instances;
 
         #endregion
 
