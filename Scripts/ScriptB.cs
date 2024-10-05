@@ -1,15 +1,13 @@
 
+using App.Core;
 using Magnet.Core;
 using System.Runtime.InteropServices;
 
 
 
 [Script("ScriptB")]
-public class ScriptB : BaseScript
+public class ScriptB : MyScript
 {
-    [DllImport("demo.dll")]
-    public static extern bool OpenDemo();
-
 
     public static Double Value = Math.PI;
 

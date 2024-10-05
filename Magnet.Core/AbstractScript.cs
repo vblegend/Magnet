@@ -7,7 +7,7 @@ namespace Magnet.Core
     /// <summary>
     /// Base script object, script object needs to inherit this type, provides some basic scripting mechanisms
     /// </summary>
-    public abstract class BaseScript : IScriptInstance
+    public abstract class AbstractScript : IScriptInstance
     {
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -25,6 +25,7 @@ namespace Magnet.Core
             private set;
         }
 
+        
 
         void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
@@ -96,12 +97,12 @@ namespace Magnet.Core
             }
         }
 
-        public T? SCRIPT<T>() where T : BaseScript
+        public T? SCRIPT<T>() where T : AbstractScript
         {
             return stateContext.InstanceOfType<T>();
         }
 
-        public void SCRIPT<T>(Action<T> callback) where T : BaseScript
+        public void SCRIPT<T>(Action<T> callback) where T : AbstractScript
         {
             var script = SCRIPT<T>();
             if (script != null) callback(script);

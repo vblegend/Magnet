@@ -8,5 +8,20 @@
     [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     public sealed class AutowiredAttribute : Attribute
     {
+        public AutowiredAttribute()
+        {
+            
+        }
+
+        public AutowiredAttribute(Type type)
+        {
+            this.Type = type;
+        }
+
+
+        public String Alias { get; set; }
+        public Type Type { get; set; }
+
+
     }
 }

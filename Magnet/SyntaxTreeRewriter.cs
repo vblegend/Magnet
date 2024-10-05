@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Reflection;
+
 
 namespace Magnet
 {
@@ -8,21 +10,124 @@ namespace Magnet
     {
         private SemanticModel semanticModel;
 
+        private Dictionary<String, String> ReplaceTypes;
+        public SyntaxTreeRewriter(Dictionary<String, String> ReplaceTypes)
+        {
+            this.ReplaceTypes = ReplaceTypes;
+        }
 
 
 
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node);
-            if (typeInfo.Type?.ToString() == "System.Threading.Thread")
+            if (this.ReplaceTypes.TryGetValue(typeInfo.Type?.ToString(), out var newTypeName))
             {
-                // 替换为自定义的 MyThread
-                var newType = SyntaxFactory.ParseTypeName("Magnet.Proxy.ThreadProxy");
-                var newObjectCreation = node.WithType(newType);
-                Console.WriteLine(newObjectCreation.ToFullString());
-                return newObjectCreation;
+                return node.WithType(MakeNameSyntax(newTypeName));
             }
             return base.VisitObjectCreationExpression(node);
+        }
+
+        public override SyntaxNode VisitTypeOfExpression(TypeOfExpressionSyntax node)
+        {
+            // 获取 typeof 内的类型
+            var typeSyntax = node.Type;
+            // 使用语义模型获取类型信息
+            var typeInfo = this.semanticModel.GetTypeInfo(typeSyntax);
+
+            if (this.ReplaceTypes.TryGetValue(typeInfo.ConvertedType.ToString(), out var newTypeName))
+            {
+                return node.WithType(this.MakeNameSyntax(newTypeName));
+            }
+            return base.VisitTypeOfExpression(node);
+        }
+
+
+        public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+            // 获取方法的符号信息
+            var symbolInfo = semanticModel.GetSymbolInfo(node);
+            // 获取方法符号
+            var methodSymbol = symbolInfo.Symbol as IMethodSymbol;
+            // 判断是否是 Thread.Sleep 方法
+            if (methodSymbol != null && methodSymbol.IsStatic)
+            {
+                if (this.ReplaceTypes.TryGetValue(methodSymbol.ContainingType?.ToString(), out var newTypeName))
+                {
+                    //构建新的 ThreadProxy.Sleep 调用
+                    var newExpression = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, MakeNameSyntax(newTypeName), SyntaxFactory.IdentifierName(methodSymbol.Name));
+                    //替换原来的方法调用表达式
+                    var newInvocation = node.WithExpression(newExpression);
+                    return newInvocation;
+                }
+            }
+            return base.VisitInvocationExpression(node);
+        }
+
+
+        public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            // 获取属性或字段的符号信息
+            var symbolInfo = semanticModel.GetSymbolInfo(node);
+            var memberSymbol = symbolInfo.Symbol as ISymbol;
+
+            if (memberSymbol != null && memberSymbol.IsStatic && (memberSymbol.Kind == SymbolKind.Property || memberSymbol.Kind == SymbolKind.Field))
+            {
+                if (this.ReplaceTypes.TryGetValue(memberSymbol.ContainingType?.ToString(), out var newTypeName))
+                {
+                    //var newExpression = SyntaxFactory.MemberAccessExpression(
+                    //    SyntaxKind.SimpleMemberAccessExpression,
+                    //    MakeNameSyntax("Magnet.Proxy.ThreadProxy"),
+                    //    SyntaxFactory.IdentifierName(memberSymbol.Name)
+                    //);
+                    return node.WithExpression(MakeNameSyntax(newTypeName));
+                }
+            }
+            return base.VisitMemberAccessExpression(node);
+        }
+
+
+
+
+        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
+        {
+            var symbol = this.semanticModel.GetDeclaredSymbol(node);
+            if (symbol.IsStatic)
+            {
+                if (this.VisitAttributes(node.AttributeLists, out var attributeLists))
+                {
+                    return node.WithAttributeLists(attributeLists);
+                }
+            }
+            return base.VisitMethodDeclaration(node);
+        }
+
+
+
+
+        private Boolean VisitAttributes(SyntaxList<AttributeListSyntax> attributeLists, out SyntaxList<AttributeListSyntax> newList)
+        {
+            newList = SyntaxFactory.List<AttributeListSyntax>();
+            var count = 0;
+            // 遍历方法的所有属性
+            foreach (var attributeList in attributeLists)
+            {
+                List<AttributeSyntax> attributeList2 = new List<AttributeSyntax>();
+                foreach (var attribute in attributeList.Attributes)
+                {
+                    var symbol = this.semanticModel.GetSymbolInfo(attribute).Symbol as IMethodSymbol;
+                    var attr = attribute;
+                    if (this.ReplaceTypes.TryGetValue(symbol.ContainingType?.ToString(), out var newTypeName))
+                    {
+                        count++;
+                        attr = attribute.WithName(SyntaxFactory.ParseName(newTypeName));
+                    }
+                    attributeList2.Add(attr);
+                }
+                var ss = attributeList.WithAttributes(SyntaxFactory.SeparatedList(attributeList2));
+                newList = newList.Add(ss);
+            }
+            return count > 0;
         }
 
 
@@ -41,89 +146,6 @@ namespace Magnet
             return nameSyntax;
         }
 
-        // 判断是不是调用 debugger()
-        private bool IsDebuggerCall(InvocationExpressionSyntax node)
-        {
-            var expression = node.Expression;
-            if (expression is IdentifierNameSyntax identifierName)
-            {
-                return identifierName.Identifier.Text == "debugger";
-            }
-            return false;
-        }
-
-        public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
-        {
-            // 获取方法的符号信息
-            var symbolInfo = semanticModel.GetSymbolInfo(node);
-            // 获取方法符号
-            var methodSymbol = symbolInfo.Symbol as IMethodSymbol;
-
-
-            //if (methodSymbol != null && methodSymbol.Name == "Invoke" && IsDebuggerCall(node))
-            //{
-            //    // 返回 null 以删除该调用
-            //    return null;
-            //}
-
-
-
-
-
-
-
-
-            // 判断是否是 Thread.Sleep 方法
-            if (methodSymbol != null && methodSymbol.ContainingType.ToString() == "System.Threading.Thread")
-            {
-                if (node.Expression is MemberAccessExpressionSyntax memberAccess)
-                {
-                    if (methodSymbol.IsStatic)
-                    {
-                        //Console.WriteLine(memberAccess.Expression);
-                        //var newExpression = memberAccess.WithExpression(MakeNameSyntax("Magnet.Proxy.ThreadProxy"));
-                        //构建新的 ThreadProxy.Sleep 调用
-                        var newExpression = SyntaxFactory.MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            MakeNameSyntax("Magnet.Proxy.ThreadProxy"),
-                            SyntaxFactory.IdentifierName(methodSymbol.Name)
-                        );
-                        //替换原来的方法调用表达式
-                        var newInvocation = node.WithExpression(newExpression);
-                        return newInvocation;
-                    }
-                }
-            }
-
-            // 如果不是 Thread.Sleep 调用，返回原节点
-            return base.VisitInvocationExpression(node);
-        }
-
-
-        public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        {
-            // 获取属性或字段的符号信息
-            var symbolInfo = semanticModel.GetSymbolInfo(node);
-            var memberSymbol = symbolInfo.Symbol as ISymbol;
-
-            if (memberSymbol != null && memberSymbol.ContainingType.ToString() == "System.Threading.Thread")
-            {
-                // 判断是属性或字段的访问
-                if (memberSymbol.Kind == SymbolKind.Property || memberSymbol.Kind == SymbolKind.Field)
-                {
-                    // 将 Thread.CurrentThread 等静态属性、字段替换为 ThreadProxy 对应的属性或字段
-                    var newExpression = SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        MakeNameSyntax("Magnet.Proxy.ThreadProxy"),
-                        SyntaxFactory.IdentifierName(memberSymbol.Name)
-                    );
-                    var result = node.WithExpression(MakeNameSyntax("Magnet.Proxy.ThreadProxy"));
-                    //Console.WriteLine(result.ToFullString());
-                    return result;
-                }
-            }
-            return base.VisitMemberAccessExpression(node);
-        }
 
         public SyntaxNode VisitWith(SemanticModel model, SyntaxNode root)
         {

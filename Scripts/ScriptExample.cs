@@ -10,7 +10,7 @@ using System;
 // 3. The BaseScript class must be inherited
 
 [Script(nameof(ScriptExample))]
-public class ScriptExample : BaseScript
+public class ScriptExample : AbstractScript
 {
 
     [Function("Hello")]

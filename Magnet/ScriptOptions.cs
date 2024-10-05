@@ -7,7 +7,7 @@ namespace Magnet
     public class ScriptOptions
     {
 
-        public String Name { get; set; }
+        public String Name { get; set; } = "Magnet.Script";
 
         public ScriptRunMode Mode { get; set; } = ScriptRunMode.Release;
 
@@ -27,6 +27,9 @@ namespace Magnet
 
         public Boolean UseDebugger { get; set; }
 
+        public Boolean AllowAsync { get; set; } = false;
+
+        internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
 
 
@@ -40,7 +43,7 @@ namespace Magnet
             return this;
         }
 
-        internal ConcurrentDictionary<Type, Object> InjectedObjectMap {  get; private set; } = [];
+        internal ConcurrentDictionary<Type, Object> InjectedObjectMap { get; private set; } = [];
 
         public ScriptOptions AddInjectedObject<T>(T value)
         {
@@ -73,6 +76,21 @@ namespace Magnet
         }
 
 
+
+        public ScriptOptions ReplaceType(String sourceType, String newType)
+        {
+            ReplaceTypes.Add(sourceType, newType);
+            return this;
+        }
+
+
+        public ScriptOptions ReplaceType(Type sourceType, Type newType)
+        {
+            ReplaceTypes.Add(sourceType.FullName, newType.FullName);
+            return this;
+        }
+
+
         public ScriptOptions AddReferences<T>() where T : class
         {
             this.References.Add(typeof(T).Assembly);
@@ -90,6 +108,14 @@ namespace Magnet
             return this;
         }
 
+
+
+        
+        public ScriptOptions WithAllowAsync(Boolean allowAsync)
+        {
+            this.AllowAsync = allowAsync;
+            return this;
+        }
 
 
         public ScriptOptions WithDirectory(String baseDirectory)

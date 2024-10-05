@@ -1,9 +1,7 @@
 ﻿using Magnet.Core;
-using System.Collections.Concurrent;
-using System.Collections.Frozen;
-using System.Collections.ObjectModel;
+using System;
+using System.Diagnostics.Metrics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 
 namespace Magnet
@@ -12,6 +10,10 @@ namespace Magnet
     {
         private MagnetScript engine;
         private MagnetStateContext stateContext;
+        public event Action<MagnetState> Unloading;
+
+        private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
+
 
         internal MagnetState(MagnetScript engine)
         {
@@ -21,16 +23,15 @@ namespace Magnet
         }
 
 
-
         private void CreateState()
         {
             foreach (var meta in this.engine.scriptMetaInfos)
             {
-                var instance = (BaseScript)Activator.CreateInstance(meta.Type);
-                this.stateContext.AddInstance(meta.Attribute, instance);
-                this.Autowired(instance, engine.Options.InjectedObjectMap);
+                var instance = (AbstractScript)Activator.CreateInstance(meta.ScriptType);
+                this.stateContext.AddInstance(meta, instance);
+                this.stateContext.Autowired(meta.ScriptType, instance, engine.Options.InjectedObjectMap);
             }
-            // Injected Data
+            //Injected Data
             foreach (var instance in this.stateContext.Instances)
             {
                 instance.InjectedContext(this.stateContext);
@@ -43,55 +44,86 @@ namespace Magnet
         }
 
 
-        public void Inject<TYPE>(TYPE obj, IReadOnlyDictionary<Type, Object> objectMap)
+
+        public void Inject<TObject>(TObject obj)
         {
             foreach (var instance in this.stateContext.Instances)
             {
-                this.Autowired(instance as BaseScript, objectMap);
+                this.stateContext.Autowired(instance as AbstractScript, obj);
             }
         }
 
 
-        private void Autowired(BaseScript instance, IReadOnlyDictionary <Type, Object> objectMap)
+
+        public WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
-            var type = instance.GetType();
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public );
-            foreach (var field in fields)
+            var _delegate = this.stateContext.GetScriptMethod<T>(scriptName, methodName);
+            return _delegate != null ? new WeakReference<T>(_delegate) : null;
+        }
+
+
+
+
+        public WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName)
+        {
+            var key = $"get {scriptName}.{propertyName}()";
+            if (delegateCache.TryGetValue(key, out var @delegate))
             {
-                var attribute = field.GetCustomAttribute<AutowiredAttribute>();
-                if (attribute != null)
+                return new WeakReference<Getter<T>>((Getter<T>)@delegate);
+            }
+            else
+            {
+                AbstractScript script = this.stateContext.InstanceOfName(scriptName);
+                if (script != null)
                 {
-                    if (objectMap.TryGetValue(field.FieldType, out Object value))
-                    {
-                        field.SetValue(instance, value);
-                    }
+                    // 获取对象的类型
+                    Type type = script.GetType();
+                    // 获取方法信息 (MethodInfo)
+                    PropertyInfo propertyInfo = type.GetProperty(propertyName);
+                    // 创建一个 Delegate 并绑定到 obj 对象
+                    var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), propertyInfo.GetGetMethod());
+                    delegateCache.Add(key, getter);
+                    return new WeakReference<Getter<T>>(getter);
                 }
+                throw new Exception("not found script.");
             }
         }
 
 
-        public T GetDelegate<T>(String scriptName, String methodName) where T : Delegate
+        public WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName)
         {
-            BaseScript script = this.stateContext.InstanceOfName(scriptName);
-            if (script != null)
+            var key = $"set {scriptName}.{propertyName}()";
+            if (delegateCache.TryGetValue(key, out var @delegate))
             {
-                // 获取对象的类型
-                Type type = script.GetType();
-                // 获取方法信息 (MethodInfo)
-                MethodInfo methodInfo = type.GetMethod(methodName);
-                // 创建一个 Delegate 并绑定到 obj 对象
-                return (T)Delegate.CreateDelegate(typeof(T), script, methodInfo);
+                return new WeakReference<Setter<T>>((Setter<T>)@delegate);
             }
-            throw new Exception("not found script.");
+            else
+            {
+                AbstractScript script = this.stateContext.InstanceOfName(scriptName);
+                if (script != null)
+                {
+                    // 获取对象的类型
+                    Type type = script.GetType();
+                    // 获取方法信息 (MethodInfo)
+                    PropertyInfo propertyInfo = type.GetProperty(propertyName);
+                    // 创建一个 Delegate 并绑定到 obj 对象
+                    var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), propertyInfo.GetSetMethod());
+                    delegateCache.Add(key, setter);
+                    return new WeakReference<Setter<T>>(setter);
+                }
+                throw new Exception("not found script.");
+            }
         }
 
 
 
 
 
-        public object GetVariable(string scriptName, string variableName)
+
+
+        public object GetFieldValue(string scriptName, string variableName)
         {
-            BaseScript script = this.stateContext.InstanceOfName(scriptName);
+            AbstractScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -103,9 +135,9 @@ namespace Magnet
             throw new Exception("Variable not found");
         }
 
-        public void SetVariable(string scriptName, string variableName, object value)
+        public void SetFieldValue(string scriptName, string variableName, object value)
         {
-            BaseScript script = this.stateContext.InstanceOfName(scriptName);
+            AbstractScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -115,8 +147,16 @@ namespace Magnet
             }
         }
 
+
+
         public void Dispose()
         {
+            this.delegateCache.Clear();
+            if (this.Unloading != null)
+            {
+                this.Unloading.Invoke(this);
+                this.Unloading = null;
+            }
             if (this.stateContext != null)
             {
                 this.stateContext.Dispose();

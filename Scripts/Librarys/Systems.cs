@@ -1,11 +1,12 @@
-﻿using Magnet.Core;
+﻿using App.Core;
+using Magnet.Core;
 using System;
 using System.Runtime.CompilerServices;
 
 
 
 [Script(nameof(Systems))]
-public class Systems : BaseScript
+public class Systems : MyScript
 {
     public static AttributeTargets Target1 { get; set; }
 
@@ -38,6 +39,6 @@ public class Systems : BaseScript
     [ModuleInitializer]
     public static void Module()
     {
-
+        Console.WriteLine("ModuleInitializer");
     }
 }

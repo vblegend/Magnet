@@ -3,7 +3,7 @@
 public static class DebuggerExtends
 {
 
-    public static void DEBUG(this BaseScript script, string message)
+    public static void DEBUG(this AbstractScript script, string message)
     {
         Console.WriteLine(message);
     }

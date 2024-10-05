@@ -15,12 +15,12 @@ namespace Magnet.Core
         {
         }
 
-        public ScriptAttribute(string name)
+        public ScriptAttribute(string alias)
         {
-            this.Name = name;
+            this.Alias = alias;
         }
 
-        public string Name { get; set; }
+        public string Alias { get; set; }
 
         public string Description { get; set; }
     }

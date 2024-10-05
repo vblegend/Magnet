@@ -2,12 +2,12 @@
 
 namespace ScriptRuner
 {
-    internal class WitchTimer : IDisposable
+    internal class WatchTimer : IDisposable
     {
         private Stopwatch stopwatch;
         private String name;
 
-        public WitchTimer(String name)
+        public WatchTimer(String name)
         {
             this.name = name;
             this.stopwatch = new Stopwatch();
@@ -20,18 +20,13 @@ namespace ScriptRuner
             this.stopwatch.Stop();
             var f = Console.ForegroundColor;
             var b = Console.BackgroundColor;
-
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor= ConsoleColor.Red;
-
-
-            Console.WriteLine($"Task:{this.name} use {this.stopwatch.ElapsedMilliseconds}ms");
+            Console.Write($"Task: {this.name} use {this.stopwatch.ElapsedMilliseconds}ms");
             this.stopwatch = null;
-
-
-
             Console.ForegroundColor = f;
             Console.BackgroundColor = b;
+            Console.WriteLine();
         }
     }
 }

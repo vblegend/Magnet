@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Reflection;
 using Microsoft.VisualBasic.FileIO;
+using System.Xml.Linq;
 
 namespace Magnet
 {
@@ -17,8 +18,16 @@ namespace Magnet
     // 自定义的 Roslyn 语法树 Walker，用于检测不允许的 API 调用
     public class ForbiddenApiWalker : CSharpSyntaxWalker
     {
+
         private SemanticModel semanticModel;
         public readonly List<String> ForbiddenApis = new List<String>();
+        private ScriptOptions scriptOptions;
+
+        public ForbiddenApiWalker(ScriptOptions scriptOptions)
+        {
+            this.scriptOptions = scriptOptions;
+        }
+
 
         public bool HasForbiddenApis
         {
@@ -43,7 +52,8 @@ namespace Magnet
             new ForbiddenSymbols(){ Method = "QueueUserWorkItem", Typed = "ThreadPool"},
             new ForbiddenSymbols(){ Method = "GetMethods", Typed = "Type"},
             new ForbiddenSymbols(){ Method = "GetMethod", Typed = "Type"},
-
+            new ForbiddenSymbols(){ Typed = "Type",  Method = "GetType"},
+            new ForbiddenSymbols(){ Typed = "Activator"},
             new ForbiddenSymbols(){ Typed = "FileStream"},
             new ForbiddenSymbols(){ Typed = "File"},
             new ForbiddenSymbols(){ Typed = "Directory"},
@@ -53,7 +63,7 @@ namespace Magnet
             new ForbiddenSymbols(){ Typed = "Assembly"},
         };
 
-        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
             // 获取左侧表达式的类型信息
             var typeInfo = this.semanticModel.GetTypeInfo(node.Expression);
@@ -109,10 +119,22 @@ namespace Magnet
             base.VisitPropertyDeclaration(node);
         }
 
+
+
+
+
+
+
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
             // 获取方法的语义信息
             var symbol = this.semanticModel.GetDeclaredSymbol(node);
+
+            // 检查是否有 async 修饰符
+            if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && (!this.scriptOptions.AllowAsync))
+            {
+                Console.WriteLine($"异步方法: {node.Identifier.Text}, 行: {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}");
+            }
             if (symbol != null)
             {
                 var ModuleInitializerAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.CompilerServices.ModuleInitializerAttribute");

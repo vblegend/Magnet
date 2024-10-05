@@ -6,9 +6,11 @@ using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
+
 
 [Script(nameof(ScriptA))]
-public class ScriptA : BaseScript
+public class ScriptA : MyScript
 {
     [Autowired]
     private IKilledContext KilledContext;
@@ -23,25 +25,23 @@ public class ScriptA : BaseScript
     }
 
 
-    [Function("Login")]
+
+
+    [Function]
     public void Login(LoginContext context)
     {
 
-        this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.STR[1]}");
-        GLOBAL.STR.Set(1,"Hello Wrold");
+        this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
+        GLOBAL.S[1] = "Hello Wrold";
+
+        ENABLED_TIMER(0, Initialize, 5);
+
         this.Test(context.UserName);
 
-        File.WriteAllText("1", "1");
-        Directory.EnumerateFiles("..");
-        var s = new Thread(() => { });
-        s.Start();
-        Thread.Sleep(0);
-        var t = Thread.CurrentThread;
-        Console.WriteLine($"GetCurrentProcessorId = {t};");
-        typeof(ScriptA).GetNestedTypes();
+        var typed = typeof(Thread);
 
+        Console.WriteLine(typed.FullName);
 
-        ThreadPool.QueueUserWorkItem((e) => { });
 
         var list = new List<string>();
 
