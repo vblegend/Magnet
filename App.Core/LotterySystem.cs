@@ -46,7 +46,7 @@ namespace App.Core
 
     public class LotteryItem<TPrize>
     {
-        public TPrize Prize;
+        public required TPrize Prize;
         /// <summary>
         /// 是否为已获得的
         /// </summary>

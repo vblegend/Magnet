@@ -7,15 +7,14 @@ namespace App.Core
     {
 
         [Autowired]
-        private readonly GlobalVariableStore? _global;
-        protected GlobalVariableStore GLOBAL => _global!;
+        protected readonly GlobalVariableStore GLOBAL;
+ 
 
 
 
 
 
-
-        protected Object SELF;
+        protected readonly Object SELF;
 
 
 
