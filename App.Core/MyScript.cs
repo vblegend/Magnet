@@ -36,6 +36,12 @@ namespace App.Core
 
 
 
+        protected Int32 RANDOM(Int32 maxValue)
+        {
+            return Random.Shared.Next(maxValue);
+        }
+
+
 
     }
 }

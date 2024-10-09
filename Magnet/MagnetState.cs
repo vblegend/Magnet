@@ -44,14 +44,16 @@ namespace Magnet
         }
 
 
+        public void Inject(IReadOnlyDictionary<Type, Object> objectMap)
+        {
+            this.stateContext.Autowired(objectMap);
+        }
 
         public void Inject<TObject>(TObject obj)
         {
-            foreach (var instance in this.stateContext.Instances)
-            {
-                this.stateContext.Autowired(instance as AbstractScript, obj);
-            }
+            this.stateContext.Autowired<TObject>(obj);
         }
+
 
 
 

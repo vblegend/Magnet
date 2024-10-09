@@ -30,7 +30,7 @@ namespace Magnet
 
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
-        private ScriptLoadContext scriptLoadContext = new ScriptLoadContext();
+        private ScriptLoadContext scriptLoadContext;
 
         public event Action<MagnetScript> Unloading;
 
@@ -76,6 +76,7 @@ namespace Magnet
         {
             this.diagnostics = new List<String>();
             this.Options = options;
+            this.scriptLoadContext = new ScriptLoadContext(options);
             var libs = ImportantAssemblies.Concat(options.References);
             this.referencesForCodegen = AppDomain.CurrentDomain
             .GetAssemblies()

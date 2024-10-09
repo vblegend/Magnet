@@ -73,11 +73,12 @@ public static class Program
 
 
         //
-        options.ReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Proxy.ModuleInitializerAttribute)); 
-        
+        options.ReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Proxy.ModuleInitializerAttribute));
 
 
-        
+        options.SetAssemblyLoadCallback(AssemblyLoad);
+
+
 
 
         options.AddInjectedObject<ObjectKilledContext>(new ObjectKilledContext());
@@ -88,6 +89,11 @@ public static class Program
 
 
 
+    static Assembly AssemblyLoad(ScriptLoadContext context, AssemblyName assemblyName)
+    {
+        return null;
+    }
+
 
 
 
@@ -95,6 +101,55 @@ public static class Program
     {
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
+
+
+
+        using (new WatchTimer("Draw 200000"))
+        {
+            List<PrizeItem> prizes = new List<PrizeItem>
+            {
+                new PrizeItem { ItemId = "Item1", Probability = 0.1, Once = true },
+                new PrizeItem { ItemId = "Item2", Probability = 0.2, Once = true },
+                new PrizeItem { ItemId = "Item3", Probability = 0.5, Once = true },
+                new PrizeItem { ItemId = "Item4", Probability = 0.8, Once = true },
+                new PrizeItem { ItemId = "Item5", Probability = 1, Once = true },
+                new PrizeItem { ItemId = "Item6", Probability = 1.2, Once = true },
+                new PrizeItem { ItemId = "Item7", Probability = 1.5, Once = true },
+                new PrizeItem { ItemId = "Item8", Probability = 2, Once = true },
+                new PrizeItem { ItemId = "Item9", Probability = 5, Once = true },
+                new PrizeItem { ItemId = "Item10", Probability = 10, Once = true },
+                new PrizeItem { ItemId = "Item11", Probability = 15, Once = true },
+                new PrizeItem { ItemId = "Item12", Probability = 20, Once = true },
+                new PrizeItem { ItemId = "Item13", Probability = 25, Once = true },
+                new PrizeItem { ItemId = "Item14", Probability = 5, Once = true },
+                new PrizeItem { ItemId = "Item15", Probability = 5, Once = true },
+                new PrizeItem { ItemId = "Item16", Probability = 5, Once = true },
+                new PrizeItem { ItemId = "Item17", Probability = 5, Once = true },
+                new PrizeItem { ItemId = "Item18", Probability = 50, Once = true },
+            };
+
+            LotterySystem<PrizeItem> lotterySystem = new LotterySystem<PrizeItem>(prizes);
+            for (int i = 0; i < 200000; i++)
+            {
+                var cw = lotterySystem.Draw();
+                if (cw != null)
+                {
+                    Console.WriteLine($"抽到的奖品: {cw.ItemId}");
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         var weakLogin = TestSccriptUnload();
@@ -107,7 +162,7 @@ public static class Program
         }
         //System.Private.Xml, Version = 8.0.0.0, Culture = neutral, PublicKeyToken = cc7b13ffcd2ddd51
         // Magnet.Script, Version = 0.0.0.0, Culture = neutral, PublicKeyToken = null
-        var scriptModule = AppDomain.CurrentDomain.GetAssemblies().Where(assembly=> assembly.FullName.StartsWith("Magnet.Script,")).FirstOrDefault();
+        var scriptModule = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.FullName.StartsWith("Magnet.Script,")).FirstOrDefault();
         if (scriptModule != null)
         {
             Console.WriteLine("脚本模块卸载失败！");
@@ -159,7 +214,7 @@ public static class Program
 
             var stateTest = scriptManager.CreateScriptState();
 
-           var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
+            var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
 
 
             using (new WatchTimer("Try GetTarget 100000"))
@@ -235,10 +290,11 @@ public static class Program
         var login = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
         var context = new LoginContext();
         context.UserName = "Administrator";
-        if (login.TryGetTarget(out var target)){
+        if (login.TryGetTarget(out var target))
+        {
             target(context);
         }
-   
+
     }
 
 

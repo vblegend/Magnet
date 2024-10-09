@@ -1,9 +1,14 @@
 ﻿using Magnet.Core;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
+using System.Runtime.Loader;
 
 namespace Magnet
 {
+
+    public delegate Assembly AssemblyLoadDelegate(ScriptLoadContext context, AssemblyName assemblyName);
+
     public class ScriptOptions
     {
 
@@ -14,6 +19,9 @@ namespace Magnet
         public String BaseDirectory { get; set; }
 
         public String ScriptFilePattern { get; set; } = "*.cs";
+
+
+        public AssemblyLoadDelegate AssemblyLoad;
 
         /// <summary>
         /// add using xxxx;
@@ -32,6 +40,11 @@ namespace Magnet
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
 
+        public ScriptOptions SetAssemblyLoadCallback(AssemblyLoadDelegate assemblyLoad)
+        {
+            this.AssemblyLoad = assemblyLoad;
+            return this;
+        }
 
 
         public ScriptOptions AddUsings(params String[] nameSpaces)
@@ -110,7 +123,7 @@ namespace Magnet
 
 
 
-        
+
         public ScriptOptions WithAllowAsync(Boolean allowAsync)
         {
             this.AllowAsync = allowAsync;

@@ -11,5 +11,7 @@ namespace ScriptRuner
         public object Murderer => 123456;
 
         public DateTime KilledTime =>  DateTime.Now;
+
+        public long ObjectId => 10200402121;
     }
 }

@@ -54,6 +54,50 @@ namespace Magnet
             }
         }
 
+
+
+
+        public void Autowired(IReadOnlyDictionary<Type, Object> objectMap)
+        {
+            foreach (var pair in instancesByType)
+            {
+                var instance = pair.Value;
+                foreach (var field in instance.Metadata.AutowriredFields)
+                {
+                    foreach (var obj in objectMap)
+                    {
+                        // field.RequiredType
+                        // field.Alias
+                        if (obj.Key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(obj.Key))
+                        {
+                            field.FieldInfo.SetValue(instance, obj.Value);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public void Autowired<TObject>(TObject @object)
+        {
+            var valType = typeof(TObject);
+            foreach (var pair in instancesByType)
+            {
+                var instance = pair.Value;
+                foreach (var field in instance.Metadata.AutowriredFields)
+                {
+                    // field.RequiredType
+                    // field.Alias
+                    if (valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
+                    {
+                        field.FieldInfo.SetValue(instance, @object);
+                    }
+                }
+            }
+        }
+
+
+
         public void Autowired(Type instanceType, AbstractScript instance, IReadOnlyDictionary<Type, Object> objectMap)
         {
             if (instancesByType.TryGetValue(instanceType, out var scriptInstance))
@@ -61,7 +105,7 @@ namespace Magnet
                 foreach (var field in scriptInstance.Metadata.AutowriredFields)
                 {
                     foreach (var obj in objectMap)
-                    {  
+                    {
                         // field.RequiredType
                         // field.Alias
                         if (obj.Key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(obj.Key))

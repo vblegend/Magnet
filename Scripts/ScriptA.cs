@@ -5,8 +5,8 @@ using System.IO;
 using System.Threading;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
+
+using App.Core.UserInterface;
 
 
 [Script(nameof(ScriptA))]
@@ -30,6 +30,54 @@ public class ScriptA : MyScript
     [Function]
     public void Login(LoginContext context)
     {
+
+
+
+
+        UI.DIALOG(120).TO(SELF)
+          .POSITION(11, 22)
+          .TEXT([
+              "====[<$name>]====",
+              "bbbbbb",
+              "cccccc",
+              "dddddd"
+          ])
+          .FLOATING([
+              UI.GIF("view", "package://item.wix,12", 0, 0),
+              UI.IMAGE("view", "package://item.wix,12", 0, 0),
+              UI.BUTTTON("ok", "package://item.wix,13", 15, 100),
+              UI.BUTTTON("cancel", "package://item.wix,14", 200, 100)
+          ])
+          .SEND();
+
+
+
+        switch (RANDOM(5))
+        {
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                break;
+            case 5:
+                break;
+
+
+
+            default:
+                break;
+        }
+
+
+
+
+
+
 
         this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
         GLOBAL.S[1] = "Hello Wrold";
