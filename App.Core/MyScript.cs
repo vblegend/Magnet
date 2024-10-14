@@ -1,4 +1,5 @@
-﻿using Magnet.Core;
+﻿using App.Core.Probability;
+using Magnet.Core;
 
 
 namespace App.Core
@@ -8,7 +9,7 @@ namespace App.Core
 
         [Autowired]
         protected readonly GlobalVariableStore GLOBAL;
- 
+
 
 
 
@@ -40,6 +41,21 @@ namespace App.Core
             return Random.Shared.Next(maxValue);
         }
 
+
+
+
+
+        protected TValue RANDOM<TValue>(Lottery<TValue> items)
+        {
+
+           var value = Random.Shared.NextDouble() * items.TotalProbability;
+
+            items.Random(value);
+
+
+
+            return default;
+        }
 
 
     }

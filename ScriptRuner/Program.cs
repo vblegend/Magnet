@@ -255,6 +255,16 @@ public static class Program
     {
         MagnetScript scriptManager = new MagnetScript(Options());
         var result = scriptManager.Compile();
+        if (!result.Success)
+        {
+            foreach (var item in result.Diagnostics)
+            {
+                Console.WriteLine(item.ToString());
+            }
+        }
+
+
+
         List<MagnetState> states = new List<MagnetState>();
         var state = scriptManager.CreateScriptState();
         var weak = state.MethodDelegate<LoginHandler>("ScriptA", "Login");

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 
 using App.Core.UserInterface;
+using App.Core.Probability;
 
 
 [Script(nameof(ScriptA))]
@@ -49,6 +50,27 @@ public class ScriptA : MyScript
               UI.BUTTTON("cancel", "package://item.wix,14", 200, 100)
           ])
           .SEND();
+
+
+
+
+        var lottery = Lottery<String>.Load("");
+
+        lottery.Add(45.0, "F");
+        lottery.Add(35.0, "E");
+        lottery.Add(8.0, "D");
+        lottery.Add(5.0, "C");
+        lottery.Add(3.0, "B");
+        lottery.Add(2.0, "A");
+        lottery.Add(1.0, "S");
+        lottery.Add(0.5, "SS");
+        lottery.Add(0.1, "SSS");
+
+
+
+
+
+        var result = lottery.Draw();
 
 
 
