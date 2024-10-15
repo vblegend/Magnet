@@ -48,9 +48,9 @@ namespace App.Core
         protected TValue RANDOM<TValue>(Lottery<TValue> items)
         {
 
-           var value = Random.Shared.NextDouble() * items.TotalProbability;
+           //var value = Random.Shared.NextDouble() * items.TotalProbability;
 
-            items.Random(value);
+           // items.Random(value);
 
 
 

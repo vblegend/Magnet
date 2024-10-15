@@ -35,4 +35,16 @@
     <ProjectReference Include="..\Magnet\Magnet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="lotterys\minimum guarantee.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lotterys\unlimited.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lotterys\once.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

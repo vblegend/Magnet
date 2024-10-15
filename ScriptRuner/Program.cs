@@ -2,6 +2,7 @@
 
 
 using App.Core;
+using App.Core.Probability;
 using Magnet;
 
 using ScriptRuner;
@@ -23,12 +24,6 @@ public static class Program
     private static ScriptOptions Options()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
-
-
-
-
-
-
         ScriptOptions options = new ScriptOptions();
         options.WithDebug(false);
 
@@ -102,52 +97,15 @@ public static class Program
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
-
-
-        using (new WatchTimer("Draw 200000"))
-        {
-            List<PrizeItem> prizes = new List<PrizeItem>
-            {
-                new PrizeItem { ItemId = "Item1", Probability = 0.1, Once = true },
-                new PrizeItem { ItemId = "Item2", Probability = 0.2, Once = true },
-                new PrizeItem { ItemId = "Item3", Probability = 0.5, Once = true },
-                new PrizeItem { ItemId = "Item4", Probability = 0.8, Once = true },
-                new PrizeItem { ItemId = "Item5", Probability = 1, Once = true },
-                new PrizeItem { ItemId = "Item6", Probability = 1.2, Once = true },
-                new PrizeItem { ItemId = "Item7", Probability = 1.5, Once = true },
-                new PrizeItem { ItemId = "Item8", Probability = 2, Once = true },
-                new PrizeItem { ItemId = "Item9", Probability = 5, Once = true },
-                new PrizeItem { ItemId = "Item10", Probability = 10, Once = true },
-                new PrizeItem { ItemId = "Item11", Probability = 15, Once = true },
-                new PrizeItem { ItemId = "Item12", Probability = 20, Once = true },
-                new PrizeItem { ItemId = "Item13", Probability = 25, Once = true },
-                new PrizeItem { ItemId = "Item14", Probability = 5, Once = true },
-                new PrizeItem { ItemId = "Item15", Probability = 5, Once = true },
-                new PrizeItem { ItemId = "Item16", Probability = 5, Once = true },
-                new PrizeItem { ItemId = "Item17", Probability = 5, Once = true },
-                new PrizeItem { ItemId = "Item18", Probability = 50, Once = true },
-            };
-
-            LotterySystem<PrizeItem> lotterySystem = new LotterySystem<PrizeItem>(prizes);
-            for (int i = 0; i < 200000; i++)
-            {
-                var cw = lotterySystem.Draw();
-                if (cw != null)
-                {
-                    Console.WriteLine($"抽到的奖品: {cw.ItemId}");
-                }
-            }
-        }
-
-
-
-
-
-
-
-
-
-
+        //var lottery = Lottery<String>.Load("lotterys/once.txt");
+        //using (new WatchTimer("Draw Minimum Guarantee 75"))
+        //{
+        //    for (int i = 0; i < 75; i++)
+        //    {
+        //        var drawItem = lottery.Draw();
+        //        Console.WriteLine($"Draw Item {drawItem} With {i + 1} Count.");
+        //    }
+        //}
 
 
 
@@ -156,6 +114,7 @@ public static class Program
 
         if (weakLogin.TryGetTarget(out var login))
         {
+            Console.WriteLine("脚本模块卸载失败！");
             var context = new LoginContext();
             context.UserName = "Administrator";
             login(context);

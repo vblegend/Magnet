@@ -1,0 +1,32 @@
+﻿using App.Core;
+using App.Core.Probability;
+using Magnet.Core;
+using System;
+
+
+[Script(nameof(Raffler))]
+public class Raffler : MyScript
+{
+    // Global Lottery
+    private static Lottery<String> MGLottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
+    private static Lottery<String> OnceLottery = Lottery<String>.Load("lotterys/once.txt");
+
+
+    // Personal Lottery 
+    private readonly Lottery<String> _myOnceLottery = OnceLottery.Clone();
+
+    protected override void Initialize()
+    {
+
+    }
+
+
+    [Function]
+    public void Draw(IObjectContext context)
+    {
+        var item = _myOnceLottery.Draw();
+        Console.WriteLine(item);
+    }
+
+}
+
