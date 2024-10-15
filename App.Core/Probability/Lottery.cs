@@ -2,42 +2,45 @@
 {
     public sealed class Lottery<TValue>
     {
-
-        private class ROOT_INFO<TValue3>
+        private class RAW_INFO
         {
-            public ROOT_INFO(List<ITEM<TValue3>> pList, Double[] cps, Double totalProbability, Double availableProbability)
+            public RAW_INFO(Lottery<TValue> lottery)
             {
-                this.prizeList = new List<ITEM<TValue3>>(pList.Select(e=>e.Clone()));
-                this.cumulativeProbabilities = new Double[cps.Length];
-                Array.Copy(cps, this.cumulativeProbabilities, cps.Length);
-                this.totalProbability = totalProbability;
-                this.availableProbability = availableProbability;
+                var count = lottery._items.Count;
+                this.items = lottery._items;
+                this.cumulativeProbabilities = new Double[count];
+
+                Array.Copy(lottery.cumulativeProbabilities, this.cumulativeProbabilities, count);
+
+                this.quantityInStock = new int[count];
+                Array.Copy(lottery.quantityInStock, this.quantityInStock, count);
+
+                this.totalProbability = lottery.totalProbability;
+                this.availableProbability = lottery.availableProbability;
+
             }
             public Double[] cumulativeProbabilities = [];
+            public Int32[] quantityInStock = [];
             public Double availableProbability = 0.0;
             public Double totalProbability = 0.0;
-            public List<ITEM<TValue3>> prizeList = [];
+            public List<ReadOnlyItem<TValue>> items = [];
         }
 
-
-
-        private class ITEM<TValue2>
+        private class ReadOnlyItem<TValue2>
         {
-            public ITEM(Double probability, TValue2 Item, Int32 Stock)
+            public ReadOnlyItem(Double probability, TValue2 Item, Int32 Stock)
             {
                 this.Probability = probability;
                 this.Stock = Stock;
-                this.RawStock = Stock;
                 this.Item = Item;
             }
-            public Double Probability;
-            public Int32 Stock;
-            public Int32 RawStock;
-            public TValue2 Item;
+            public readonly Double Probability;
+            public readonly Int32 Stock;
+            public readonly TValue2 Item;
 
-            public ITEM<TValue2> Clone()
+            public ReadOnlyItem<TValue2> Clone()
             {
-                return new ITEM<TValue2>(Probability, Item, RawStock);
+                return new ReadOnlyItem<TValue2>(Probability, Item, Stock);
             }
 
             public override string ToString()
@@ -47,25 +50,25 @@
         }
 
         private static readonly Random random = new Random();
-        private readonly List<ITEM<TValue>> prizeList = new List<ITEM<TValue>>();
+
+        private List<ReadOnlyItem<TValue>> _items = [];
+
         private readonly object lockObject = new object();
+
+        // 物品库存数量
+        private Int32[] quantityInStock = [];
+        // 物品累计概率
         private Double[] cumulativeProbabilities = [];
+        // 剩余概率
         private Double availableProbability = 0.0;
+        // 总概率
         private Double totalProbability = 0.0;
+
         private Boolean IsReady = false;
-        public Double TotalProbability => totalProbability;
+
+        private RAW_INFO Root;
 
 
-        private ROOT_INFO<TValue> Root;
-
-
-
-        public TValue? Draw(Double[] ssssss)
-        {
-
-
-            return default;
-        }
 
 
         public TValue? Draw()
@@ -79,22 +82,36 @@
                 int index = Array.BinarySearch(cumulativeProbabilities, drawValue);
                 if (index < 0) index = ~index;
                 // 确保有库存
-                while (prizeList[index].Stock == 0) index++;
+                while (quantityInStock[index] == 0) index++;
                 // 标记已获得
-                MarkAsObtained(index);
-                return prizeList[index].Item;
+                if (quantityInStock[index] > 0) quantityInStock[index]--;
+                // 局部更新累积概率数组，只需更新从当前索引之后的部分
+                this.InitializeCumulativeProbabilities();
+                return _items[index].Item;
             }
         }
 
 
 
+        public TValue? Draw(Double[] ssssss)
+        {
+
+
+            return default;
+        }
+
 
         private void normalData()
         {
-            prizeList.Sort((x, y) => x.Probability.CompareTo(y.Probability));
-            cumulativeProbabilities = new double[prizeList.Count];
+            var count = _items.Count;
+            cumulativeProbabilities = new Double[count];
+            quantityInStock = new Int32[count];
+            for (int i = 0; i < count; i++)
+            {
+                quantityInStock[i] = _items[i].Stock;
+            }
             InitializeCumulativeProbabilities();
-            this.Root = new ROOT_INFO<TValue>(this.prizeList, this.cumulativeProbabilities,this.totalProbability, this.availableProbability);
+            this.Root = new RAW_INFO(this);
             this.IsReady = true;
         }
 
@@ -103,42 +120,37 @@
         {
             totalProbability = 0.0;
             availableProbability = 0.0;
-            for (int i = 0; i < prizeList.Count; i++)
+            for (int i = 0; i < _items.Count; i++)
             {
-                totalProbability += prizeList[i].Probability;
-                if (prizeList[i].Stock == -1 || prizeList[i].Stock > 0)
+                totalProbability += _items[i].Probability;
+                if (quantityInStock[i] == -1 || quantityInStock[i] > 0)
                 {
-                    availableProbability += prizeList[i].Probability;
+                    availableProbability += _items[i].Probability;
                 }
                 cumulativeProbabilities[i] = availableProbability;
             }
         }
 
 
-        private void MarkAsObtained(int index)
-        {
-            var item = prizeList[index];
-            if (item.Stock > 0) item.Stock--;
-            // 局部更新累积概率数组，只需更新从当前索引之后的部分
-            this.InitializeCumulativeProbabilities();
-        }
-
-
         public void Add(Double probability, in TValue item, Int32 stock = -1)
         {
-            prizeList.Add(new ITEM<TValue>(probability, item, stock));
-            IsReady = false;
+            this._items.Add(new ReadOnlyItem<TValue>(probability, item, stock));
+            this.IsReady = false;
         }
+
 
         public Lottery<TValue> Clone()
         {
             var lottery = new Lottery<TValue>();
             if (!lottery.IsReady) lottery.normalData();
-            lottery.prizeList.AddRange(this.Root.prizeList.Select(p => p.Clone()));
+            var count = this.Root.items.Count;
+            lottery._items = this.Root.items;
             lottery.availableProbability = this.Root.availableProbability;
             lottery.totalProbability = this.Root.totalProbability;
-            lottery.cumulativeProbabilities = new double[this.Root.cumulativeProbabilities.Length];
-            Array.Copy(this.Root.cumulativeProbabilities, lottery.cumulativeProbabilities, this.Root.cumulativeProbabilities.Length);
+            lottery.cumulativeProbabilities = new double[count];
+            Array.Copy(this.Root.cumulativeProbabilities, lottery.cumulativeProbabilities, count);
+            lottery.quantityInStock = new Int32[count];
+            Array.Copy(this.Root.quantityInStock, lottery.quantityInStock, count);
             lottery.Root = this.Root;
             lottery.IsReady = true;
             return lottery;

@@ -97,15 +97,48 @@ public static class Program
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
-        //var lottery = Lottery<String>.Load("lotterys/once.txt");
-        //using (new WatchTimer("Draw Minimum Guarantee 75"))
-        //{
-        //    for (int i = 0; i < 75; i++)
-        //    {
-        //        var drawItem = lottery.Draw();
-        //        Console.WriteLine($"Draw Item {drawItem} With {i + 1} Count.");
-        //    }
-        //}
+        var lottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
+
+
+
+        using (new WatchTimer("Draw Minimum Guarantee 75"))
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                var drawItem = lottery.Draw();
+                if (drawItem == null) break;
+
+                Console.Write($"Draw Item ");
+
+                if (drawItem[00] == 'S')
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                }
+                Console.Write(drawItem);
+
+                if (drawItem[00] == 'S')
+                {
+                    Console.BackgroundColor = ConsoleColor.Black;
+                }
+
+
+                Console.WriteLine($" With {i + 1} Count.");
+            }
+        }
+
+
+        using (new WatchTimer("Draw SSS With"))
+        {
+            var count = 0;
+            while (true)
+            {
+                count++;
+                var lottery2 = lottery.Clone();
+                var drawItem = lottery2.Draw();
+                if (drawItem == "SSS") break;
+            }
+            Console.WriteLine(count);
+        }
 
 
 

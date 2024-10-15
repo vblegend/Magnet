@@ -24,8 +24,15 @@ public class Raffler : MyScript
     [Function]
     public void Draw(IObjectContext context)
     {
-        var item = _myOnceLottery.Draw();
-        Console.WriteLine(item);
+
+
+        for (int i = 0; i < 10; i++)
+        {
+            var item = _myOnceLottery.Draw();
+            Console.WriteLine($"Draw Item {item}");
+        }     
+        Console.WriteLine();
+
     }
 
 }
