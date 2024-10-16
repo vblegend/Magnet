@@ -32,7 +32,7 @@ public class ScriptA : MyScript
     public void Login(LoginContext context)
     {
 
-        SCRIPT<Raffler>().Draw(context);
+        Script<Raffler>().Draw(context);
 
 
         UI.DIALOG(120).TO(SELF)
@@ -51,63 +51,32 @@ public class ScriptA : MyScript
           ])
           .SEND();
 
-
-
-
-
-        switch (RANDOM(5))
-        {
-            case 0:
-                break;
-            case 1:
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            case 4:
-                break;
-            case 5:
-                break;
-
-
-
-            default:
-                break;
-        }
-
-
-
-
-
-
-
         this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
         GLOBAL.S[1] = "Hello Wrold";
 
         ENABLED_TIMER(0, Initialize, 5);
 
-        this.Test(context.UserName);
 
         var typed = typeof(Thread);
 
-        Console.WriteLine(typed.FullName);
+        this.PRINT(typed.FullName);
 
 
-        var list = new List<string>();
+        List<string> list = [];
 
         debugger();
 
-        PRINT("System.Drawing.dll");
+        this.PRINT("System.Drawing.dll");
+        Call("ScriptB", "Test", []);
+        Call("ScriptB", "PrintMessage", ["Help"]);
+        TryCall("ScriptB", "PrintMessage1", ["Help"]);
 
-        CALL("ScriptB", "PrintMessage", "Help");
 
+        Script<ScriptB>().PrintMessage("AAA");
 
-        SCRIPT<ScriptB>().PrintMessage("aaa");
-
-        SCRIPT<ScriptB>((script) =>
+        Script<ScriptB>((script) =>
         {
-            script.PrintMessage("");
+            script.PrintMessage("BBB");
         });
 
         //ScriptB.PrintMessage(message);

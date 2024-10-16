@@ -37,7 +37,18 @@ namespace Magnet
 
         public Boolean AllowAsync { get; set; } = false;
 
+        public IOutput Output { get; set; } = new ConsoleOutput();
+
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
+
+
+
+        public ScriptOptions SetOutput(IOutput messagePrinter)
+        {
+            this.Output = messagePrinter;
+            return this;
+        }
+
 
 
         public ScriptOptions SetAssemblyLoadCallback(AssemblyLoadDelegate assemblyLoad)

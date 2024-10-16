@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 
 
@@ -65,7 +66,7 @@ public static class Program
         options.ReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Proxy.Socket));
         options.ReplaceType(typeof(System.Net.WebClient), typeof(Magnet.Proxy.WebClient));
         options.ReplaceType(typeof(System.Net.Http.HttpClient), typeof(Magnet.Proxy.HttpClient));
-
+        options.ReplaceType(typeof(System.GC), typeof(Magnet.Proxy.GC));
 
         //
         options.ReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Proxy.ModuleInitializerAttribute));
@@ -99,6 +100,7 @@ public static class Program
 
         var lottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
 
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 
         using (new WatchTimer("Draw Minimum Guarantee 75"))
@@ -226,7 +228,19 @@ public static class Program
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            CallLogin(stateTest);
+
+
+            try
+            {
+                CallLogin(stateTest);
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
+
+
+
         }
         else
         {

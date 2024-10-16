@@ -14,7 +14,6 @@ namespace Magnet.Core
         public ScriptRunMode RunMode { get; }
         public Boolean UseDebuggerBreak { get; }
 
-
-
+        public IOutput Output { get; }
     }
 }

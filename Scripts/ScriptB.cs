@@ -1,6 +1,7 @@
 
 using App.Core;
 using Magnet.Core;
+using System;
 using System.Runtime.InteropServices;
 
 
@@ -17,11 +18,15 @@ public class ScriptB : MyScript
         //DEBUG("ScriptB.Initialize");
     }
 
+    public void Test()
+    {
+        this.PRINT("无参数函数");
 
+    }
 
     public void PrintMessage(string message)
     {
-        Console.WriteLine(message);
+        this.PRINT(message);
         //Assembly.Load("System.Drawing.dll");
     }
 }

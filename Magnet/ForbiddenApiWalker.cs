@@ -84,20 +84,40 @@ namespace Magnet
         }
 
 
+
+        private Boolean HasAttribute(MemberDeclarationSyntax node, String AttributeFullName)
+        {
+            foreach (var attributeList in node.AttributeLists)
+            {
+                foreach (var attribute in attributeList.Attributes)
+                {
+                    var symbolInfo = this.semanticModel.GetSymbolInfo(attribute);
+                    var attributeSymbol = symbolInfo.Symbol as IMethodSymbol;
+                    if (attributeSymbol?.ContainingType.ToString() == AttributeFullName) return true;
+                }
+            }
+            return false;
+        }
+
+
+
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
             // 检查是否有 static 修饰符
             if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
             {
-                // 提取字段类型和字段名
-                var variableDeclaration = node.Declaration;
-                var fieldType = variableDeclaration.Type.ToString();
-
-                foreach (var variable in variableDeclaration.Variables)
+                if (! this.HasAttribute(node, "Magnet.Core.GlobalAttribute"))
                 {
-                    var fieldName = variable.Identifier.Text;
+                    // 提取字段类型和字段名
+                    var variableDeclaration = node.Declaration;
+                    var fieldType = variableDeclaration.Type.ToString();
 
-                    this.AddReport(node, $"静态字段: {fieldName}，类型: {fieldType}");
+                    foreach (var variable in variableDeclaration.Variables)
+                    {
+                        var fieldName = variable.Identifier.Text;
+
+                        this.AddReport(node, $"静态字段: {fieldName}，类型: {fieldType}");
+                    }
                 }
             }
 
@@ -105,17 +125,22 @@ namespace Magnet
             base.VisitFieldDeclaration(node);
         }
 
+
+
+
         // 重写方法以检测属性声明
         public override void VisitPropertyDeclaration(PropertyDeclarationSyntax node)
         {
             // 检查是否有 static 修饰符
             if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
             {
-                var propertyType = node.Type.ToString();
-                var propertyName = node.Identifier.Text;
-                this.AddReport(node, $"静态字段: {propertyName}，类型: {propertyType}");
+                if (!this.HasAttribute(node, "Magnet.Core.GlobalAttribute"))
+                {
+                    var propertyType = node.Type.ToString();
+                    var propertyName = node.Identifier.Text;
+                    this.AddReport(node, $"静态字段: {propertyName}，类型: {propertyType}");
+                }
             }
-
             base.VisitPropertyDeclaration(node);
         }
 

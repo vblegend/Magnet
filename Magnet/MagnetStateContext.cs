@@ -19,6 +19,9 @@ namespace Magnet
         }
 
 
+
+        public IOutput Output => engine.Options.Output;
+
         public ScriptRunMode RunMode => engine.Options.Mode;
 
         public bool UseDebuggerBreak => engine.Options.UseDebugger;
@@ -194,6 +197,7 @@ namespace Magnet
         }
 
         public IReadOnlyList<IScriptInstance> Instances => instances;
+
 
         #endregion
 

@@ -8,7 +8,10 @@ using System;
 public class Raffler : MyScript
 {
     // Global Lottery
+    [Global]
     private static Lottery<String> MGLottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
+
+    [Global]
     private static Lottery<String> OnceLottery = Lottery<String>.Load("lotterys/once.txt");
 
 

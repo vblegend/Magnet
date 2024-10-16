@@ -16,7 +16,7 @@ public class ScriptExample : AbstractScript
     [Function("Hello")]
     public void Hello(String name)
     {
-        Console.WriteLine($"Hello {name}!");
+        this.PRINT($"Hello {name}!");
     }
 
 

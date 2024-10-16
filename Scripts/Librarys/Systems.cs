@@ -8,10 +8,15 @@ using System.Runtime.CompilerServices;
 [Script(nameof(Systems))]
 public class Systems : MyScript
 {
+
+    
     public static AttributeTargets Target1 { get; set; }
 
+    [Global]
     public static AttributeTargets Target2;
 
+
+    [Global]
     public static AttributeTargets Target3
     {
         get
@@ -27,7 +32,7 @@ public class Systems : MyScript
     [Function("Login")]
     public void SystemInitialize(Object args)
     {
-        Console.WriteLine(args);
+        this.PRINT(args);
     }
 
 

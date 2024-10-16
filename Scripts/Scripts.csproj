@@ -13,9 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Librarys\Extends.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="Librarys\Systems.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>

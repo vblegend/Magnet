@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿
+using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Magnet.Core
 {
@@ -25,7 +27,7 @@ namespace Magnet.Core
             private set;
         }
 
-        
+
 
         void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
@@ -45,66 +47,86 @@ namespace Magnet.Core
         {
         }
 
-
-        protected void PRINT(string format, params object?[] args)
+        public void Output(MessageType type, String message)
         {
-            PRINT(String.Format(format, args));
+            stateContext.Output.Write(type, message);
         }
 
-        protected void PRINT(String message)
-        {
-            Console.WriteLine(message);
-        }
 
-        protected void DEBUG(String message)
-        {
-            if (stateContext.RunMode != ScriptRunMode.Debug) return;
-            StackTrace stackTrace = new StackTrace(1, true);
-            StackFrame callerFrame = stackTrace.GetFrame(0);
-            var method = callerFrame.GetMethod();
-            var methodName = method.Name;
-            var className = method.DeclaringType.FullName;
-            var fileName = callerFrame.GetFileName();
-            var lineNumber = callerFrame.GetFileLineNumber();
-            Console.WriteLine($"{fileName}({lineNumber}) [{className}.{methodName}] => {message}");
-        }
 
-        protected void DEBUG(string format, params object?[] args)
-        {
-            if (stateContext.RunMode != ScriptRunMode.Debug) return;
-            DEBUG(String.Format(format, args));
-        }
 
-        public void CALL(String scriptName, String method, params Object[] objects)
+        /// <summary>
+        /// Calls a method of the specified script, passing in the method parameters
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        /// <exception cref="ScriptRunException"></exception>
+        public Object? Call(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
         {
             var script = stateContext.InstanceOfName(scriptName);
-            script.GetType().GetMethod(method).Invoke(script, objects);
-        }
-
-        public void TRY_CALL(String scriptName, String method, params Object[] objects)
-        {
-            var script = stateContext.InstanceOfName(scriptName);
-            if (script != null)
+            if (script == null)
             {
-                try
-                {
-                    script.GetType().GetMethod(method).Invoke(script, objects);
-                }
-                catch (Exception ex)
-                {
-
-                }
+                throw new ScriptRunException($"Script {scriptName} was not found when method {methodName} of script {scriptName} was called.", callFilePath, callLineNumber, callMethod);
+            }
+            var methodInfo = script.GetType().GetMethod(methodName);
+            if (methodInfo == null)
+            {
+                throw new ScriptRunException($"Method {methodName} was not found when method {methodName} of script {scriptName} was called.", callFilePath, callLineNumber, callMethod);
+            }
+            try
+            {
+                return methodInfo.Invoke(script, args);
+            }
+            catch (Exception ex)
+            {
+                throw new ScriptRunException($"While calling method {methodName} of script {scriptName}, an exception was encountered that could not be handled.", callFilePath, callLineNumber, callMethod, ex);
             }
         }
 
-        public T? SCRIPT<T>() where T : AbstractScript
+
+        /// <summary>
+        /// Try Calls a method of the specified script, passing in the method parameters
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public Object? TryCall(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        {
+            var script = stateContext.InstanceOfName(scriptName);
+            if (script == null)
+            {
+                this.Output(MessageType.Warning, $"{callFilePath}({callLineNumber}) [{callMethod}] => TryCall(\"{scriptName}\",\"{methodName}\",??) not found script {scriptName}.");
+                return null;
+            }
+            try
+            {
+                var methodInfo = script.GetType().GetMethod(methodName);
+                if (methodInfo == null)
+                {
+                    this.Output(MessageType.Warning, $"{callFilePath}({callLineNumber}) [{callMethod}] => TryCall(\"{scriptName}\",\"{methodName}\",??) not found method {methodName}.");
+                    return null;
+                }
+                return methodInfo.Invoke(script, args);
+            }
+            catch (Exception ex)
+            {
+                this.Output(MessageType.Warning, $"{callFilePath}({callLineNumber}) [{callMethod}] => TryCall(\"{scriptName}\",\"{methodName}\",??) an exception was encountered that could not be handled.");
+                return null;
+            }
+
+        }
+
+        public T? Script<T>() where T : AbstractScript
         {
             return stateContext.InstanceOfType<T>();
         }
 
-        public void SCRIPT<T>(Action<T> callback) where T : AbstractScript
+        public void Script<T>(Action<T> callback) where T : AbstractScript
         {
-            var script = SCRIPT<T>();
+            var script = Script<T>();
             if (script != null) callback(script);
         }
 

@@ -255,7 +255,7 @@ namespace Magnet
 
         private async Task<SyntaxTree> ParseSyntaxTree(String filePath)
         {
-            var code = await File.ReadAllTextAsync(filePath);
+            var code = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
             var syntaxTree = CSharpSyntaxTree.ParseText(text: code, path: filePath, encoding: Encoding.UTF8);
             return GlobalUsings(syntaxTree, baseUsing.Concat(this.Options.Using).ToArray());
         }
@@ -270,7 +270,7 @@ namespace Magnet
                 syntaxTrees: syntaxTrees,
                 references: referencesForCodegen,
                 options: this.compilationOptions
-            );
+                            );
 
             // 检查是否有不允许的 API 调用
             var walker = new ForbiddenApiWalker(this.Options);

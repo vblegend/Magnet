@@ -86,6 +86,11 @@ namespace Magnet.Proxy
     }
 
 
+    public sealed class GC
+    {
+    }
+
+
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
     public sealed class ModuleInitializerAttribute: Attribute
     {
