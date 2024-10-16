@@ -2,8 +2,11 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Reflection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualBasic.FileIO;
-using System.Xml.Linq;
+
 
 namespace Magnet
 {
@@ -116,7 +119,7 @@ namespace Magnet
                     {
                         var fieldName = variable.Identifier.Text;
 
-                        this.AddReport(node, $"静态字段: {fieldName}，类型: {fieldType}");
+                        this.AddReport(node, $"未确定的全局变量定义 {fieldName}，类型: {fieldType}，如果该成员为全局变量，请使用[Global]属性标记。");
                     }
                 }
             }
@@ -138,7 +141,7 @@ namespace Magnet
                 {
                     var propertyType = node.Type.ToString();
                     var propertyName = node.Identifier.Text;
-                    this.AddReport(node, $"静态字段: {propertyName}，类型: {propertyType}");
+                    this.AddReport(node, $"未确定的全局变量定义 {propertyName}，类型: {propertyType}，如果该成员为全局变量，请使用[Global]属性标记。");
                 }
             }
             base.VisitPropertyDeclaration(node);
@@ -243,14 +246,14 @@ namespace Magnet
             base.VisitObjectCreationExpression(node);
         }
 
-        private void AddReport(CSharpSyntaxNode node, String keyword)
+        private void AddReport(CSharpSyntaxNode node, String message)
         {
             
             // 获取位置并打印行列信息
             var location = node.GetLocation();
             var lineSpan = location.GetLineSpan();
             // 输出错误信息，包含行列
-            Console.WriteLine($"{node.SyntaxTree.FilePath}({lineSpan.StartLinePosition.Line + 1},{lineSpan.StartLinePosition.Character + 1}) Warning: Forbidden API '{keyword}' detected in script.");
+            Console.WriteLine($"{node.SyntaxTree.FilePath}({lineSpan.StartLinePosition.Line + 1},{lineSpan.StartLinePosition.Character + 1}) {message}");
         }
     }
 }

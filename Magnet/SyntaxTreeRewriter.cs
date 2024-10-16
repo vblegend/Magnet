@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 
@@ -77,7 +79,7 @@ namespace Magnet
                 {
                     //var newExpression = SyntaxFactory.MemberAccessExpression(
                     //    SyntaxKind.SimpleMemberAccessExpression,
-                    //    MakeNameSyntax("Magnet.Proxy.ThreadProxy"),
+                    //    MakeNameSyntax("Magnet.Safety.ThreadProxy"),
                     //    SyntaxFactory.IdentifierName(memberSymbol.Name)
                     //);
                     return node.WithExpression(MakeNameSyntax(newTypeName));

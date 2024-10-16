@@ -1,5 +1,4 @@
-﻿using App.Core;
-using Magnet.Core;
+﻿using Magnet.Core;
 using System;
 using System.Runtime.CompilerServices;
 

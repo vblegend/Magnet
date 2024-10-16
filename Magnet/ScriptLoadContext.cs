@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
 using System.Reflection;
 using System.Runtime.Loader;
 
@@ -19,7 +19,6 @@ namespace Magnet
             {
                 return Options.AssemblyLoad(this,assemblyName);
             }
-            Console.WriteLine($"Load Assembly: {assemblyName.Name}");
             if (assemblyName.Name == "AllowedAssembly")
             {
                 return LoadFromAssemblyPath("path_to_your_allowed_assembly.dll");

@@ -1,4 +1,8 @@
-﻿namespace App.Core.Probability
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+
+namespace App.Core.Probability
 {
     public sealed class Lottery<TValue>
     {

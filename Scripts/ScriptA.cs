@@ -1,13 +1,8 @@
 using App.Core;
 using Magnet.Core;
-
-using System.IO;
 using System.Threading;
-using System;
 using System.Collections.Generic;
-
 using App.Core.UserInterface;
-using App.Core.Probability;
 
 
 [Script(nameof(ScriptA))]

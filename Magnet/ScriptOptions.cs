@@ -1,8 +1,9 @@
 ﻿using Magnet.Core;
+using Microsoft.CodeAnalysis;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
-using System.Runtime.Loader;
 
 namespace Magnet
 {
@@ -162,6 +163,59 @@ namespace Magnet
             this.UseDebugger = useDebuggerBreak;
             return this;
         }
+
+
+
+
+
+
+
+
+        public ScriptOptions DisabledInsecureTypes()
+        {
+
+            this.ReplaceType(typeof(System.GC), typeof(Magnet.Safety.GC));
+            this.ReplaceType(typeof(System.Threading.Thread), typeof(Magnet.Safety.Thread));
+            this.ReplaceType(typeof(System.Threading.ThreadPool), typeof(Magnet.Safety.ThreadPool));
+            this.ReplaceType(typeof(System.Threading.Tasks.Task), typeof(Magnet.Safety.Task));
+
+            // code safe
+            this.ReplaceType(typeof(System.Activator), typeof(Magnet.Safety.Activator));
+            this.ReplaceType(typeof(System.Type), typeof(Magnet.Safety.Type));
+            this.ReplaceType(typeof(System.Reflection.Assembly), typeof(Magnet.Safety.Assembly));
+            this.ReplaceType(typeof(System.Reflection.Emit.DynamicMethod), typeof(Magnet.Safety.DynamicMethod));
+            this.ReplaceType(typeof(System.Linq.Expressions.DynamicExpression), typeof(Magnet.Safety.DynamicMethod));
+            this.ReplaceType(typeof(System.Linq.Expressions.Expression), typeof(Magnet.Safety.DynamicMethod));
+            this.ReplaceType(typeof(System.Runtime.CompilerServices.CallSite), typeof(Magnet.Safety.DynamicMethod));
+
+            //
+            this.ReplaceType(typeof(System.Environment), typeof(Magnet.Safety.Environment));
+            this.ReplaceType(typeof(System.Diagnostics.Process), typeof(Magnet.Safety.Process));
+            this.ReplaceType(typeof(System.Runtime.InteropServices.Marshal), typeof(Magnet.Safety.Marshal));
+
+            // IO
+            this.ReplaceType(typeof(System.IO.File), typeof(Magnet.Safety.File));
+            this.ReplaceType(typeof(System.IO.Directory), typeof(Magnet.Safety.Directory));
+            this.ReplaceType(typeof(System.IO.FileStream), typeof(Magnet.Safety.FileStream));
+            this.ReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Safety.StreamWriter));
+            this.ReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Safety.StreamReader));
+
+            // NET
+            this.ReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Safety.Socket));
+            this.ReplaceType(typeof(System.Net.WebClient), typeof(Magnet.Safety.WebClient));
+            this.ReplaceType(typeof(System.Net.Http.HttpClient), typeof(Magnet.Safety.HttpClient));
+
+
+            //
+            this.ReplaceType(typeof(System.Runtime.InteropServices.DllImportAttribute), typeof(Magnet.Safety.DllImportAttribute));
+            this.ReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Safety.ModuleInitializerAttribute));
+            return this;
+        }
+
+
+
+
+
 
 
     }

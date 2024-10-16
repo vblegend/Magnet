@@ -1,4 +1,7 @@
-﻿namespace App.Core
+﻿
+using System;
+
+namespace App.Core
 {
     public class LoginContext: IObjectContext
     {

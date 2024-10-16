@@ -2,8 +2,6 @@
 using App.Core;
 using Magnet.Core;
 using System;
-using System.Runtime.InteropServices;
-
 
 
 [Script("ScriptB")]

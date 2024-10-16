@@ -1,6 +1,7 @@
 ﻿using Magnet.Core;
+using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Reflection;
 
 

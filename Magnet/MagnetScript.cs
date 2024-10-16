@@ -7,6 +7,11 @@ using Magnet.Core;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using System;
+using System.Linq;
+using System.IO;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 
 
@@ -25,7 +30,6 @@ namespace Magnet
 
         private Assembly scriptAssembly;
 
-
         public IReadOnlyList<String> Diagnostics => diagnostics;
 
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
@@ -33,7 +37,11 @@ namespace Magnet
         private ScriptLoadContext scriptLoadContext;
 
         public event Action<MagnetScript> Unloading;
+        public event Action<MagnetScript> Unloaded;
 
+        private static List<String> ExistScripts = new List<string>();
+
+        private readonly ConcurrentDictionary<Int64,MagnetState> SurvivalStates = new ();
 
         public static readonly Assembly[] ImportantAssemblies =
         [
@@ -43,8 +51,17 @@ namespace Magnet
         ];
 
 
-        public void Unload()
+        public void Unload(Boolean force = false)
         {
+            if (force)
+            {
+                var keys = SurvivalStates.Keys;
+                foreach (var key in keys)
+                {
+                    var state = SurvivalStates[key];
+                    state?.Dispose();
+                }
+            }
             if (this.Unloading != null)
             {
                 this.Unloading.Invoke(this);
@@ -62,8 +79,26 @@ namespace Magnet
             this.referencesForCodegen = Array.Empty<PortableExecutableReference>();
             this.diagnostics.Clear();
             this.scriptMetaInfos = Array.Empty<ScriptMetadata>();
+            ExistScripts.Remove(this.Options.Name);
+
+
+            // TODO 检测程序集被卸载后
+            if (this.Unloaded != null)
+            {
+                this.Unloaded.Invoke(this);
+                this.Unloaded = null;
+            }
+
+
         }
 
+
+
+        private Boolean IsAssemblyExists(String assemblyName)
+        {
+            var scriptModule = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.ManifestModule.ScopeName == assemblyName).FirstOrDefault();
+            return scriptModule != null;
+        }
 
 
 
@@ -76,6 +111,13 @@ namespace Magnet
         {
             this.diagnostics = new List<String>();
             this.Options = options;
+
+            if (IsAssemblyExists(options.Name) || ExistScripts.Contains(options.Name))
+            {
+                throw new Exception("脚本已存在，无法重复加载");
+            }
+            ExistScripts.Add(this.Options.Name);
+
             this.scriptLoadContext = new ScriptLoadContext(options);
             var libs = ImportantAssemblies.Concat(options.References);
             this.referencesForCodegen = AppDomain.CurrentDomain
@@ -89,13 +131,14 @@ namespace Magnet
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
             this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
+            this.compilationOptions = this.compilationOptions.WithModuleName(this.Options.Name);
             scriptLoadContext.Unloading += ScriptLoadContext_Unloading;
         }
 
         private void ScriptLoadContext_Unloading(System.Runtime.Loader.AssemblyLoadContext obj)
         {
 
-            Console.WriteLine("脚本已被卸载...");
+            Console.WriteLine("脚本被卸载...");
         }
 
         public CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
@@ -223,7 +266,7 @@ namespace Magnet
                         var exportMethod = new ScriptExportMethod();
                         exportMethod.MethodInfo = methodInfo;
                         exportMethod.Alias = String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias;
-   
+
                         metaInfo.ExportMethods.Add(exportMethod.Alias, exportMethod);
                     }
                 }
@@ -236,22 +279,35 @@ namespace Magnet
 
 
 
-
-        public MagnetState CreateScriptState()
+        /// <summary>
+        /// Create a script state machine
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public MagnetState CreateState(Int64 identity = -1)
         {
-            if (this.scriptAssembly == null) throw new Exception("没有可用的脚本程序集");
-            return new MagnetState(this);
+            if (this.scriptAssembly == null) throw new Exception("A copy of the script is unavailable, uncompiled, or failed to compile");
+            if (identity == -1)
+            {
+                while (identity == -1 || SurvivalStates.ContainsKey(identity))
+                {
+                    identity = Random.Shared.NextInt64();
+                }
+            }
+            if (SurvivalStates.ContainsKey(identity))
+            {
+                throw new Exception("The Identity state already exists.");
+            }
+            var state = new MagnetState(this, identity);
+            state.Unloading += State_Unloading;
+            SurvivalStates.AddOrUpdate(identity,e=> state, (e,a)=> state);
+            return state;
         }
 
-
-
-
-
-
-
-
-
-
+        private void State_Unloading(MagnetState state)
+        {
+            SurvivalStates.Remove(state.Identity, out var value);
+        }
 
         private async Task<SyntaxTree> ParseSyntaxTree(String filePath)
         {
@@ -266,6 +322,7 @@ namespace Magnet
         private EmitResult CompileSyntaxTree(SyntaxTree[] syntaxTrees)
         {
             var compilation = CSharpCompilation.Create(
+
                 assemblyName: this.Options.Name,
                 syntaxTrees: syntaxTrees,
                 references: referencesForCodegen,
@@ -326,11 +383,6 @@ namespace Magnet
                 pdbStream = new MemoryStream();
                 emitOptions = emitOptions.WithDebugInformationFormat(DebugInformationFormat.PortablePdb);
             }
-
-
-
-
-
             EmitResult result = compilation.Emit(execStream, pdbStream, options: emitOptions);
             if (result.Success)
             {

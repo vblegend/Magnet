@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace App.Core.UserInterface
 {
@@ -67,7 +64,7 @@ namespace App.Core.UserInterface
 
         public void SEND()
         {
-            Console.WriteLine(this);
+       
         }
 
 

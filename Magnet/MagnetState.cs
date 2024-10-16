@@ -1,6 +1,6 @@
 ﻿using Magnet.Core;
 using System;
-using System.Diagnostics.Metrics;
+using System.Collections.Generic;
 using System.Reflection;
 
 
@@ -12,11 +12,15 @@ namespace Magnet
         private MagnetStateContext stateContext;
         public event Action<MagnetState> Unloading;
 
+        public Int64 Identity {  get; private set; }
+
+
         private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
 
 
-        internal MagnetState(MagnetScript engine)
+        internal MagnetState(MagnetScript engine, Int64 identity)
         {
+            this.Identity = identity;
             this.engine = engine;
             this.stateContext = new MagnetStateContext(engine);
             this.CreateState();

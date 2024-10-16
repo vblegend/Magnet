@@ -4,16 +4,13 @@
 using App.Core;
 using App.Core.Probability;
 using Magnet;
-
 using ScriptRuner;
-using System.Diagnostics;
-using System.Linq.Expressions;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 
 public static class Program
@@ -29,54 +26,17 @@ public static class Program
         options.WithDebug(false);
 
         //options.WithRelease();
-        //options.AddUsings("Magnet.Proxy");
+
         options.WithAllowAsync(false);
         options.AddReferences("System.Threading.Thread");
         options.AddReferences("System.Console");
         options.AddReferences<MagnetScript>();
         options.AddReferences<LoginContext>();
         options.WithDirectory("../../../../Scripts");
-        // thread
-        options.ReplaceType(typeof(System.Threading.Thread), typeof(Magnet.Proxy.Thread));
-        options.ReplaceType(typeof(System.Threading.ThreadPool), typeof(Magnet.Proxy.ThreadPool));
-        options.ReplaceType(typeof(System.Threading.Tasks.Task), typeof(Magnet.Proxy.Task));
-
-        // code safe
-        options.ReplaceType(typeof(System.Activator), typeof(Magnet.Proxy.Activator));
-        options.ReplaceType(typeof(System.Type), typeof(Magnet.Proxy.Type));
-        options.ReplaceType(typeof(System.Reflection.Assembly), typeof(Magnet.Proxy.Assembly));
-        options.ReplaceType(typeof(System.Reflection.Emit.DynamicMethod), typeof(Magnet.Proxy.DynamicMethod));
-        options.ReplaceType(typeof(System.Linq.Expressions.DynamicExpression), typeof(Magnet.Proxy.DynamicMethod));
-        options.ReplaceType(typeof(System.Linq.Expressions.Expression), typeof(Magnet.Proxy.DynamicMethod));
-        options.ReplaceType(typeof(System.Runtime.CompilerServices.CallSite), typeof(Magnet.Proxy.DynamicMethod));
-        options.ReplaceType(typeof(System.Runtime.InteropServices.DllImportAttribute), typeof(Magnet.Proxy.DllImportAttribute));
+        // Insecure
+        options.DisabledInsecureTypes();
         //
-        options.ReplaceType(typeof(System.Environment), typeof(Magnet.Proxy.Environment));
-        options.ReplaceType(typeof(System.Diagnostics.Process), typeof(Magnet.Proxy.Process));
-        options.ReplaceType(typeof(System.Runtime.InteropServices.Marshal), typeof(Magnet.Proxy.Marshal));
-
-        // IO
-        options.ReplaceType(typeof(System.IO.File), typeof(Magnet.Proxy.File));
-        options.ReplaceType(typeof(System.IO.Directory), typeof(Magnet.Proxy.Directory));
-        options.ReplaceType(typeof(System.IO.FileStream), typeof(Magnet.Proxy.FileStream));
-        options.ReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Proxy.StreamWriter));
-        options.ReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Proxy.StreamReader));
-
-        // NET
-        options.ReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Proxy.Socket));
-        options.ReplaceType(typeof(System.Net.WebClient), typeof(Magnet.Proxy.WebClient));
-        options.ReplaceType(typeof(System.Net.Http.HttpClient), typeof(Magnet.Proxy.HttpClient));
-        options.ReplaceType(typeof(System.GC), typeof(Magnet.Proxy.GC));
-
-        //
-        options.ReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Proxy.ModuleInitializerAttribute));
-
-
         options.SetAssemblyLoadCallback(AssemblyLoad);
-
-
-
-
         options.AddInjectedObject<ObjectKilledContext>(new ObjectKilledContext());
         options.AddInjectedObject(GLOBAL);
 
@@ -100,7 +60,7 @@ public static class Program
 
         var lottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
 
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 
 
         using (new WatchTimer("Draw Minimum Guarantee 75"))
@@ -174,20 +134,20 @@ public static class Program
 
             using (new WatchTimer("Set ScriptB.Value = {1.23456};"))
             {
-                var state = scriptManager.CreateScriptState();
+                var state = scriptManager.CreateState();
                 state.SetFieldValue("ScriptB", "Value", 1.23456);
                 var value = state.GetFieldValue("ScriptB", "Value");
             }
 
             using (new WatchTimer("Create Script State 1"))
             {
-                var state = scriptManager.CreateScriptState();
+                var state = scriptManager.CreateState();
             }
 
 
             using (new WatchTimer("Create Delegate 100000"))
             {
-                var state = scriptManager.CreateScriptState();
+                var state = scriptManager.CreateState();
                 for (int i = 0; i < 100000; i++)
                 {
                     state.MethodDelegate<LoginHandler>("ScriptA", "Login");
@@ -196,17 +156,27 @@ public static class Program
 
 
             List<MagnetState> states = new List<MagnetState>();
-            using (new WatchTimer("Create State 1000"))
+            using (new WatchTimer("Create State 100000"))
             {
-                for (int i = 0; i < 1000; i++)
+                for (int i = 0; i < 100000; i++)
                 {
-                    var state = scriptManager.CreateScriptState();
+                    var state = scriptManager.CreateState();
                     states.Add(state);
+                    state.Dispose();
                 }
             }
 
 
-            var stateTest = scriptManager.CreateScriptState();
+            using (new WatchTimer("Dispose State 100000"))
+            {
+                foreach (var state in states)
+                {
+                    state.Dispose();
+                }
+            }
+
+
+            var stateTest = scriptManager.CreateState();
 
             var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
 
@@ -223,8 +193,8 @@ public static class Program
             }
 
 
-
             scriptManager.Unload();
+
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -233,7 +203,8 @@ public static class Program
             try
             {
                 CallLogin(stateTest);
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
@@ -272,7 +243,7 @@ public static class Program
 
 
         List<MagnetState> states = new List<MagnetState>();
-        var state = scriptManager.CreateScriptState();
+        var state = scriptManager.CreateState();
         var weak = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
         scriptManager.Unload();
         state.Dispose();

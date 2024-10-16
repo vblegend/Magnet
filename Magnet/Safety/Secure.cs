@@ -1,6 +1,8 @@
 ﻿
 
-namespace Magnet.Proxy
+using System;
+
+namespace Magnet.Safety
 {
 
     public sealed class Type

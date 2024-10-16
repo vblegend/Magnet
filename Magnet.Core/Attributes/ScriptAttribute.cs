@@ -1,4 +1,5 @@
 ﻿using Magnet.Core;
+using System;
 
 namespace Magnet.Core
 {
