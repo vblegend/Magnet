@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace App.Core.Probability
@@ -14,10 +15,11 @@ namespace App.Core.Probability
         {
             private Int32 currentIndex = 0;
             private String[] lines;
-
-            public TxtLootTableParser(String[] lines)
+            private String Directory = "";
+            public TxtLootTableParser(String filename)
             {
-                this.lines = lines;
+                this.lines = File.ReadAllLines(filename);
+                this.Directory = Path.GetDirectoryName(filename);
             }
 
             // 解析一个组
@@ -35,8 +37,15 @@ namespace App.Core.Probability
                     if (line.StartsWith("//"))
                         continue;
 
+                    if (line.StartsWith("#include"))
+                    {
+                        var fileName = line.Substring(8).Trim();
+                        var parser = new TxtLootTableParser(Path.Combine(Directory, fileName));
+                        var root = parser.Parse();
+                        group.Children.AddRange(root.Children);
+                    }
                     // 检查是否是一个子组的开始
-                    if (line.StartsWith("{"))
+                    else if (line.StartsWith("{"))
                     {
                         LootGenerator<String>.LootGroup subGroup = Parse(); // 递归解析子组
                         group.Children.Add(subGroup);
@@ -76,8 +85,7 @@ namespace App.Core.Probability
         public static LootGenerator<String> Load(String filename)
         {
             var lootGenerator = new LootGenerator<String>();
-            var lines = File.ReadAllLines(filename);
-            var parser = new TxtLootTableParser(lines);
+            var parser = new TxtLootTableParser(filename);
             lootGenerator.root = parser.Parse();
             return lootGenerator;
         }

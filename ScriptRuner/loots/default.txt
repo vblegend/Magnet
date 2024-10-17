@@ -1,5 +1,11 @@
 ﻿// 物品 概率 
 
+
+
+#include gold-coin.txt
+
+
+
 SSS  1/100
 SS   1/80 
 S    1/60 
