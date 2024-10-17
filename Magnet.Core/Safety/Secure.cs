@@ -105,6 +105,15 @@ namespace Magnet.Safety
     {
     }
 
-    
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public sealed class LibraryImportAttribute : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = false)]
+    public sealed class ComImportAttribute : Attribute
+    {
+    }
+
 
 }

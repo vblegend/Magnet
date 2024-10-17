@@ -27,7 +27,7 @@ public static class Program
         ScriptOptions options = new ScriptOptions();
         options.WithName(name);
         options.WithOutPutFile("123.dll");
-        options.WithDebug(false);
+        options.WithDebug(true);
 
         options.WithRelease();
 
@@ -198,14 +198,6 @@ public static class Program
                     }
                 }
             }
-
-            scriptManager.Unload(true);
-
-            if (weak.TryGetTarget(out var target))
-            {
-                target(null);
-            }
-
             try
             {
                 CallLogin(stateTest);
@@ -214,6 +206,14 @@ public static class Program
             {
                 Console.WriteLine(ex);
             }
+
+            scriptManager.Unload(true);
+
+            if (weak.TryGetTarget(out var target))
+            {
+                target(null);
+            }
+
 
 
             //ArrayPool<Char>.Shared.Rent(1);

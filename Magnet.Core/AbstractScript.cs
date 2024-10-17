@@ -7,12 +7,12 @@ using System.Runtime.CompilerServices;
 namespace Magnet.Core
 {
 
+
     /// <summary>
     /// Base script object, script object needs to inherit this type, provides some basic scripting mechanisms
     /// </summary>
     public abstract class AbstractScript : IScriptInstance
     {
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IStateContext stateContext;
 
@@ -33,7 +33,24 @@ namespace Magnet.Core
         void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
             this.stateContext = stateContext;
-            this.debugger = this.stateContext.UseDebuggerBreak ? Debugger.Break : () => { };
+            if (this.stateContext.UseDebuggerBreak)
+            {
+                this.debugger = LaunchDebugger;
+                this.debugger += Debugger.Break;
+            }
+            else
+            {
+                this.debugger = () => { };
+            }
+        }
+
+
+        private void LaunchDebugger()
+        {
+            if (!Debugger.IsAttached)
+            {
+                Debugger.Launch();
+            }
         }
 
 
