@@ -24,9 +24,11 @@ namespace App.Core
 
 
 
-        protected void ENABLED_TIMER(Int32 timerIndex, Action callback, Int32 intervalSecond)
+        protected void ENABLED_TIMER(Int32 timerIndex, Action callback, UInt32 intervalSecond)
         {
-
+            Int64 combined = ((Int64)timerIndex << 32) | (uint)intervalSecond;
+            Int32 aRecovered = (Int32)(combined >> 32);
+            UInt32 bRecovered = (UInt32)(combined & 0xFFFFFFFF);
         }
 
 
