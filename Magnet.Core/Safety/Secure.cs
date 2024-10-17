@@ -72,9 +72,10 @@ namespace Magnet.Safety
     {
     }
 
-
-
-
+    public sealed class AppDomain
+    {
+    }
+    
 
     public sealed class Socket
     {

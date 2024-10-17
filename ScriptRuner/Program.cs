@@ -6,10 +6,12 @@ using App.Core.Probability;
 using Magnet;
 using ScriptRuner;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 
@@ -19,18 +21,20 @@ public static class Program
 
     private static GlobalVariableStore GLOBAL = new GlobalVariableStore();
 
-    private static ScriptOptions Options()
+    private static ScriptOptions Options(String name)
     {
         GLOBAL.S[1] = "This is Global String Variable.";
         ScriptOptions options = new ScriptOptions();
+        options.WithName(name);
+        options.WithOutPutFile("123.dll");
         options.WithDebug(false);
 
-        //options.WithRelease();
+        options.WithRelease();
 
         options.WithAllowAsync(false);
         options.AddReferences("System.Threading.Thread");
         options.AddReferences("System.Console");
-        options.AddReferences<MagnetScript>();
+        //options.AddReferences<MagnetScript>();
         options.AddReferences<LoginContext>();
         options.WithDirectory("../../../../Scripts");
         // Insecure
@@ -69,26 +73,13 @@ public static class Program
             {
                 var drawItem = lottery.Draw();
                 if (drawItem == null) break;
-
                 Console.Write($"Draw Item ");
-
-                if (drawItem[00] == 'S')
-                {
-                    Console.BackgroundColor = ConsoleColor.Red;
-                }
+                if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Red;
                 Console.Write(drawItem);
-
-                if (drawItem[00] == 'S')
-                {
-                    Console.BackgroundColor = ConsoleColor.Black;
-                }
-
-
+                if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Black;
                 Console.WriteLine($" With {i + 1} Count.");
             }
         }
-
-
         using (new WatchTimer("Draw SSS With"))
         {
             var count = 0;
@@ -102,31 +93,9 @@ public static class Program
             Console.WriteLine(count);
         }
 
-
-
-
         var weakLogin = TestSccriptUnload();
 
-        if (weakLogin.TryGetTarget(out var login))
-        {
-            Console.WriteLine("脚本模块卸载失败！");
-            var context = new LoginContext();
-            context.UserName = "Administrator";
-            login(context);
-        }
-        //System.Private.Xml, Version = 8.0.0.0, Culture = neutral, PublicKeyToken = cc7b13ffcd2ddd51
-        // Magnet.Script, Version = 0.0.0.0, Culture = neutral, PublicKeyToken = null
-        var scriptModule = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.FullName.StartsWith("Magnet.Script,")).FirstOrDefault();
-        if (scriptModule != null)
-        {
-            Console.WriteLine("脚本模块卸载失败！");
-        }
-        else
-        {
-            Console.WriteLine("脚本模块卸载成功！");
-        }
-
-        MagnetScript scriptManager = new MagnetScript(Options());
+        MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         var result = scriptManager.Compile();
         if (result.Success)
         {
@@ -179,27 +148,24 @@ public static class Program
             var stateTest = scriptManager.CreateState();
 
             var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
-
-
             using (new WatchTimer("Try GetTarget 100000"))
             {
                 for (int i = 0; i < 100000; i++)
                 {
                     if (weak.TryGetTarget(out var ss))
                     {
-
+                        ss = null;
                     }
                 }
             }
+            
+            scriptManager.Unload(true);
 
-
-            scriptManager.Unload();
-
-
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-
+            if (weak.TryGetTarget(out var target))
+            {
+                target(null);
+            }
+    
             try
             {
                 CallLogin(stateTest);
@@ -210,7 +176,7 @@ public static class Program
             }
 
 
-
+            //ArrayPool<Char>.Shared.Rent(1);
 
         }
         else
@@ -226,11 +192,10 @@ public static class Program
     }
 
 
-    static MagnetState scriptState;
 
     private static WeakReference<LoginHandler> TestSccriptUnload()
     {
-        MagnetScript scriptManager = new MagnetScript(Options());
+        MagnetScript scriptManager = new MagnetScript(Options("Unload.Test"));
         var result = scriptManager.Compile();
         if (!result.Success)
         {
@@ -239,18 +204,12 @@ public static class Program
                 Console.WriteLine(item.ToString());
             }
         }
-
-
-
         List<MagnetState> states = new List<MagnetState>();
         var state = scriptManager.CreateState();
         var weak = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
-        scriptManager.Unload();
         state.Dispose();
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
+        scriptManager.Unload();
         return weak;
-
     }
 
 

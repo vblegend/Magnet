@@ -1,5 +1,4 @@
-﻿using Magnet.Core;
-using System;
+﻿using System;
 
 namespace Magnet.Core
 {

@@ -12,14 +12,19 @@ using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using Microsoft.CodeAnalysis.Scripting;
+using System.Reflection.Emit;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 
 
 
 namespace Magnet
 {
-    public class MagnetScript
+    public sealed partial class MagnetScript
     {
         private String[] baseUsing = ["System", "Magnet.Core"];
+
         public ScriptOptions Options { get; private set; }
 
         public PortableExecutableReference[] referencesForCodegen = [];
@@ -28,7 +33,7 @@ namespace Magnet
 
         internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
 
-        private Assembly scriptAssembly;
+        private WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
 
         public IReadOnlyList<String> Diagnostics => diagnostics;
 
@@ -39,9 +44,10 @@ namespace Magnet
         public event Action<MagnetScript> Unloading;
         public event Action<MagnetScript> Unloaded;
 
-        private static List<String> ExistScripts = new List<string>();
+        public String Name => Options.Name;
 
-        private readonly ConcurrentDictionary<Int64,MagnetState> SurvivalStates = new ();
+
+        private readonly ConcurrentDictionary<Int64, MagnetState> SurvivalStates = new();
 
         public static readonly Assembly[] ImportantAssemblies =
         [
@@ -51,6 +57,12 @@ namespace Magnet
         ];
 
 
+        /// <summary>
+        /// Uninstall the script assembly.
+        /// Before performing the Unload method, ensure that all MagnetStates are destroyed and no internal script resource objects are forcibly referenced
+        /// </summary>
+        /// <param name="force">Force destruction of all MagnetState instances</param>
+        /// <exception cref="ScriptUnloadFailureException">The script states is not destroyed, or resources inside the script are externally referenced</exception>
         public void Unload(Boolean force = false)
         {
             if (force)
@@ -62,43 +74,29 @@ namespace Magnet
                     state?.Dispose();
                 }
             }
-            if (this.Unloading != null)
-            {
-                this.Unloading.Invoke(this);
-                this.Unloading = null;
-            }
-            if (this.scriptLoadContext != null)
-            {
-                this.scriptLoadContext.Unload();
-                this.scriptLoadContext = null;
-            }
-            if (this.scriptAssembly != null)
-            {
-                this.scriptAssembly = null;
-            }
-            this.referencesForCodegen = Array.Empty<PortableExecutableReference>();
+            this.Unloading?.Invoke(this);
+            this.Unloading = null;
             this.diagnostics.Clear();
-            this.scriptMetaInfos = Array.Empty<ScriptMetadata>();
-            ExistScripts.Remove(this.Options.Name);
-
-
-            // TODO 检测程序集被卸载后
-            if (this.Unloaded != null)
+            this.scriptMetaInfos = [];
+            this.referencesForCodegen = [];
+            this.scriptLoadContext?.Unload();
+            // 触发垃圾回收
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            if (Exists(this.Name))
             {
-                this.Unloaded.Invoke(this);
-                this.Unloaded = null;
+                throw new ScriptUnloadFailureException();
             }
-
-
+            //this.scriptAssembly(null);
+            RemoveCache(this);
+            // TODO 检测程序集被卸载后
+            this.Unloaded?.Invoke(this);
+            this.scriptLoadContext = null;
+            this.Unloaded = null;
+            this.Options = null;
         }
 
 
-
-        private Boolean IsAssemblyExists(String assemblyName)
-        {
-            var scriptModule = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.ManifestModule.ScopeName == assemblyName).FirstOrDefault();
-            return scriptModule != null;
-        }
 
 
 
@@ -111,13 +109,6 @@ namespace Magnet
         {
             this.diagnostics = new List<String>();
             this.Options = options;
-
-            if (IsAssemblyExists(options.Name) || ExistScripts.Contains(options.Name))
-            {
-                throw new Exception("脚本已存在，无法重复加载");
-            }
-            ExistScripts.Add(this.Options.Name);
-
             this.scriptLoadContext = new ScriptLoadContext(options);
             var libs = ImportantAssemblies.Concat(options.References);
             this.referencesForCodegen = AppDomain.CurrentDomain
@@ -132,13 +123,7 @@ namespace Magnet
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
             this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             this.compilationOptions = this.compilationOptions.WithModuleName(this.Options.Name);
-            scriptLoadContext.Unloading += ScriptLoadContext_Unloading;
-        }
 
-        private void ScriptLoadContext_Unloading(System.Runtime.Loader.AssemblyLoadContext obj)
-        {
-
-            Console.WriteLine("脚本被卸载...");
         }
 
         public CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
@@ -199,25 +184,35 @@ namespace Magnet
             var rootDir = Path.GetFullPath(this.Options.BaseDirectory);
             var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, SearchOption.AllDirectories);
             var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file))).ToArray();
-            var syntaxTrees = Task.WhenAll(parseTasks).Result;
+            var syntaxTrees = new List<SyntaxTree>(Task.WhenAll(parseTasks).Result);
+            SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText("[assembly: Magnet.Core.ScriptAssembly()]");
+            syntaxTrees.Insert(0, assemblyAttribute);
             var result = CompileSyntaxTree(syntaxTrees);
             if (result.Success)
             {
-                var types = this.scriptAssembly.GetTypes();
-                var baseType = typeof(AbstractScript);
-                this.scriptMetaInfos = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
-                                        .Select(type =>
-                                        {
-                                            var attribute = type.GetCustomAttribute<ScriptAttribute>();
-                                            var scriptConfig = new ScriptMetadata();
-                                            scriptConfig.ScriptType = type;
-                                            scriptConfig.ScriptAlias = String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias;
+                if (this.scriptAssembly.TryGetTarget(out var assembly))
+                {
+                    var types = assembly.GetTypes();
+                    var baseType = typeof(AbstractScript);
+                    this.scriptMetaInfos = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
+                                            .Select(type =>
+                                            {
+                                                var attribute = type.GetCustomAttribute<ScriptAttribute>();
+                                                var scriptConfig = new ScriptMetadata();
+                                                scriptConfig.ScriptType = type;
+                                                scriptConfig.ScriptAlias = String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias;
 
-                                            ParseScriptAutowriredFields(scriptConfig);
-                                            ParseScriptMethods(scriptConfig);
-                                            Console.WriteLine($"Found Script：{type.Name}");
-                                            return scriptConfig;
-                                        }).ToImmutableList();
+                                                ParseScriptAutowriredFields(scriptConfig);
+                                                ParseScriptMethods(scriptConfig);
+                                                Console.WriteLine($"Found Script：{type.Name}");
+                                                return scriptConfig;
+                                            }).ToImmutableList();
+
+                    assembly = null;
+                }
+
+
+
             }
             return result;
         }
@@ -278,7 +273,6 @@ namespace Magnet
 
 
 
-
         /// <summary>
         /// Create a script state machine
         /// </summary>
@@ -286,7 +280,10 @@ namespace Magnet
         /// <exception cref="Exception"></exception>
         public MagnetState CreateState(Int64 identity = -1)
         {
-            if (this.scriptAssembly == null) throw new Exception("A copy of the script is unavailable, uncompiled, or failed to compile");
+            if (!this.scriptAssembly.TryGetTarget(out _))
+            {
+                throw new Exception("A copy of the script is unavailable, uncompiled, or failed to compile");
+            }
             if (identity == -1)
             {
                 while (identity == -1 || SurvivalStates.ContainsKey(identity))
@@ -300,7 +297,7 @@ namespace Magnet
             }
             var state = new MagnetState(this, identity);
             state.Unloading += State_Unloading;
-            SurvivalStates.AddOrUpdate(identity,e=> state, (e,a)=> state);
+            SurvivalStates.AddOrUpdate(identity, e => state, (e, a) => state);
             return state;
         }
 
@@ -319,7 +316,7 @@ namespace Magnet
 
 
         // 使用 Roslyn 编译脚本
-        private EmitResult CompileSyntaxTree(SyntaxTree[] syntaxTrees)
+        private EmitResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees)
         {
             var compilation = CSharpCompilation.Create(
 
@@ -332,7 +329,7 @@ namespace Magnet
             // 检查是否有不允许的 API 调用
             var walker = new ForbiddenApiWalker(this.Options);
             var rewriter = new SyntaxTreeRewriter(this.Options.ReplaceTypes);
-            for (int i = 0; i < syntaxTrees.Length; i++)
+            for (int i = 0; i < syntaxTrees.Count; i++)
             {
                 var syntaxTree = syntaxTrees[i];
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
@@ -388,13 +385,19 @@ namespace Magnet
             {
                 execStream.Seek(0, SeekOrigin.Begin);
                 if (pdbStream != null) pdbStream.Seek(0, SeekOrigin.Begin);
-                this.scriptAssembly = scriptLoadContext.LoadFromStream(execStream, pdbStream);
+                if (Exists(this.Name)) throw new ScriptExistException(this.Name);
+                this.scriptAssembly.SetTarget(scriptLoadContext.LoadFromStream(execStream, pdbStream));
+                AddCache(this);
             }
             if (pdbStream != null) pdbStream.Dispose();
+            if (execStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
+            {
+                execStream.Seek(0, SeekOrigin.Begin);
+                File.WriteAllBytes(Options.OutPutFile, execStream.ToArray());
+            }
             execStream.Dispose();
             return result;
         }
-
 
 
     }

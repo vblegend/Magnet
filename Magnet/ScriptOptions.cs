@@ -13,16 +13,19 @@ namespace Magnet
     public class ScriptOptions
     {
 
-        public String Name { get; set; } = "Magnet.Script";
-
-        public ScriptRunMode Mode { get; set; } = ScriptRunMode.Release;
-
-        public String BaseDirectory { get; set; }
-
-        public String ScriptFilePattern { get; set; } = "*.cs";
+        public String Name { get; private set; } = "Magnet.Script";
 
 
-        public AssemblyLoadDelegate AssemblyLoad;
+        public String OutPutFile { get; private set; }
+
+        public ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
+
+        public String BaseDirectory { get; private set; }
+
+        public String ScriptFilePattern { get; private set; } = "*.cs";
+
+
+        public AssemblyLoadDelegate AssemblyLoad { get; private set; }
 
         /// <summary>
         /// add using xxxx;
@@ -34,11 +37,13 @@ namespace Magnet
         /// </summary>
         public List<Assembly> References { get; private set; } = [];
 
-        public Boolean UseDebugger { get; set; }
+        public Boolean UseDebugger { get; private set; }
 
-        public Boolean AllowAsync { get; set; } = false;
+        public Boolean AllowAsync { get; private set; } = false;
 
-        public IOutput Output { get; set; } = new ConsoleOutput();
+        public IOutput Output { get; private set; } = new ConsoleOutput();
+
+
 
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
@@ -49,7 +54,6 @@ namespace Magnet
             this.Output = messagePrinter;
             return this;
         }
-
 
 
         public ScriptOptions SetAssemblyLoadCallback(AssemblyLoadDelegate assemblyLoad)
@@ -136,9 +140,30 @@ namespace Magnet
 
 
 
+        public ScriptOptions WithOutPutFile(String name)
+        {
+            this.OutPutFile = name;
+            return this;
+        }
+
+
+        public ScriptOptions WithName(String name)
+        {
+            this.Name = name;
+            return this;
+        }
+
         public ScriptOptions WithAllowAsync(Boolean allowAsync)
         {
             this.AllowAsync = allowAsync;
+            return this;
+        }
+
+
+
+        public ScriptOptions WithFilePattern(String filePattern)
+        {
+            this.ScriptFilePattern = filePattern;
             return this;
         }
 
@@ -178,6 +203,8 @@ namespace Magnet
             this.ReplaceType(typeof(System.Threading.Thread), typeof(Magnet.Safety.Thread));
             this.ReplaceType(typeof(System.Threading.ThreadPool), typeof(Magnet.Safety.ThreadPool));
             this.ReplaceType(typeof(System.Threading.Tasks.Task), typeof(Magnet.Safety.Task));
+            this.ReplaceType(typeof(System.AppDomain), typeof(Magnet.Safety.AppDomain));
+
 
             // code safe
             this.ReplaceType(typeof(System.Activator), typeof(Magnet.Safety.Activator));
@@ -199,6 +226,8 @@ namespace Magnet
             this.ReplaceType(typeof(System.IO.FileStream), typeof(Magnet.Safety.FileStream));
             this.ReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Safety.StreamWriter));
             this.ReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Safety.StreamReader));
+
+            
 
             // NET
             this.ReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Safety.Socket));

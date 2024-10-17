@@ -10,18 +10,13 @@ namespace Magnet
         public string Alias { get; set; }
         public MethodInfo MethodInfo { get; set; }
     }
+
     internal class AutowriredField
     {
         public string Alias { get; set; }
         public Type RequiredType { get; set; }
         public FieldInfo FieldInfo { get; set; }
     }
-
-
-
-
-
-
 
     internal class ScriptMetadata
     {

@@ -26,7 +26,7 @@ public class ScriptA : MyScript
     [Function]
     public void Login(LoginContext context)
     {
-
+        
         Script<Raffler>().Draw(context);
 
 
