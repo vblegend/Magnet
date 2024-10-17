@@ -62,30 +62,35 @@ public static class Program
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
-        var lottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
+        var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
 
-        var lootGenerator = LootGenerator<String>.Load("drops/default.txt");
+        var lootGenerator = LootGenerator<String>.Load("loots/default.txt");
 
 
         using (new WatchTimer("Loot Generate 100000"))
         {
             for (int i = 0; i < 100000; i++)
             {
-               var res= lootGenerator.Generate();
-                foreach (var item in res)
-                {
-                }
+               lootGenerator.Generate();
             }
         }
 
 
-        using (new WatchTimer("Loot Generate 100000"))
+        using (new WatchTimer("Loot Generate 1"))
         {
-            var loots = lootGenerator.Generate(10);
-            foreach (var item in loots)
+            var loots = lootGenerator.Generate();
+            if (loots.Count() > 0)
             {
-                Console.WriteLine($"Loot Item " + item);
+                foreach (var loot in loots)
+                {
+                    Console.WriteLine($"Drop Item: {loot}");
+                }
             }
+            else
+            {
+                Console.WriteLine("Not Dorp Items。");
+            }
+
         }
 
         using (new WatchTimer("Draw SSS With"))
@@ -94,36 +99,13 @@ public static class Program
             while (true)
             {
                 count++;
-                var drops = lootGenerator.Generate();
-                var Count = drops.Where(e => e == "CCCCC").Count();
+                var drops = lootGenerator.Generate(1.0);
+                var Count = drops.Where(e => e.Value == "SSS").Count();
 
                 if (Count > 0) break;
             }
             Console.WriteLine(count);
         }
-
-
-
-
-        {
-            var drops = lootGenerator.Generate();
-            if (drops.Count() > 0)
-            {
-                foreach (var drop in drops)
-                {
-                    Console.WriteLine($"掉落物品: {drop}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("没有掉落物品。");
-            }
-        }
-
-
-
-
-
 
         using (new WatchTimer("Draw Minimum Guarantee 75"))
         {
