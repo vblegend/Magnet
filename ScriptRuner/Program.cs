@@ -95,7 +95,7 @@ public static class Program
             {
                 count++;
                 var drops = lootGenerator.Generate();
-                var Count = drops.Where(e => e == "CCCCCC").Count();
+                var Count = drops.Where(e => e == "CCCCC").Count();
 
                 if (Count > 0) break;
             }
