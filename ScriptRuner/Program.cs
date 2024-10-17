@@ -64,6 +64,64 @@ public static class Program
 
         var lottery = Lottery<String>.Load("lotterys/minimum guarantee.txt");
 
+        var lootGenerator = LootGenerator<String>.Load("drops/default.txt");
+
+
+        using (new WatchTimer("Loot Generate 100000"))
+        {
+            for (int i = 0; i < 100000; i++)
+            {
+               var res= lootGenerator.Generate();
+                foreach (var item in res)
+                {
+                }
+            }
+        }
+
+
+        using (new WatchTimer("Loot Generate 100000"))
+        {
+            var loots = lootGenerator.Generate(10);
+            foreach (var item in loots)
+            {
+                Console.WriteLine($"Loot Item " + item);
+            }
+        }
+
+        using (new WatchTimer("Draw SSS With"))
+        {
+            var count = 0;
+            while (true)
+            {
+                count++;
+                var drops = lootGenerator.Generate();
+                var Count = drops.Where(e => e == "CCCCCC").Count();
+
+                if (Count > 0) break;
+            }
+            Console.WriteLine(count);
+        }
+
+
+
+
+        {
+            var drops = lootGenerator.Generate();
+            if (drops.Count() > 0)
+            {
+                foreach (var drop in drops)
+                {
+                    Console.WriteLine($"掉落物品: {drop}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("没有掉落物品。");
+            }
+        }
+
+
+
 
 
 
@@ -158,14 +216,14 @@ public static class Program
                     }
                 }
             }
-            
+
             scriptManager.Unload(true);
 
             if (weak.TryGetTarget(out var target))
             {
                 target(null);
             }
-    
+
             try
             {
                 CallLogin(stateTest);

@@ -13,15 +13,11 @@ namespace App.Core.Probability
                 var count = lottery._items.Count;
                 this.items = lottery._items;
                 this.cumulativeProbabilities = new Double[count];
-
                 Array.Copy(lottery.cumulativeProbabilities, this.cumulativeProbabilities, count);
-
                 this.quantityInStock = new int[count];
                 Array.Copy(lottery.quantityInStock, this.quantityInStock, count);
-
                 this.totalProbability = lottery.totalProbability;
                 this.availableProbability = lottery.availableProbability;
-
             }
             public Double[] cumulativeProbabilities = [];
             public Int32[] quantityInStock = [];
@@ -70,7 +66,7 @@ namespace App.Core.Probability
 
         private Boolean IsReady = false;
 
-        private RAW_INFO Root;
+        private RAW_INFO? Raw = null;
 
 
 
@@ -79,7 +75,7 @@ namespace App.Core.Probability
         {
             lock (lockObject)
             {
-                if (!IsReady) this.normalData();
+                if (!IsReady) this.NormalData();
                 if (availableProbability == 0) return default;
                 // 使用二分查找定位被抽中的项目
                 double drawValue = random.NextDouble() * availableProbability;
@@ -105,7 +101,7 @@ namespace App.Core.Probability
         }
 
 
-        private void normalData()
+        private void NormalData()
         {
             var count = _items.Count;
             cumulativeProbabilities = new Double[count];
@@ -115,7 +111,7 @@ namespace App.Core.Probability
                 quantityInStock[i] = _items[i].Stock;
             }
             InitializeCumulativeProbabilities();
-            this.Root = new RAW_INFO(this);
+            this.Raw = new RAW_INFO(this);
             this.IsReady = true;
         }
 
@@ -146,16 +142,16 @@ namespace App.Core.Probability
         public Lottery<TValue> Clone()
         {
             var lottery = new Lottery<TValue>();
-            if (!lottery.IsReady) lottery.normalData();
-            var count = this.Root.items.Count;
-            lottery._items = this.Root.items;
-            lottery.availableProbability = this.Root.availableProbability;
-            lottery.totalProbability = this.Root.totalProbability;
+            if (!lottery.IsReady) lottery.NormalData();
+            var count = this.Raw!.items.Count;
+            lottery._items = this.Raw.items;
+            lottery.availableProbability = this.Raw.availableProbability;
+            lottery.totalProbability = this.Raw.totalProbability;
             lottery.cumulativeProbabilities = new double[count];
-            Array.Copy(this.Root.cumulativeProbabilities, lottery.cumulativeProbabilities, count);
+            Array.Copy(this.Raw.cumulativeProbabilities, lottery.cumulativeProbabilities, count);
             lottery.quantityInStock = new Int32[count];
-            Array.Copy(this.Root.quantityInStock, lottery.quantityInStock, count);
-            lottery.Root = this.Root;
+            Array.Copy(this.Raw.quantityInStock, lottery.quantityInStock, count);
+            lottery.Raw = this.Raw;
             lottery.IsReady = true;
             return lottery;
         }
@@ -184,7 +180,7 @@ namespace App.Core.Probability
                     lottery.Add(probability, item, stock);
                 }
             }
-            lottery.normalData();
+            lottery.NormalData();
             return lottery;
         }
     }
