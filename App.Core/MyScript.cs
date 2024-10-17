@@ -9,14 +9,10 @@ namespace App.Core
     {
 
         [Autowired]
-        protected readonly GlobalVariableStore GLOBAL;
+        protected readonly GlobalVariableStore? GLOBAL;
 
-
-
-
-
-
-        protected readonly Object SELF;
+        [Autowired]
+        protected readonly Object? SELF;
 
 
 
