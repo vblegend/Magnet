@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Language.Parser\Language.Parser.csproj" />
     <ProjectReference Include="..\Magnet.Core\Magnet.Core.csproj" />
   </ItemGroup>
 

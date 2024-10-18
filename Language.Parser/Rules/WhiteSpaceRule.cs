@@ -9,7 +9,7 @@ namespace Language.Parser.Rules
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;
             Int32 Index = 0;
-            while (Char.IsWhiteSpace(codeSpan[Index]))
+            while (Char.IsWhiteSpace(codeSpan[Index]) && codeSpan[Index] != '\n')
             {
                 Index++;
             }

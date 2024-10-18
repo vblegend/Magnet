@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace Language.Parser
 {
@@ -44,7 +40,7 @@ namespace Language.Parser
     {
         internal EndOfFileToken()
         {
-            this.Symbol = Symbols.KW_EOF;
+            Symbol = Symbol.EOF;
         }
     }
     public class IdentifierToken : Token
@@ -80,6 +76,18 @@ namespace Language.Parser
         {
         }
     }
+
+
+    public class NewLineToken : Token
+    {
+        internal NewLineToken()
+        {
+            
+        }
+    }
+
+
+
 
     public class OperatorToken : PunctuatorToken
     {

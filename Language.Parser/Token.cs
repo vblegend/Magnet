@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace Language.Parser
 {
@@ -13,7 +9,7 @@ namespace Language.Parser
         /// <summary>
         /// get token symbol object
         /// </summary>
-        public Symbols Symbol
+        public Symbol Symbol
         {
             get;
             internal set;

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Language.Parser
 {
@@ -18,7 +14,6 @@ namespace Language.Parser
             ColumnNumber = columnNumber;
             FileName = fileName;
             LineNumber = lineNumber;
-            Token = Token;
         }
 
         internal LexerException(string fileName, Token token, string message) : base(message)

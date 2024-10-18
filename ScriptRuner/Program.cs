@@ -5,15 +5,12 @@ using App.Core;
 using App.Core.Probability;
 using Magnet;
 using ScriptRuner;
+using ScriptRuner.Loot;
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-
 
 public static class Program
 {
@@ -78,7 +75,7 @@ public static class Program
 
         using (new WatchTimer("Loot Generate 1"))
         {
-            var loots = lootGenerator.Generate();
+            var loots = lootGenerator.Generate(1);
             if (loots.Count() > 0)
             {
                 foreach (var loot in loots)
@@ -93,7 +90,7 @@ public static class Program
 
         }
 
-        using (new WatchTimer("Draw SSS With"))
+        using (new WatchTimer("Draw SS With"))
         {
             var count = 0;
             while (true)

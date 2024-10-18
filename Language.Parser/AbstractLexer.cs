@@ -1,18 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Language.Parser
 {
+    public class SymbolProvider
+    {
+        private readonly Dictionary<string, Symbol> _SymbolMaps = new Dictionary<string, Symbol>();
+
+        internal Symbol FromString(string name)
+        {
+            _SymbolMaps.TryGetValue(name, out var symbol);
+            return symbol;
+        }
+
+
+        public void Register(Symbol symbol)
+        {
+            _SymbolMaps.Add(symbol.Name, symbol);
+        }
+    }
+
+
+
+
     public abstract class AbstractLexer
     {
         public Int32 LineNumber { get; private set; } = 1;
         public Int32 ColumnNumber { get; private set; } = 1;
-
         public String FullPath { get; private set; }
         public String FileName { get; private set; }
         public String InputData { get; private set; }
@@ -23,6 +40,9 @@ namespace Language.Parser
         private Int32 readOffset { get; set; } = 0;
         private Int32 bufferLength { get; set; } = 0;
         public Int32 Position { get; private set; } = 0;
+
+
+        private readonly SymbolProvider symbolProvider = new SymbolProvider();
 
         public AbstractLexer(String file, Encoding encoding) : this(File.ReadAllText(file, encoding), file)
         {
@@ -35,6 +55,8 @@ namespace Language.Parser
             this.FileName = Path.GetFileName(file);
             this.InputData = text.Replace("\r\n", "\n");
             this.bufferLength = this.InputData.Length;
+            this.symbolProvider.Register(Symbol.EOF);
+            this.RegisterSymbols(this.symbolProvider);
             this.RegisterTokenRegexs(this._TokenRules);
             this.ParseTokens();
             this.Position = 0;
@@ -47,13 +69,17 @@ namespace Language.Parser
 
         protected abstract void RegisterTokenRegexs(List<TokenRules> tokenRules);
 
+        protected abstract void RegisterSymbols(SymbolProvider symbolProvider);
+
+
+
         /// <summary>
         /// If it is the specified symbol, return, otherwise report an error
         /// </summary>
         /// <param name="symbol"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public Token NextOfKind(Symbols symbol)
+        public Token NextOfKind(Symbol symbol)
         {
             var token = this.Next();
             if (token.Symbol != symbol)
@@ -105,7 +131,7 @@ namespace Language.Parser
         /// <param name="symbol"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public Boolean TestSymbol(Symbols symbol)
+        public Boolean TestSymbol(Symbol symbol)
         {
             var nextToken = this.LookAtHead();
             return (nextToken.Symbol == symbol);
@@ -117,7 +143,7 @@ namespace Language.Parser
         /// <param name="symbol"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public Boolean TestNext(Symbols symbol)
+        public Boolean TestNext(Symbol symbol)
         {
             var nextToken = this.LookAtHead();
             if (nextToken.Symbol == symbol)
@@ -127,6 +153,16 @@ namespace Language.Parser
             }
             return false;
         }
+
+        public Boolean LookAtHead(Symbol symbol)
+        {
+            var nextToken = this.tokens[this.Position];
+            return nextToken.Symbol == symbol;
+        }
+
+
+
+
 
         /// <summary>
         /// get next token without removing it.
@@ -190,7 +226,7 @@ namespace Language.Parser
                 var result = rule.Test(span, this.LineNumber, this.ColumnNumber);
                 if (result.Success)
                 {
-                    if (result.Type == TokenTyped.Comment || result.Type == TokenTyped.NewLine || result.Type == TokenTyped.WhiteSpace)
+                    if (result.Type == TokenTyped.Comment || result.Type == TokenTyped.WhiteSpace)
                     {
                         this.readOffset += result.Length;
                         this.bufferLength -= result.Length;
@@ -218,7 +254,7 @@ namespace Language.Parser
         private Token CreateToken(in RuleTestResult result)
         {
             Token token = null;
-            var symbol = Symbols.FromString(result.Value);
+            var symbol = this.symbolProvider.FromString(result.Value);
             if (symbol != null)
             {
                 if (symbol.Type == SymbolTypes.KeyWord) token = new KeywordToken();
