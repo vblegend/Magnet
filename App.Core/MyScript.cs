@@ -11,8 +11,8 @@ namespace App.Core
         [Autowired]
         protected readonly GlobalVariableStore? GLOBAL;
 
-        [Autowired]
-        protected readonly Object? SELF;
+        [Autowired("SELF")]
+        protected readonly IObjectContext? SELF;
 
 
 

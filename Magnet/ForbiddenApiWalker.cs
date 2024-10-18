@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualBasic.FileIO;
+using System.Runtime.CompilerServices;
 
 
 namespace Magnet
@@ -34,6 +35,7 @@ namespace Magnet
 
         public bool HasForbiddenApis
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return ForbiddenApis.Count > 0;
@@ -66,7 +68,7 @@ namespace Magnet
             new ForbiddenSymbols(){ Typed = "Assembly"},
         };
 
-    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
             // 获取左侧表达式的类型信息
             var typeInfo = this.semanticModel.GetTypeInfo(node.Expression);
@@ -109,7 +111,7 @@ namespace Magnet
             // 检查是否有 static 修饰符
             if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
             {
-                if (! this.HasAttribute(node, "Magnet.Core.GlobalAttribute"))
+                if (!this.HasAttribute(node, "Magnet.Core.GlobalAttribute"))
                 {
                     // 提取字段类型和字段名
                     var variableDeclaration = node.Declaration;
@@ -248,7 +250,7 @@ namespace Magnet
 
         private void AddReport(CSharpSyntaxNode node, String message)
         {
-            
+
             // 获取位置并打印行列信息
             var location = node.GetLocation();
             var lineSpan = location.GetLineSpan();

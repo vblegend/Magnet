@@ -12,7 +12,7 @@ namespace Magnet
         private MagnetStateContext stateContext;
         public event Action<MagnetState> Unloading;
 
-        public Int64 Identity {  get; private set; }
+        public Int64 Identity { get; private set; }
 
 
         private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
@@ -86,13 +86,17 @@ namespace Magnet
                     Type type = script.GetType();
                     // 获取方法信息 (MethodInfo)
                     PropertyInfo propertyInfo = type.GetProperty(propertyName);
-                    // 创建一个 Delegate 并绑定到 obj 对象
-                    var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), propertyInfo.GetGetMethod());
-                    delegateCache.Add(key, getter);
-                    return new WeakReference<Getter<T>>(getter);
+                    if (propertyInfo != null)
+                    {
+                        // 创建一个 Delegate 并绑定到 obj 对象
+                        var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), script, propertyInfo.GetMethod);
+                        delegateCache.Add(key, getter);
+                        return new WeakReference<Getter<T>>(getter);
+                    }
+
                 }
-                throw new Exception("not found script.");
             }
+            return null;
         }
 
 
@@ -112,13 +116,17 @@ namespace Magnet
                     Type type = script.GetType();
                     // 获取方法信息 (MethodInfo)
                     PropertyInfo propertyInfo = type.GetProperty(propertyName);
-                    // 创建一个 Delegate 并绑定到 obj 对象
-                    var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), propertyInfo.GetSetMethod());
-                    delegateCache.Add(key, setter);
-                    return new WeakReference<Setter<T>>(setter);
+                    if (propertyInfo != null)
+                    {
+                        // 创建一个 Delegate 并绑定到 obj 对象
+                        var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), script, propertyInfo.SetMethod);
+                        delegateCache.Add(key, setter);
+                        return new WeakReference<Setter<T>>(setter);
+                    }
+
                 }
-                throw new Exception("not found script.");
             }
+            return null;
         }
 
 

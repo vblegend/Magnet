@@ -40,7 +40,7 @@ namespace Magnet
 
         #region Autowired
 
-        public void Autowired<TObject>(AbstractScript instance, TObject @object)
+        public void Autowired<TObject>(AbstractScript instance, TObject @object, String slotName = null)
         {
             var instanceType = instance.GetType();
             if (instancesByType.TryGetValue(instanceType, out var scriptInstance))
@@ -48,11 +48,12 @@ namespace Magnet
                 var valType = typeof(TObject);
                 foreach (var field in scriptInstance.Metadata.AutowriredFields)
                 {
-                    // field.RequiredType
-                    // field.Alias
                     if (valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
                     {
-                        field.FieldInfo.SetValue(instance, @object);
+                        if (slotName == null || slotName == field.SlotName)
+                        {
+                            field.FieldInfo.SetValue(instance, @object);
+                        }
                     }
                 }
             }
@@ -70,11 +71,10 @@ namespace Magnet
                 {
                     foreach (var obj in objectMap)
                     {
-                        // field.RequiredType
-                        // field.Alias
                         if (obj.Key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(obj.Key))
                         {
                             field.FieldInfo.SetValue(instance, obj.Value);
+                            break;
                         }
                     }
                 }
@@ -82,7 +82,7 @@ namespace Magnet
         }
 
 
-        public void Autowired<TObject>(TObject @object)
+        public void Autowired<TObject>(TObject @object, String slotName = null)
         {
             var valType = typeof(TObject);
             foreach (var pair in instancesByType)
@@ -90,11 +90,12 @@ namespace Magnet
                 var instance = pair.Value;
                 foreach (var field in instance.Metadata.AutowriredFields)
                 {
-                    // field.RequiredType
-                    // field.Alias
                     if (valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
                     {
-                        field.FieldInfo.SetValue(instance, @object);
+                        if (slotName == null || slotName == field.SlotName)
+                        {
+                            field.FieldInfo.SetValue(instance, @object);
+                        }
                     }
                 }
             }
@@ -102,7 +103,7 @@ namespace Magnet
 
 
 
-        public void Autowired(Type instanceType, AbstractScript instance, IReadOnlyDictionary<Type, Object> objectMap)
+        public void Autowired(Type instanceType, AbstractScript instance, IReadOnlyDictionary<Type, List<Objectinstance>> objectMap)
         {
             if (instancesByType.TryGetValue(instanceType, out var scriptInstance))
             {
@@ -110,12 +111,20 @@ namespace Magnet
                 {
                     foreach (var obj in objectMap)
                     {
-                        // field.RequiredType
-                        // field.Alias
+                        var ok = false;
                         if (obj.Key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(obj.Key))
                         {
-                            field.FieldInfo.SetValue(instance, obj.Value);
+                            foreach (var item in obj.Value)
+                            {
+                                if (field.SlotName == null || field.SlotName == item.SlotName)
+                                {
+                                    field.FieldInfo.SetValue(instance, item.Instance);
+                                    ok = true;
+                                    break;
+                                }
+                            }
                         }
+                        if (ok) break;
                     }
                 }
             }

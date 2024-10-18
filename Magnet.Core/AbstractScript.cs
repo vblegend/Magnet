@@ -16,6 +16,7 @@ namespace Magnet.Core
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IStateContext stateContext;
 
+        
         protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
 
         /// <summary>
@@ -24,6 +25,7 @@ namespace Magnet.Core
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         protected Action debugger
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get;
             private set;
         }

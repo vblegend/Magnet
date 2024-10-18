@@ -44,6 +44,6 @@ public class Systems : MyScript
     [ModuleInitializer]
     public static void Module()
     {
-        Console.WriteLine("ModuleInitializer");
+
     }
 }

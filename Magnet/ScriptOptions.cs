@@ -10,6 +10,13 @@ namespace Magnet
 
     public delegate Assembly AssemblyLoadDelegate(ScriptLoadContext context, AssemblyName assemblyName);
 
+    public class Objectinstance
+    {
+        public String SlotName;
+        public Object Instance;
+    }
+
+
     public class ScriptOptions
     {
 
@@ -72,16 +79,17 @@ namespace Magnet
             return this;
         }
 
-        internal ConcurrentDictionary<Type, Object> InjectedObjectMap { get; private set; } = [];
+        internal ConcurrentDictionary<Type, List<Objectinstance>> InjectedObjectMap { get; private set; } = [];
 
-        public ScriptOptions AddInjectedObject<T>(T value)
+        public ScriptOptions AddInjectedObject<T>(T value, String slotName = null)
         {
             var type = typeof(T);
-            if (InjectedObjectMap.ContainsKey(type))
+            var list = InjectedObjectMap.GetOrAdd(type, (type) => new List<Objectinstance>());
+            foreach (var item in list)
             {
-                throw new InvalidOperationException();
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
             }
-            InjectedObjectMap.TryAdd(type, value);
+            list.Add(new Objectinstance() { Instance = value, SlotName = slotName });
             return this;
         }
 

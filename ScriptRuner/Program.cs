@@ -20,26 +20,24 @@ public static class Program
 
     private static ScriptOptions Options(String name)
     {
-        GLOBAL.S[1] = "This is Global String Variable.";
         ScriptOptions options = new ScriptOptions();
         options.WithName(name);
         options.WithOutPutFile("123.dll");
-        options.WithDebug(true);
+        options.WithDebug(false);
 
-        options.WithRelease();
-
+        //options.WithRelease();
         options.WithAllowAsync(false);
-        options.AddReferences("System.Threading.Thread");
-        options.AddReferences("System.Console");
-        //options.AddReferences<MagnetScript>();
         options.AddReferences<LoginContext>();
         options.WithDirectory("../../../../Scripts");
+
+
         // Insecure
         options.DisabledInsecureTypes();
         //
         options.SetAssemblyLoadCallback(AssemblyLoad);
         options.AddInjectedObject<ObjectKilledContext>(new ObjectKilledContext());
         options.AddInjectedObject(GLOBAL);
+        options.AddInjectedObject<IObjectContext>(new HumContext(), "SELF");
 
         return options;
     }
@@ -56,6 +54,7 @@ public static class Program
 
     public static void Main()
     {
+        GLOBAL.S[1] = "This is Global String Variable.";
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
@@ -87,7 +86,6 @@ public static class Program
             {
                 Console.WriteLine("Not Dorp Items。");
             }
-
         }
 
         using (new WatchTimer("Draw SS With"))
@@ -167,8 +165,8 @@ public static class Program
                 for (int i = 0; i < 100000; i++)
                 {
                     var state = scriptManager.CreateState();
-                    states.Add(state);
-                    state.Dispose();
+                    //states.Add(state);
+                    //state.Dispose();
                 }
             }
 
@@ -184,17 +182,23 @@ public static class Program
 
             var stateTest = scriptManager.CreateState();
 
-            var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
-            using (new WatchTimer("Try GetTarget 100000"))
+
+            var weakSetter = stateTest.PropertySetterDelegate<Double>("ScriptExample", "Target");
+            if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
             {
-                for (int i = 0; i < 100000; i++)
-                {
-                    if (weak.TryGetTarget(out var ss))
-                    {
-                        ss = null;
-                    }
-                }
+                setter(111);
+                setter = null;
             }
+
+            var weakGetter = stateTest.PropertyGetterDelegate<Double>("ScriptExample", "Target");
+            if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
+            {
+                Console.WriteLine(getter());
+                getter = null;
+            }
+
+            var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
+
             try
             {
                 CallLogin(stateTest);
@@ -240,6 +244,7 @@ public static class Program
             {
                 Console.WriteLine(item.ToString());
             }
+            return null;
         }
         List<MagnetState> states = new List<MagnetState>();
         var state = scriptManager.CreateState();

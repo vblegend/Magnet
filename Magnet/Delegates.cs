@@ -2,7 +2,7 @@
 
 namespace Magnet
 {
-    public delegate void Setter<out TResult>();
+    public delegate void Setter<T>(T value);
 
-    public delegate void Getter<in T>(T obj);
+    public delegate T Getter<T>();
 }

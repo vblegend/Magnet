@@ -7,13 +7,13 @@ namespace Magnet
 
     internal class ScriptExportMethod
     {
-        public string Alias { get; set; }
+        public String Alias { get; set; }
         public MethodInfo MethodInfo { get; set; }
     }
 
     internal class AutowriredField
     {
-        public string Alias { get; set; }
+        public String SlotName { get; set; }
         public Type RequiredType { get; set; }
         public FieldInfo FieldInfo { get; set; }
     }

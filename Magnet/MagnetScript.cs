@@ -47,7 +47,7 @@ namespace Magnet
         public String Name => Options.Name;
 
 
-        private readonly ConcurrentDictionary<Int64, MagnetState> SurvivalStates = new();
+        private readonly Dictionary<Int64, MagnetState> SurvivalStates = new( 65535);
 
         public static readonly Assembly[] ImportantAssemblies =
         [
@@ -201,10 +201,9 @@ namespace Magnet
                                                 var scriptConfig = new ScriptMetadata();
                                                 scriptConfig.ScriptType = type;
                                                 scriptConfig.ScriptAlias = String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias;
-
                                                 ParseScriptAutowriredFields(scriptConfig);
                                                 ParseScriptMethods(scriptConfig);
-                                                Console.WriteLine($"Found Script：{type.Name}");
+                                                //Console.WriteLine($"Found Script：{type.Name}");
                                                 return scriptConfig;
                                             }).ToImmutableList();
 
@@ -235,7 +234,7 @@ namespace Magnet
                         var autowrired = new AutowriredField();
                         autowrired.FieldInfo = fieldInfo;
                         autowrired.RequiredType = attribute.Type;
-                        autowrired.Alias = String.IsNullOrEmpty(attribute.Alias) ? fieldInfo.Name : attribute.Alias;
+                        autowrired.SlotName = attribute.SlotName;
                         metaInfo.AutowriredFields.Add(autowrired);
                     }
                 }
@@ -297,7 +296,8 @@ namespace Magnet
             }
             var state = new MagnetState(this, identity);
             state.Unloading += State_Unloading;
-            SurvivalStates.AddOrUpdate(identity, e => state, (e, a) => state);
+            // TODO 性能问题
+            SurvivalStates.TryAdd(identity, state);
             return state;
         }
 

@@ -20,5 +20,16 @@ public class ScriptExample : AbstractScript
 
 
 
+    public Double Target
+    {
+        get
+        {
+            return 3.14;
+        }
+        set
+        {
+            this.PRINT(value);
+        }
+    }
 }
 
