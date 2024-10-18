@@ -118,8 +118,8 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
 
     // A usable script must meet three requirements.
     // 1. The access must be public
-    // 2. The Script Attribute must be marked
-    // 3. The BaseScript class must be inherited
+    // 2. The [ScriptAttribute] must be marked
+    // 3. The AbstractScript class must be inherited
 
     [Script(nameof(ScriptExample))]
     public class ScriptExample : AbstractScript
