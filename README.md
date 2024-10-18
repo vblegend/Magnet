@@ -24,8 +24,6 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
 
 # Examples
 
-
-
 ``` csharp
     private static ScriptOptions Options(String name)
     {
@@ -95,7 +93,7 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
 ```
 
 
-# ScriptExample
+# Script Examples
 
 ``` csharp
     using Magnet.Core;
@@ -121,6 +119,17 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
         public void Hello()
         {
             this.PRINT($"Hello Wrold!");
+
+            // call script method
+            Call("ScriptB", "Test", []);
+            Call("ScriptB", "PrintMessage", ["Help"]);
+            TryCall("ScriptB", "PrintMessage1", ["Help"]);
+            Script<ScriptB>().PrintMessage("AAA");
+            Script<ScriptB>((script) =>
+            {
+                script.PrintMessage("BBB");
+            });
+
         }
 
 
