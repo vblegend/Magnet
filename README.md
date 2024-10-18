@@ -83,6 +83,22 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
                 target();
                 target = null;
             }
+
+            var weakSetter = state.PropertySetterDelegate<Double>("ScriptExample", "Target");
+            if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
+            {
+                setter(1234.45);
+                setter = null;
+            }
+
+            var weakGetter = state.PropertyGetterDelegate<Double>("ScriptExample", "Target");
+            if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
+            {
+                Console.WriteLine(getter());
+                getter = null;
+            }
+
+
             state.Dispose();
         }
         scriptManager.Unload();
