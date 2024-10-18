@@ -30,9 +30,12 @@ public class Raffler : MyScript
         for (int i = 0; i < 10; i++)
         {
             var item = _myOnceLottery.Draw();
-            Console.WriteLine($"Draw Item {item}");
+            if (item != null)
+            {
+                this.DEBUG($"Draw Item {item}");
+            }
         }     
-        Console.WriteLine();
+ 
     }
 
 }

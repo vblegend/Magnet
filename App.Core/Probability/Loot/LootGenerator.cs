@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+
 
 namespace App.Core.Probability
 {
@@ -27,20 +26,18 @@ namespace App.Core.Probability
     {
         private interface ILoot
         {
-            double Probability { get; }
-
+            Double Probability { get; }
         }
 
         private class LootGroup : ILoot
         {
-            public double Probability { get; set; }
-
+            public Double Probability { get; set; }
             public List<ILoot> Children { get; private set; } = new List<ILoot>();
         }
 
         private class LootItem : ILoot
         {
-            public double Probability{ get; private set; }
+            public Double Probability { get; private set; }
             public Loot<TValue> Item { get; private set; }
             public LootItem(Loot<TValue> item, double probability)
             {

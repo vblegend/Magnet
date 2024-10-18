@@ -1,6 +1,10 @@
-﻿using System;
+﻿using App.Core.Probability.Loot.DSL;
+using Language.Parser;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace App.Core.Probability
 {
@@ -16,11 +20,54 @@ namespace App.Core.Probability
             private Int32 currentIndex = 0;
             private String[] lines;
             private String Directory = "";
+            private LootGenerator<String>.LootGroup root = new LootGenerator<String>.LootGroup();
+            private LootFileLexer lexer;
+
+
             public TxtLootTableParser(String filename)
             {
                 this.lines = File.ReadAllLines(filename);
                 this.Directory = Path.GetDirectoryName(filename);
+                LootFileLexer lexer = new LootFileLexer(filename, Encoding.UTF8);
+                Console.WriteLine(lexer);
             }
+
+
+            public LootGenerator<String>.LootGroup Parse()
+            {
+                while (true)
+                {
+                    if (this.lexer.TestNext(Symbols.KW_EOF)) break;
+                    var node = ParseStatement();
+                    if (node != null) this.root.Children.Add(node);
+                }
+                return this.root;
+            }
+
+
+
+
+            private LootGenerator<String>.ILoot ParseStatement()
+            {
+                var token = this.lexer.LookAtHead();
+                if (token == null) throw new ParseException(this.lexer.FullPath, token, "Invalid keywords appear in ");
+                if (token.Symbol == Symbols.KW_SHARP) return this.ParseInclude();
+                if (token.Symbol == Symbols.KW_IMPORT) return this.ParseImport();
+                if (token.Symbol == Symbols.KW_EXPORT) return this.ParseExportStatement(currentScope);
+                if (token.Symbol == Symbols.KW_FOR) return this.ParseForBlock(currentScope);
+                if (token.Symbol == Symbols.KW_WHILE) return this.ParseWhileBlock(currentScope);
+                if (token.Symbol == Symbols.KW_IF) return this.ParseIfBlock(currentScope);
+                var exp = this.ParseExpression(currentScope);
+                return new ExpressionStatement(exp);
+            }
+
+            private LootGenerator<String>.ILoot ParseInclude()
+            {
+                return null;
+            }
+
+
+
 
             // 解析一个组
             public LootGenerator<String>.LootGroup Parse()
@@ -70,6 +117,21 @@ namespace App.Core.Probability
                 }
                 return group;
             }
+
+    
+
+
+            private void ParseGroup()
+            {
+
+            }
+
+
+            private void ParseItem()
+            {
+
+            }
+
 
             private static double ParseProbability(string probabilityStr)
             {

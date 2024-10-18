@@ -64,14 +64,14 @@ public static class Program
 
         var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
 
-        var lootGenerator = LootGenerator<String>.Load("loots/default.txt");
+        var lootGenerator = LootGenerator<String>.Load("loots/default.loot");
 
 
         using (new WatchTimer("Loot Generate 100000"))
         {
             for (int i = 0; i < 100000; i++)
             {
-               lootGenerator.Generate();
+                lootGenerator.Generate();
             }
         }
 

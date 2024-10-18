@@ -36,10 +36,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="loots\gold-coin.txt">
+    <None Update="loots\gold-coin.loot">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="loots\default.txt">
+    <None Update="loots\default.loot">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="lotterys\minimum guarantee.txt">

@@ -5,9 +5,11 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Language.Parser\Language.Parser.csproj" />
     <ProjectReference Include="..\Magnet.Core\Magnet.Core.csproj" />
   </ItemGroup>
 
