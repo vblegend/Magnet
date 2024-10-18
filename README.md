@@ -63,7 +63,6 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
             }
             return null;
         }
-        List<MagnetState> states = new List<MagnetState>();
         var state = scriptManager.CreateState();
         var weak = state.MethodDelegate<Action>("ScriptExample", "Hello");
         state.Dispose();
