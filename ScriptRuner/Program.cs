@@ -2,6 +2,7 @@
 
 
 using App.Core;
+using App.Core.Events;
 using App.Core.Probability;
 using Magnet;
 using ScriptRuner;
@@ -11,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Principal;
 
 public static class Program
 {
@@ -58,120 +60,103 @@ public static class Program
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
-        var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
+        //var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
 
-        var lootGenerator = LootGenerator<String>.Load("loots/default.loot");
-
-
-        using (new WatchTimer("Loot Generate 100000"))
-        {
-            for (int i = 0; i < 100000; i++)
-            {
-                lootGenerator.Generate();
-            }
-        }
+        //var lootGenerator = LootGenerator<String>.Load("loots/default.loot");
 
 
-        using (new WatchTimer("Loot Generate 1"))
-        {
-            var loots = lootGenerator.Generate(1);
-            if (loots.Count() > 0)
-            {
-                foreach (var loot in loots)
-                {
-                    Console.WriteLine($"Drop Item: {loot}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("Not Dorp Items。");
-            }
-        }
+        //using (new WatchTimer("Loot Generate 100000"))
+        //{
+        //    for (int i = 0; i < 100000; i++)
+        //    {
+        //        lootGenerator.Generate();
+        //    }
+        //}
 
-        using (new WatchTimer("Draw SS With"))
-        {
-            var count = 0;
-            while (true)
-            {
-                count++;
-                var drops = lootGenerator.Generate(1.0);
-                var Count = drops.Where(e => e.Value == "SSS").Count();
 
-                if (Count > 0) break;
-            }
-            Console.WriteLine(count);
-        }
+        //using (new WatchTimer("Loot Generate 1"))
+        //{
+        //    var loots = lootGenerator.Generate(1);
+        //    if (loots.Count() > 0)
+        //    {
+        //        foreach (var loot in loots)
+        //        {
+        //            Console.WriteLine($"Drop Item: {loot}");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        Console.WriteLine("Not Dorp Items。");
+        //    }
+        //}
 
-        using (new WatchTimer("Draw Minimum Guarantee 75"))
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                var drawItem = lottery.Draw();
-                if (drawItem == null) break;
-                Console.Write($"Draw Item ");
-                if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Red;
-                Console.Write(drawItem);
-                if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Black;
-                Console.WriteLine($" With {i + 1} Count.");
-            }
-        }
-        using (new WatchTimer("Draw SSS With"))
-        {
-            var count = 0;
-            while (true)
-            {
-                count++;
-                var lottery2 = lottery.Clone();
-                var drawItem = lottery2.Draw();
-                if (drawItem == "SSS") break;
-            }
-            Console.WriteLine(count);
-        }
+        //using (new WatchTimer("Draw SS With"))
+        //{
+        //    var count = 0;
+        //    while (true)
+        //    {
+        //        count++;
+        //        var drops = lootGenerator.Generate(1.0);
+        //        var Count = drops.Where(e => e.Value == "SSS").Count();
 
-        var weakLogin = TestSccriptUnload();
+        //        if (Count > 0) break;
+        //    }
+        //    Console.WriteLine(count);
+        //}
+
+        //using (new WatchTimer("Draw Minimum Guarantee 75"))
+        //{
+        //    for (int i = 0; i < 100; i++)
+        //    {
+        //        var drawItem = lottery.Draw();
+        //        if (drawItem == null) break;
+        //        Console.Write($"Draw Item ");
+        //        if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Red;
+        //        Console.Write(drawItem);
+        //        if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Black;
+        //        Console.WriteLine($" With {i + 1} Count.");
+        //    }
+        //}
+        //using (new WatchTimer("Draw SSS With"))
+        //{
+        //    var count = 0;
+        //    while (true)
+        //    {
+        //        count++;
+        //        var lottery2 = lottery.Clone();
+        //        var drawItem = lottery2.Draw();
+        //        if (drawItem == "SSS") break;
+        //    }
+        //    Console.WriteLine(count);
+        //}
+
+        //var weakLogin = TestSccriptUnload();
 
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         var result = scriptManager.Compile();
         if (result.Success)
         {
             Console.WriteLine();
-
-            using (new WatchTimer("Set ScriptB.Value = {1.23456};"))
+            List<MagnetState> states = new List<MagnetState>();
+            using (new WatchTimer("Create State 10000"))
             {
-                var state = scriptManager.CreateState();
-                state.SetFieldValue("ScriptB", "Value", 1.23456);
-                var value = state.GetFieldValue("ScriptB", "Value");
+                for (int i = 0; i < 10000; i++)
+                {
+                    var state = scriptManager.CreateState();
+                    states.Add(state);
+                }
             }
 
-            using (new WatchTimer("Create Script State 1"))
+            using (new WatchTimer("Create Delegate 10000"))
             {
                 var state = scriptManager.CreateState();
-            }
-
-
-            using (new WatchTimer("Create Delegate 100000"))
-            {
-                var state = scriptManager.CreateState();
-                for (int i = 0; i < 100000; i++)
+                for (int i = 0; i < 10000; i++)
                 {
                     state.MethodDelegate<LoginHandler>("ScriptA", "Login");
                 }
             }
 
-
-            List<MagnetState> states = new List<MagnetState>();
-            using (new WatchTimer("Create State 100000"))
-            {
-                for (int i = 0; i < 100000; i++)
-                {
-                    var state = scriptManager.CreateState();
-                    //states.Add(state);
-                    //state.Dispose();
-                }
-            }
-
-
-            using (new WatchTimer("Dispose State 100000"))
+            using (new WatchTimer("Dispose State 10000"))
             {
                 foreach (var state in states)
                 {
@@ -183,10 +168,19 @@ public static class Program
             var stateTest = scriptManager.CreateState();
 
 
+            var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
+            if (weak != null && weak.TryGetTarget(out var handler2))
+            {
+                handler2(null);
+                handler2 = null;
+                //
+            }
+
+            
             var weakSetter = stateTest.PropertySetterDelegate<Double>("ScriptExample", "Target");
             if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
             {
-                setter(111);
+                setter(123.45);
                 setter = null;
             }
 
@@ -197,7 +191,13 @@ public static class Program
                 getter = null;
             }
 
-            var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
+
+            var weakAttackEvent =stateTest.ScriptAs<IObjectEvent>();
+            if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
+            {
+                attackEvent.OnAttack();
+                attackEvent = null;
+            }
 
             try
             {
@@ -207,16 +207,15 @@ public static class Program
             {
                 Console.WriteLine(ex);
             }
-
+    
             scriptManager.Unload(true);
 
-            if (weak.TryGetTarget(out var target))
+
+
+            if (weak.TryGetTarget(out var handler))
             {
-                target(null);
+                handler(null);
             }
-
-
-
             //ArrayPool<Char>.Shared.Rent(1);
 
         }
@@ -281,6 +280,7 @@ public static class Program
         if (login.TryGetTarget(out var target))
         {
             target(context);
+            target = null;
         }
 
     }

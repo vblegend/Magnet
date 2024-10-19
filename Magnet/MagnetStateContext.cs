@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+
 
 
 namespace Magnet
@@ -107,14 +109,16 @@ namespace Magnet
         {
             if (instancesByType.TryGetValue(instanceType, out var scriptInstance))
             {
+                var keys = objectMap.Keys.ToArray();
                 foreach (var field in scriptInstance.Metadata.AutowriredFields)
                 {
-                    foreach (var obj in objectMap)
+                    foreach (var key in keys)
                     {
+                        var value = objectMap[key];
                         var ok = false;
-                        if (obj.Key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(obj.Key))
+                        if (key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(key))
                         {
-                            foreach (var item in obj.Value)
+                            foreach (var item in value)
                             {
                                 if (field.SlotName == null || field.SlotName == item.SlotName)
                                 {
@@ -139,10 +143,11 @@ namespace Magnet
             {
                 if (instance.Metadata.ExportMethods.TryGetValue(methodName, out var result))
                 {
-                    return (T)instance.DelegateCache.GetOrAdd(result.MethodInfo, (method) =>
-                    {
-                        return Delegate.CreateDelegate(typeof(T), instance.Instance, method);
-                    });
+                    return instance.GetOrCreateDelegate<T>(result.MethodInfo);
+                    //return (T)instance.DelegateCache.GetOrAdd(result.MethodInfo, (method) =>
+                    //{
+                    //    return Delegate.CreateDelegate(typeof(T), instance.Instance, method);
+                    //});
                 }
             }
             return null;
@@ -150,6 +155,32 @@ namespace Magnet
         #endregion
 
 
+
+        #region Script 
+
+
+        public T ScriptAs<T>() where T : class
+        {
+            foreach (var instance in instances)
+            {
+                if (instance is T tt) return tt;
+            }
+            return null;
+        }
+
+
+        public T ScriptAs<T>(String scriptName) where T : class
+        {
+            if (instancesByString.TryGetValue(scriptName, out ScriptInstance instance))
+            {
+                if (instance.Instance is T tt)
+                {
+                    return tt;
+                }
+            }
+            return null;
+        }
+        #endregion
 
 
 
@@ -167,12 +198,25 @@ namespace Magnet
             {
                 this.Instance = instance;
                 this.Metadata = metadata;
-                this.DelegateCache = new ConcurrentDictionary<MethodInfo, Delegate>();
             }
             public AbstractScript Instance;
             public ScriptMetadata Metadata;
-            public ConcurrentDictionary<MethodInfo, Delegate> DelegateCache;
+            public Dictionary<MethodInfo, Delegate> DelegateCache;
 
+            internal T GetOrCreateDelegate<T>(MethodInfo methodInfo) where T : Delegate
+            {
+                if (DelegateCache == null) DelegateCache = new Dictionary<MethodInfo, Delegate>();
+                if (this.DelegateCache.TryGetValue(methodInfo, out var del))
+                {
+                    return (T)del;
+                }
+                else
+                {
+                    var del2 = Delegate.CreateDelegate(typeof(T), this.Instance, methodInfo);
+                    this.DelegateCache.TryAdd(methodInfo, del2);
+                    return (T)del2;
+                }
+            }
         }
 
 

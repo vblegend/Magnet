@@ -1,4 +1,5 @@
 ﻿using App.Core.Probability;
+using App.Core.UserInterface;
 using Magnet.Core;
 using System;
 
@@ -16,7 +17,7 @@ namespace App.Core
 
 
 
-
+        
 
 
 
@@ -32,6 +33,31 @@ namespace App.Core
         {
 
         }
+
+
+
+        protected IItemBuilder MAKE(String item)
+        {
+
+
+            return null;
+        }
+
+        protected IItemBuilder MAKE(Int32 itemId)
+        {
+
+
+            return null;
+        }
+
+
+        protected void GIVE(IItemBuilder item)
+        {
+
+        }
+
+
+
 
 
 

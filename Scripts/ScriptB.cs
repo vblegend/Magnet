@@ -8,13 +8,6 @@ using System;
 public class ScriptB : MyScript
 {
 
-    public static Double Value = Math.PI;
-
-
-    protected override void Initialize()
-    {
-        //DEBUG("ScriptB.Initialize");
-    }
 
     public void Test()
     {

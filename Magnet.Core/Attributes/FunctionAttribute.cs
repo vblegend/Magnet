@@ -16,11 +16,16 @@ namespace Magnet.Core
         {
    
         }
-        public FunctionAttribute(string alias)
+        public FunctionAttribute(String alias = "",String description = "")
         {
             this.Alias = alias;
+            this.Description = description;
         }
 
-        public string Alias { get; set; }
+        public String Alias { get; set; }
+
+
+        public String Description { get; set; }
+
     }
 }

@@ -15,14 +15,6 @@ public class ScriptA : MyScript
     private IKilledContext KilledContext2 { get; set; }
 
 
-    protected override void Initialize()
-    {
-        //DEBUG("ScriptA.Initialize");
-    }
-
-
-
-
     [Function]
     public void Login(LoginContext context)
     {

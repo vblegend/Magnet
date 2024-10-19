@@ -11,10 +11,7 @@ namespace Magnet
         private MagnetScript engine;
         private MagnetStateContext stateContext;
         public event Action<MagnetState> Unloading;
-
-        public Int64 Identity { get; private set; }
-
-
+        public readonly Int64 Identity;
         private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
 
 
@@ -48,19 +45,36 @@ namespace Magnet
         }
 
 
+        /// <summary>
+        /// Batch inject objects into all script instances
+        /// </summary>
+        /// <param name="objectMap"></param>
         public void Inject(IReadOnlyDictionary<Type, Object> objectMap)
         {
             this.stateContext.Autowired(objectMap);
         }
 
-        public void Inject<TObject>(TObject obj)
+
+
+        /// <summary>
+        /// Inject objects into all script instances
+        /// </summary>
+        /// <typeparam name="TObject"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="slotName">[Autowired] Specifies the slot name</param>
+        public void Inject<TObject>(TObject obj, String slotName = null)
         {
-            this.stateContext.Autowired<TObject>(obj);
+            this.stateContext.Autowired<TObject>(obj,slotName);
         }
 
 
-
-
+        /// <summary>
+        /// Gets a delegated weak reference to a script method
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <param name="methodName"></param>
+        /// <returns></returns>
         public WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
             var _delegate = this.stateContext.GetScriptMethod<T>(scriptName, methodName);
@@ -68,8 +82,43 @@ namespace Magnet
         }
 
 
+        /// <summary>
+        /// Gets a weak reference to the tripartite interface implemented by the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <returns></returns>
+        public WeakReference<T> ScriptAs<T>(String scriptName) where T : class
+        {
+            var _object = this.stateContext.ScriptAs<T>(scriptName);
+            return _object != null ? new WeakReference<T>(_object) : null;
+        }
 
 
+
+        /// <summary>
+        /// Gets a weak reference to the tripartite interface implemented by any script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <returns></returns>
+        public WeakReference<T> ScriptAs<T>() where T : class
+        {
+            var _object = this.stateContext.ScriptAs<T>();
+            return _object != null ? new WeakReference<T>(_object) : null;
+        }
+
+
+
+
+
+        /// <summary>
+        /// Gets a weak reference to the script's property Getter delegate
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
         public WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName)
         {
             var key = $"get {scriptName}.{propertyName}()";
@@ -99,7 +148,13 @@ namespace Magnet
             return null;
         }
 
-
+        /// <summary>
+        /// Gets the script's property Setter delegate weak reference
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
         public WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName)
         {
             var key = $"set {scriptName}.{propertyName}()";
@@ -134,30 +189,40 @@ namespace Magnet
 
 
 
-
+        /// <summary>
+        /// Get the value of the field in the script (not recommended)
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="variableName"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public object GetFieldValue(string scriptName, string variableName)
         {
             AbstractScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
-                var instance = Activator.CreateInstance(type);
                 var field = type.GetField(variableName);
-                return field?.GetValue(instance);
+                return field?.GetValue(script);
             }
-
             throw new Exception("Variable not found");
         }
 
+
+        /// <summary>
+        /// Set the value of the field in the script (not recommended)
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="variableName"></param>
+        /// <param name="value"></param>
         public void SetFieldValue(string scriptName, string variableName, object value)
         {
             AbstractScript script = this.stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
-                var instance = Activator.CreateInstance(type);
                 var field = type.GetField(variableName);
-                field?.SetValue(instance, value);
+                field?.SetValue(script, value);
             }
         }
 
@@ -165,18 +230,13 @@ namespace Magnet
 
         public void Dispose()
         {
-            this.delegateCache.Clear();
-            if (this.Unloading != null)
-            {
-                this.Unloading.Invoke(this);
-                this.Unloading = null;
-            }
-            if (this.stateContext != null)
-            {
-                this.stateContext.Dispose();
-                this.stateContext = null;
-            }
-
+            this.delegateCache?.Clear();
+            this.delegateCache = null;
+            this.Unloading?.Invoke(this);
+            this.Unloading = null;
+            this.stateContext?.Dispose();
+            this.stateContext = null;
+            this.engine = null;
         }
     }
 }

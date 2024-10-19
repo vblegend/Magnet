@@ -15,7 +15,7 @@ public class Raffler : MyScript
     private static Lottery<String> OnceLottery = Lottery<String>.Load("lotterys/once.txt");
 
 
-    // Personal Lottery 
+    //Personal Lottery
     private readonly Lottery<String> _myOnceLottery = OnceLottery.Clone();
 
     protected override void Initialize()
@@ -34,8 +34,8 @@ public class Raffler : MyScript
             {
                 this.DEBUG($"Draw Item {item}");
             }
-        }     
- 
+        }
+
     }
 
 }

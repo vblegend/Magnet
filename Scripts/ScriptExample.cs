@@ -12,6 +12,13 @@ using System;
 public class ScriptExample : AbstractScript
 {
 
+    protected override void Initialize()
+    {
+        //DEBUG("ScriptExample.Initialize");
+    }
+
+
+
     [Function("Hello")]
     public void Hello(String name)
     {

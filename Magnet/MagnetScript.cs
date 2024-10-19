@@ -11,11 +11,8 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using Microsoft.CodeAnalysis.Scripting;
-using System.Reflection.Emit;
-using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
+using System.Threading;
+
 
 
 
@@ -24,32 +21,22 @@ namespace Magnet
     public sealed partial class MagnetScript
     {
         private String[] baseUsing = ["System", "Magnet.Core"];
-
         public ScriptOptions Options { get; private set; }
-
-        public PortableExecutableReference[] referencesForCodegen = [];
-
+        private PortableExecutableReference[] referencesForCodegen = [];
         private List<String> diagnostics;
-
         internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
-
         private WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
-
         public IReadOnlyList<String> Diagnostics => diagnostics;
-
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-
         private ScriptLoadContext scriptLoadContext;
-
         public event Action<MagnetScript> Unloading;
         public event Action<MagnetScript> Unloaded;
-
         public String Name => Options.Name;
-
-
         private readonly Dictionary<Int64, MagnetState> SurvivalStates = new( 65535);
 
-        public static readonly Assembly[] ImportantAssemblies =
+
+
+        private static readonly Assembly[] ImportantAssemblies =
         [
             Assembly.Load("System.Runtime"),
             Assembly.Load("System.Private.CoreLib"),
@@ -65,6 +52,7 @@ namespace Magnet
         /// <exception cref="ScriptUnloadFailureException">The script states is not destroyed, or resources inside the script are externally referenced</exception>
         public void Unload(Boolean force = false)
         {
+ 
             if (force)
             {
                 var keys = SurvivalStates.Keys;
@@ -81,8 +69,14 @@ namespace Magnet
             this.referencesForCodegen = [];
             this.scriptLoadContext?.Unload();
             // 触发垃圾回收
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+
+            var count = 5;
+            while (count > 0 && Exists(this.Name))
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                count--;
+            }
             if (Exists(this.Name))
             {
                 throw new ScriptUnloadFailureException();
@@ -126,7 +120,7 @@ namespace Magnet
 
         }
 
-        public CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
+        private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
         {
             CompilationUnitSyntax rootCompilation = root;
             if (rootCompilation.Usings.Any(u => u.Name.ToString() == name))
@@ -178,7 +172,10 @@ namespace Magnet
         }
 
 
-        // 加载并编译目录中的所有脚本
+        /// <summary>
+        /// Load and compile all scripts in the directory
+        /// </summary>
+        /// <returns></returns>
         public EmitResult Compile()
         {
             var rootDir = Path.GetFullPath(this.Options.BaseDirectory);

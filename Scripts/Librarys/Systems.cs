@@ -1,15 +1,12 @@
 ﻿using App.Core;
 using Magnet.Core;
 using System;
-using System.Runtime.CompilerServices;
-
-
 
 [Script(nameof(Systems))]
 public class Systems : MyScript
 {
 
-    
+    public static Double Value = Math.PI;
     public static AttributeTargets Target1 { get; set; }
 
     [Global]
@@ -39,11 +36,5 @@ public class Systems : MyScript
     protected override void Initialize()
     {
         //DEBUG("Systems.Initialize");
-    }
-
-    [ModuleInitializer]
-    public static void Module()
-    {
-
     }
 }
