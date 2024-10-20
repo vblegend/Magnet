@@ -4,6 +4,7 @@
 using App.Core;
 using App.Core.Events;
 using App.Core.Probability;
+using App.Core.Quad;
 using Magnet;
 using Magnet.Core;
 using ScriptRuner;
@@ -54,7 +55,12 @@ public static class Program
     }
 
 
+    class Hum : ILocalizable
+    {
+        public int X { get; } = 650;
 
+        public int Y { get; } = 22;
+    }
 
     public static void Main()
     {
@@ -68,6 +74,19 @@ public static class Program
 
         //TestSccriptUnload();
 
+
+
+
+
+        QuadTree<Hum> quadTree = new QuadTree<Hum>(1,1,1024,1024);
+
+
+        for (int i = 0; i < 64; i++)
+        {
+            quadTree.Insert(new Hum());
+        }
+
+        Console.WriteLine(quadTree);
 
         //using (new WatchTimer("Loot Generate 100000"))
         //{
@@ -146,19 +165,19 @@ public static class Program
         {
 
             List<MagnetState> states = new List<MagnetState>();
-            using (new WatchTimer("Create State 10000"))
+            using (new WatchTimer("Create State 100000"))
             {
-                for (int i = 0; i < 10000; i++)
+                for (int i = 0; i < 100000; i++)
                 {
                     var state = scriptManager.CreateState();
                     states.Add(state);
                 }
             }
 
-            using (new WatchTimer("Create Delegate 10000"))
+            using (new WatchTimer("Create Delegate 100000"))
             {
                 var state = scriptManager.CreateState(345);
-                for (int i = 0; i < 10000; i++)
+                for (int i = 0; i < 100000; i++)
                 {
                     state.MethodDelegate<LoginHandler>("ScriptA", "Login");
                 }
@@ -242,7 +261,13 @@ public static class Program
             Thread.Sleep(10);
         }
 
+        Console.WriteLine("OK");
 
+        while (true)
+        {
+            GC.Collect();
+            Thread.Sleep(1000);
+        }
 
         Console.WriteLine("=====================================================================================");
         Console.ReadKey();
