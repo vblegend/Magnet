@@ -12,6 +12,7 @@ namespace Magnet
 
     public class Objectinstance
     {
+        public Type Type;
         public String SlotName;
         public Object Instance;
     }
@@ -79,17 +80,24 @@ namespace Magnet
             return this;
         }
 
-        internal ConcurrentDictionary<Type, List<Objectinstance>> InjectedObjectMap { get; private set; } = [];
+        internal List<Objectinstance> InjectedObjects { get; private set; } = [];
 
         public ScriptOptions AddInjectedObject<T>(T value, String slotName = null)
         {
             var type = typeof(T);
-            var list = InjectedObjectMap.GetOrAdd(type, (type) => new List<Objectinstance>());
-            foreach (var item in list)
+            foreach (var item in InjectedObjects)
             {
                 if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
             }
-            list.Add(new Objectinstance() { Instance = value, SlotName = slotName });
+            var _object = new Objectinstance() { Type = type, Instance = value, SlotName = slotName };
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                InjectedObjects.Add(_object);
+            }
+            else
+            {
+                InjectedObjects.Insert(0, _object);
+            }
             return this;
         }
 
@@ -235,7 +243,7 @@ namespace Magnet
             this.ReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Safety.StreamWriter));
             this.ReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Safety.StreamReader));
 
-            
+
 
             // NET
             this.ReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Safety.Socket));
@@ -251,7 +259,7 @@ namespace Magnet
 
 
 
-            
+
 
             return this;
         }

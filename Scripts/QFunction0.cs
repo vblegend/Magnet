@@ -6,8 +6,8 @@ using System;
 
 namespace Scripts
 {
-    [Script(nameof(Function0))]
-    public class Function0 : MyScript, IObjectEvent
+    [Script(nameof(QFunction0))]
+    public class QFunction0 : MyScript, IPlayerGameEvent
     {
 
         [Function(null, "攻击事件")]
@@ -18,8 +18,14 @@ namespace Scripts
         }
 
 
+        [Function(null, "魔法攻击事件")]
+        public void OnMagicAttack()
+        {
+
+        }
+
         [Function(null, "受伤事件")]
-        public void OnHurt()
+        public void OnStruck()
         {
 
         }
@@ -62,13 +68,13 @@ namespace Scripts
 
 
         [Function(null, "穿上装备")]
-        public void OnPutItem()
+        public void OnTakeOn()
         {
 
         }
 
         [Function(null, "取下装备")]
-        public void OnTakeItem()
+        public void OnTakeOff()
         {
 
         }
@@ -98,18 +104,19 @@ namespace Scripts
 
 
 
-        [Function(null, "获得物品")]
-        public void OnGetItem()
+        [Function(null, "捡到物品")]
+        public void OnPickUpItem()
+        {
+
+        }
+
+        [Function(null, "丢掉物品")]
+        public void OnPickDropItem()
         {
 
         }
 
 
-        [Function(null, "丢失物品")]
-        public void OnLostItem()
-        {
-
-        }
 
         [Function(null, "接受任务")]
         public void OnAcceptTask()
@@ -122,6 +129,23 @@ namespace Scripts
         {
 
         }
+
+
+        [Function(null, "等级提升")]
+        public void OnLevelUp()
+        {
+  
+        }
+
+
+
+
+
+
+
+
+
+
 
 
     }

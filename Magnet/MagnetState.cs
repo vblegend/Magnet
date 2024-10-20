@@ -13,13 +13,14 @@ namespace Magnet
         public event Action<MagnetState> Unloading;
         public readonly Int64 Identity;
         private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
-
+        internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
         internal MagnetState(MagnetScript engine, Int64 identity)
         {
             this.Identity = identity;
             this.engine = engine;
             this.stateContext = new MagnetStateContext(engine);
+            this.ReferenceTrackers = engine.ReferenceTrackers;
             this.CreateState();
         }
 
@@ -30,7 +31,7 @@ namespace Magnet
             {
                 var instance = (AbstractScript)Activator.CreateInstance(meta.ScriptType);
                 this.stateContext.AddInstance(meta, instance);
-                this.stateContext.Autowired(meta.ScriptType, instance, engine.Options.InjectedObjectMap);
+                this.stateContext.Autowired(meta.ScriptType, instance, engine.Options.InjectedObjects);
             }
             //Injected Data
             foreach (var instance in this.stateContext.Instances)
@@ -70,6 +71,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets a delegated weak reference to a script method
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -84,6 +86,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets a weak reference to the tripartite interface implemented by the script
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -98,6 +101,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets a weak reference to the tripartite interface implemented by any script
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -114,6 +118,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets a weak reference to the script's property Getter delegate
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -140,6 +145,7 @@ namespace Magnet
                         // 创建一个 Delegate 并绑定到 obj 对象
                         var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), script, propertyInfo.GetMethod);
                         delegateCache.Add(key, getter);
+                        ReferenceTrackers.Add(getter);
                         return new WeakReference<Getter<T>>(getter);
                     }
 
@@ -176,6 +182,7 @@ namespace Magnet
                         // 创建一个 Delegate 并绑定到 obj 对象
                         var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), script, propertyInfo.SetMethod);
                         delegateCache.Add(key, setter);
+                        ReferenceTrackers.Add(setter);
                         return new WeakReference<Setter<T>>(setter);
                     }
 
@@ -191,6 +198,7 @@ namespace Magnet
 
         /// <summary>
         /// Get the value of the field in the script (not recommended)
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <param name="scriptName"></param>
         /// <param name="variableName"></param>
@@ -238,5 +246,7 @@ namespace Magnet
             this.stateContext = null;
             this.engine = null;
         }
+
+
     }
 }

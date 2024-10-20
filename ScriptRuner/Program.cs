@@ -5,6 +5,7 @@ using App.Core;
 using App.Core.Events;
 using App.Core.Probability;
 using Magnet;
+using Magnet.Core;
 using ScriptRuner;
 using ScriptRuner.Loot;
 using System;
@@ -13,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Principal;
+using System.Threading;
 
 public static class Program
 {
@@ -63,6 +65,8 @@ public static class Program
         //var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
 
         //var lootGenerator = LootGenerator<String>.Load("loots/default.loot");
+
+        //TestSccriptUnload();
 
 
         //using (new WatchTimer("Loot Generate 100000"))
@@ -133,10 +137,14 @@ public static class Program
         //var weakLogin = TestSccriptUnload();
 
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
+        scriptManager.Unloading += ScriptManager_Unloading;
+        scriptManager.Unloaded += ScriptManager_Unloaded;
+
+
         var result = scriptManager.Compile();
         if (result.Success)
         {
-            Console.WriteLine();
+
             List<MagnetState> states = new List<MagnetState>();
             using (new WatchTimer("Create State 10000"))
             {
@@ -149,11 +157,12 @@ public static class Program
 
             using (new WatchTimer("Create Delegate 10000"))
             {
-                var state = scriptManager.CreateState();
+                var state = scriptManager.CreateState(345);
                 for (int i = 0; i < 10000; i++)
                 {
                     state.MethodDelegate<LoginHandler>("ScriptA", "Login");
                 }
+                state = null;
             }
 
             using (new WatchTimer("Dispose State 10000"))
@@ -163,9 +172,9 @@ public static class Program
                     state.Dispose();
                 }
             }
+            states.Clear();
 
-
-            var stateTest = scriptManager.CreateState();
+            var stateTest = scriptManager.CreateState(123);
 
 
             var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
@@ -176,7 +185,7 @@ public static class Program
                 //
             }
 
-            
+
             var weakSetter = stateTest.PropertySetterDelegate<Double>("ScriptExample", "Target");
             if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
             {
@@ -192,7 +201,7 @@ public static class Program
             }
 
 
-            var weakAttackEvent =stateTest.ScriptAs<IObjectEvent>();
+            var weakAttackEvent = stateTest.ScriptAs<IPlayerGameEvent>();
             if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
             {
                 attackEvent.OnAttack();
@@ -207,17 +216,14 @@ public static class Program
             {
                 Console.WriteLine(ex);
             }
-    
+            stateTest = null;
             scriptManager.Unload(true);
-
-
-
-            if (weak.TryGetTarget(out var handler))
-            {
-                handler(null);
-            }
+            //status = GC.WaitForFullGCComplete();
+            //if (weak.TryGetTarget(out var handler))
+            //{
+            //    handler(null);
+            //}
             //ArrayPool<Char>.Shared.Rent(1);
-
         }
         else
         {
@@ -227,15 +233,37 @@ public static class Program
                 Console.WriteLine(diagnostic.ToString());
             }
         }
+
+
+        while (scriptManager.IsAlive)
+        {
+            var obj = new byte[1024 * 1024];
+            //GC.Collect();
+            Thread.Sleep(10);
+        }
+
+
+
         Console.WriteLine("=====================================================================================");
         Console.ReadKey();
     }
 
+    private static void ScriptManager_Unloaded(MagnetScript obj)
+    {
+        Console.WriteLine($"脚本[{obj.Name}]卸载完毕.");
+    }
 
+    private static void ScriptManager_Unloading(MagnetScript obj)
+    {
+        Console.WriteLine($"收到脚本[{obj.Name}]卸载请求.");
+    }
 
     private static WeakReference<LoginHandler> TestSccriptUnload()
     {
         MagnetScript scriptManager = new MagnetScript(Options("Unload.Test"));
+        scriptManager.Unloading += ScriptManager_Unloading;
+        scriptManager.Unloaded += ScriptManager_Unloaded;
+
         var result = scriptManager.Compile();
         if (!result.Success)
         {
@@ -246,7 +274,7 @@ public static class Program
             return null;
         }
         List<MagnetState> states = new List<MagnetState>();
-        var state = scriptManager.CreateState();
+        var state = scriptManager.CreateState(999);
         var weak = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
         state.Dispose();
         scriptManager.Unload();
@@ -282,7 +310,7 @@ public static class Program
             target(context);
             target = null;
         }
-
+        state = null;
     }
 
 

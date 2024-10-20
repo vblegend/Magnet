@@ -15,6 +15,7 @@ public class ScriptA : MyScript
     private IKilledContext KilledContext2 { get; set; }
 
 
+
     [Function]
     public void Login(LoginContext context)
     {

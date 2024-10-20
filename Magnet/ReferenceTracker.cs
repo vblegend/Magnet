@@ -1,21 +1,16 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+
 namespace Magnet
 {
-
-    /// <summary>
-    /// Weak reference to the object 
-    /// Same functionality as WeakReference
-    /// 
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class WeakReference222<T> where T : class
+    public class ReferenceTracker
     {
         private GCHandle _handle;
 
-        public WeakReference222(T target)
+        public ReferenceTracker(Object target)
         {
             if (target != null)
             {
@@ -23,7 +18,7 @@ namespace Magnet
             }
         }
 
-        public void SetTarget(T target)
+        public void SetTarget(Object target)
         {
             if (_handle.IsAllocated) _handle.Free();
             _handle = GCHandle.Alloc(target, GCHandleType.Weak);
@@ -32,7 +27,7 @@ namespace Magnet
 
 
 
-        ~WeakReference222()
+        ~ReferenceTracker()
         {
             if (_handle.IsAllocated)
             {
@@ -40,24 +35,22 @@ namespace Magnet
             }
         }
 
-
-        public Boolean TryGetTarget(out T target)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetTarget([MaybeNullWhen(false), NotNullWhen(true)] out Object target)
         {
-            var o = _handle.Target;
-            target = o as T;
-            return target != null;
+            Object? o = this.Target;
+            target = o!;
+            return o != null;
         }
 
-
-
-        public T Target
+        public Object Target
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (_handle.IsAllocated)
                 {
-                    return _handle.Target as T;
+                    return _handle.Target ;
                 }
                 return null;
             }
@@ -76,5 +69,4 @@ namespace Magnet
             if (_handle.IsAllocated) _handle.Free();
         }
     }
-
 }

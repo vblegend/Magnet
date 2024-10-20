@@ -7,24 +7,25 @@ using System.Threading.Tasks;
 
 namespace App.Core.Events
 {
-    public interface IObjectEvent
+    public interface IPlayerGameEvent
     {
+        void OnMagicAttack();
         void OnAttack();
-        void OnHurt();
+        void OnStruck(); 
         void OnKilled();
         void OnDead();
         void OnResurrected();
         void OnEat();
         void OnOpened(Int32 item);
-        void OnPutItem();
-        void OnTakeItem();
+        void OnTakeOn();
+        void OnTakeOff();
         void OnEnterMap();
         void OnMoved();
         void OnLeaveMap();
-        void OnGetItem();
-        void OnLostItem();
+        void OnPickUpItem();
+        void OnPickDropItem();
         void OnAcceptTask();
         void OnCompleteTask();
-
+        void OnLevelUp();
     }
 }

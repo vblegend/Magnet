@@ -1,93 +1,93 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using System.Reflection;
+﻿using Magnet.Core;
 using Microsoft.CodeAnalysis;
-using System.Text;
-using Magnet.Core;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Immutable;
-using System.Collections.Generic;
+using Microsoft.CodeAnalysis.Emit;
 using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
-using System.Threading;
 
 
 
 
 namespace Magnet
 {
+    public enum ScrriptStatus
+    {
+        /// <summary>
+        /// The script is unavailable because the compilation method has not been executed
+        /// </summary>
+        NotReady,
+        /// <summary>
+        /// The script has been compiled
+        /// </summary>
+        Ready,
+        /// <summary>
+        /// An error occurred during script compilation
+        /// </summary>
+        CompileError,
+        /// <summary>
+        /// Uninstalling a script
+        /// </summary>
+        Unloading,
+        /// <summary>
+        /// The script was uninstalled
+        /// </summary>
+        Unloaded
+    }
+
+
+
+
     public sealed partial class MagnetScript
     {
         private String[] baseUsing = ["System", "Magnet.Core"];
         public ScriptOptions Options { get; private set; }
-        private PortableExecutableReference[] referencesForCodegen = [];
         private List<String> diagnostics;
         internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
-        private WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
+        private readonly WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
         public IReadOnlyList<String> Diagnostics => diagnostics;
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         private ScriptLoadContext scriptLoadContext;
         public event Action<MagnetScript> Unloading;
         public event Action<MagnetScript> Unloaded;
-        public String Name => Options.Name;
-        private readonly Dictionary<Int64, MagnetState> SurvivalStates = new( 65535);
+        private readonly Int64 UniqueId = Random.Shared.NextInt64();
+        public readonly String Name;
+        private readonly Dictionary<Int64, MagnetState> SurvivalStates = new();
+        private static GCEventListener gcEventListener = new GCEventListener();
+        internal TrackerColllection ReferenceTrackers = new TrackerColllection();
+        public ScrriptStatus Status { get; private set; }
 
 
-
-        private static readonly Assembly[] ImportantAssemblies =
-        [
-            Assembly.Load("System.Runtime"),
-            Assembly.Load("System.Private.CoreLib"),
-            typeof(ScriptAttribute).Assembly,
-        ];
+        private static readonly Assembly[] ImportantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly,];
 
 
-        /// <summary>
-        /// Uninstall the script assembly.
-        /// Before performing the Unload method, ensure that all MagnetStates are destroyed and no internal script resource objects are forcibly referenced
-        /// </summary>
-        /// <param name="force">Force destruction of all MagnetState instances</param>
-        /// <exception cref="ScriptUnloadFailureException">The script states is not destroyed, or resources inside the script are externally referenced</exception>
-        public void Unload(Boolean force = false)
+        public Boolean IsAlive
         {
- 
-            if (force)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
             {
-                var keys = SurvivalStates.Keys;
-                foreach (var key in keys)
+                var scriptModules = AppDomain.CurrentDomain.GetAssemblies();
+                foreach (var assembly in scriptModules)
                 {
-                    var state = SurvivalStates[key];
-                    state?.Dispose();
+                    var attrs = assembly.GetCustomAttributes(typeof(ScriptAssemblyAttribute), false);
+                    if (attrs.Length == 0) continue;
+                    foreach (var attr in attrs)
+                    {
+                        if (attr is ScriptAssemblyAttribute attribute)
+                        {
+                            if (attribute.UniqueId == this.UniqueId) return true;
+                        }
+                    }
                 }
+                return false;
             }
-            this.Unloading?.Invoke(this);
-            this.Unloading = null;
-            this.diagnostics.Clear();
-            this.scriptMetaInfos = [];
-            this.referencesForCodegen = [];
-            this.scriptLoadContext?.Unload();
-            // 触发垃圾回收
-
-            var count = 5;
-            while (count > 0 && Exists(this.Name))
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                count--;
-            }
-            if (Exists(this.Name))
-            {
-                throw new ScriptUnloadFailureException();
-            }
-            //this.scriptAssembly(null);
-            RemoveCache(this);
-            // TODO 检测程序集被卸载后
-            this.Unloaded?.Invoke(this);
-            this.scriptLoadContext = null;
-            this.Unloaded = null;
-            this.Options = null;
         }
 
 
@@ -95,29 +95,60 @@ namespace Magnet
 
 
 
+        /// <summary>
+        /// Uninstall the script assembly.
+        /// Before performing the Unload method, ensure that all MagnetStates are destroyed and no internal script resource objects are forcibly referenced
+        /// The unloading step is asynchronous and the Unloaded event is unloaded after completion
+        /// </summary>
+        /// <param name="force">Force destruction of all MagnetState instances</param>
+        /// <exception cref="ScriptUnloadFailureException">The script states is not destroyed, or resources inside the script are externally referenced</exception>
+        public void Unload(Boolean force = false)
+        {
+            if (force)
+            {
+                var keys = SurvivalStates.Keys;
+                foreach (var key in keys)
+                {
+                    var state = SurvivalStates[key];
+                    state?.Dispose();
+                    state = null;
+                }
+            }
+            this.Unloading?.Invoke(this);
+            this.Unloading = null;
+            this.diagnostics.Clear();
+            this.scriptMetaInfos = [];
+            this.scriptLoadContext?.Unload();
+            this.Status = ScrriptStatus.Unloading;
+        }
 
-
-
+        private void GcEventListener_OnGCFinalizers()
+        {
+            ReferenceTrackers.AliveObjects();
+            if (this.Status == ScrriptStatus.Unloading && !this.IsAlive)
+            {
+                gcEventListener.OnGCFinalizers -= GcEventListener_OnGCFinalizers;
+                this.Unloaded?.Invoke(this);
+                this.scriptLoadContext = null;
+                this.Unloaded = null;
+                this.Options = null;
+                this.Status = ScrriptStatus.Unloaded;
+            }
+        }
 
         public MagnetScript(ScriptOptions options)
         {
             this.diagnostics = new List<String>();
             this.Options = options;
+            this.Name = options.Name;
+            this.Status = ScrriptStatus.NotReady;
             this.scriptLoadContext = new ScriptLoadContext(options);
-            var libs = ImportantAssemblies.Concat(options.References);
-            this.referencesForCodegen = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(e => libs.Contains(e))
-            .Distinct()
-            .Where(a => !a.IsDynamic)
-            .Select(a => MetadataReference.CreateFromFile(a.Location)).ToArray();
-            //
             this.compilationOptions = this.compilationOptions.WithAllowUnsafe(false);
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
             this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             this.compilationOptions = this.compilationOptions.WithModuleName(this.Options.Name);
-
+            gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
         }
 
         private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
@@ -178,11 +209,15 @@ namespace Magnet
         /// <returns></returns>
         public EmitResult Compile()
         {
+            if (this.Status != ScrriptStatus.NotReady && this.Status != ScrriptStatus.CompileError)
+            {
+                throw new Exception("Wrong state");
+            }
             var rootDir = Path.GetFullPath(this.Options.BaseDirectory);
             var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, SearchOption.AllDirectories);
             var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file))).ToArray();
             var syntaxTrees = new List<SyntaxTree>(Task.WhenAll(parseTasks).Result);
-            SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText("[assembly: Magnet.Core.ScriptAssembly()]");
+            SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText($"[assembly: Magnet.Core.ScriptAssembly({this.UniqueId})]\n[assembly: System.Reflection.AssemblyVersion(\"1.0.0.0\")]");
             syntaxTrees.Insert(0, assemblyAttribute);
             var result = CompileSyntaxTree(syntaxTrees);
             if (result.Success)
@@ -276,7 +311,7 @@ namespace Magnet
         /// <exception cref="Exception"></exception>
         public MagnetState CreateState(Int64 identity = -1)
         {
-            if (!this.scriptAssembly.TryGetTarget(out _))
+            if (this.Status != ScrriptStatus.Ready || !this.scriptAssembly.TryGetTarget(out _))
             {
                 throw new Exception("A copy of the script is unavailable, uncompiled, or failed to compile");
             }
@@ -293,6 +328,7 @@ namespace Magnet
             }
             var state = new MagnetState(this, identity);
             state.Unloading += State_Unloading;
+            //this.ReferenceTrackers.Add(state);
             // TODO 性能问题
             SurvivalStates.TryAdd(identity, state);
             return state;
@@ -315,13 +351,24 @@ namespace Magnet
         // 使用 Roslyn 编译脚本
         private EmitResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees)
         {
+
+            var libs = ImportantAssemblies.Concat(Options.References);
+
+            var references = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Where(e => !e.IsDynamic && libs.Contains(e))
+            .Distinct()
+            .Select(a => MetadataReference.CreateFromFile(a.Location));
+
+
+
             var compilation = CSharpCompilation.Create(
 
                 assemblyName: this.Options.Name,
                 syntaxTrees: syntaxTrees,
-                references: referencesForCodegen,
+                references: references,
                 options: this.compilationOptions
-                            );
+            );
 
             // 检查是否有不允许的 API 调用
             var walker = new ForbiddenApiWalker(this.Options);
@@ -382,20 +429,22 @@ namespace Magnet
             {
                 execStream.Seek(0, SeekOrigin.Begin);
                 if (pdbStream != null) pdbStream.Seek(0, SeekOrigin.Begin);
-                if (Exists(this.Name)) throw new ScriptExistException(this.Name);
                 this.scriptAssembly.SetTarget(scriptLoadContext.LoadFromStream(execStream, pdbStream));
-                AddCache(this);
+                this.Status = ScrriptStatus.Ready;
+                if (pdbStream != null) pdbStream.Dispose();
+                if (execStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
+                {
+                    execStream.Seek(0, SeekOrigin.Begin);
+                    File.WriteAllBytes(Options.OutPutFile, execStream.ToArray());
+                }
             }
-            if (pdbStream != null) pdbStream.Dispose();
-            if (execStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
+            else
             {
-                execStream.Seek(0, SeekOrigin.Begin);
-                File.WriteAllBytes(Options.OutPutFile, execStream.ToArray());
+                this.Status = ScrriptStatus.CompileError;
             }
             execStream.Dispose();
             return result;
         }
-
 
     }
 }

@@ -1,9 +1,7 @@
 ﻿using Magnet.Core;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 
 
@@ -14,11 +12,15 @@ namespace Magnet
 
         private MagnetScript engine;
 
+        private TrackerColllection ReferenceTrackers;
+
+        public Dictionary<String, Delegate> DelegateCache;
 
 
         internal MagnetStateContext(MagnetScript engine)
         {
             this.engine = engine;
+            this.ReferenceTrackers = engine.ReferenceTrackers;
         }
 
 
@@ -35,6 +37,7 @@ namespace Magnet
             this.instances.Clear();
             this.instancesByType.Clear();
             this.instancesByString.Clear();
+            this.ReferenceTrackers = null;
         }
 
 
@@ -105,30 +108,23 @@ namespace Magnet
 
 
 
-        public void Autowired(Type instanceType, AbstractScript instance, IReadOnlyDictionary<Type, List<Objectinstance>> objectMap)
+        public void Autowired(Type instanceType, AbstractScript instance, IReadOnlyList<Objectinstance> objectList)
         {
             if (instancesByType.TryGetValue(instanceType, out var scriptInstance))
             {
-                var keys = objectMap.Keys.ToArray();
-                foreach (var field in scriptInstance.Metadata.AutowriredFields)
+                foreach (var item in objectList)
                 {
-                    foreach (var key in keys)
+                    foreach (var field in scriptInstance.Metadata.AutowriredFields)
                     {
-                        var value = objectMap[key];
-                        var ok = false;
-                        if (key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(key))
+                        if (item.Type == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(item.Type))
                         {
-                            foreach (var item in value)
+                            if (field.SlotName == null || field.SlotName == item.SlotName)
                             {
-                                if (field.SlotName == null || field.SlotName == item.SlotName)
-                                {
-                                    field.FieldInfo.SetValue(instance, item.Instance);
-                                    ok = true;
-                                    break;
-                                }
+                                field.FieldInfo.SetValue(instance, item.Instance);
+                                break;
                             }
                         }
-                        if (ok) break;
+
                     }
                 }
             }
@@ -137,17 +133,27 @@ namespace Magnet
 
 
         #region Method
+
+
+
         public T GetScriptMethod<T>(String scriptName, String methodName) where T : Delegate
         {
+            var key = scriptName + "." + methodName;
+            if (DelegateCache == null) DelegateCache = new Dictionary<String, Delegate>();
+            Delegate _delegate = null;
+            if (this.DelegateCache.TryGetValue(key, out _delegate))
+            {
+                return (T)_delegate;
+            }
+
             if (instancesByString.TryGetValue(scriptName, out ScriptInstance instance))
             {
                 if (instance.Metadata.ExportMethods.TryGetValue(methodName, out var result))
                 {
-                    return instance.GetOrCreateDelegate<T>(result.MethodInfo);
-                    //return (T)instance.DelegateCache.GetOrAdd(result.MethodInfo, (method) =>
-                    //{
-                    //    return Delegate.CreateDelegate(typeof(T), instance.Instance, method);
-                    //});
+                    _delegate = Delegate.CreateDelegate(typeof(T), instance.Instance, result.MethodInfo);
+                    this.DelegateCache.TryAdd(key, _delegate);
+                    this.ReferenceTrackers.Add(_delegate);
+                    return (T)_delegate;
                 }
             }
             return null;
@@ -192,7 +198,7 @@ namespace Magnet
 
         #region Instances
 
-        private struct ScriptInstance
+        internal struct ScriptInstance
         {
             public ScriptInstance(AbstractScript instance, ScriptMetadata metadata)
             {
@@ -201,22 +207,6 @@ namespace Magnet
             }
             public AbstractScript Instance;
             public ScriptMetadata Metadata;
-            public Dictionary<MethodInfo, Delegate> DelegateCache;
-
-            internal T GetOrCreateDelegate<T>(MethodInfo methodInfo) where T : Delegate
-            {
-                if (DelegateCache == null) DelegateCache = new Dictionary<MethodInfo, Delegate>();
-                if (this.DelegateCache.TryGetValue(methodInfo, out var del))
-                {
-                    return (T)del;
-                }
-                else
-                {
-                    var del2 = Delegate.CreateDelegate(typeof(T), this.Instance, methodInfo);
-                    this.DelegateCache.TryAdd(methodInfo, del2);
-                    return (T)del2;
-                }
-            }
         }
 
 
@@ -231,6 +221,7 @@ namespace Magnet
             instances.Add(script);
             instancesByType.Add(meta.ScriptType, metadata);
             instancesByString.Add(meta.ScriptAlias, metadata);
+            this.ReferenceTrackers.Add(script);
         }
         public AbstractScript InstanceOfName(string scriptName)
         {
@@ -250,7 +241,8 @@ namespace Magnet
             return instance.Instance;
         }
 
-        public IReadOnlyList<IScriptInstance> Instances => instances;
+        internal IReadOnlyList<IScriptInstance> Instances => instances;
+        internal IEnumerable<ScriptInstance> Instances2 => instancesByString.Values;
 
 
         #endregion
