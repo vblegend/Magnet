@@ -5,7 +5,7 @@ using Magnet.Core;
 
 namespace Scripts
 {
-    [Script(nameof(QFunction0))]
+    [Script(nameof(QManage))]
     public class QManage : MyScript, IPlayLifeEvent
     {
 

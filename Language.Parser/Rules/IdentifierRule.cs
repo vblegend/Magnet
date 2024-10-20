@@ -3,9 +3,9 @@
 
 namespace Language.Parser.Rules
 {
-    internal class IdentifierRule : TokenRules
+    internal class IdentifierRule : ILexicalRules
     {
-        public override unsafe RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
+        public unsafe RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
         {
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;

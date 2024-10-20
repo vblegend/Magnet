@@ -2,9 +2,9 @@
 
 namespace Language.Parser.Rules
 {
-    public class BlockCommentRule : TokenRules
+    public class BlockCommentRule : ILexicalRules
     {
-        public override RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
+        public RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
         {
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;

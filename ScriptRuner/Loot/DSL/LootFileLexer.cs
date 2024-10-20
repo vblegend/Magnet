@@ -7,9 +7,9 @@ using System.Text;
 namespace ScriptRuner.Loot.DSL
 {
 
-    internal class PunctuatorRule : TokenRules
+    internal class PunctuatorRule : ILexicalRules
     {
-        public override RuleTestResult Test(in ReadOnlySpan<char> codeSpan, in int LineNumber, in int ColumnNumber)
+        public RuleTestResult Test(in ReadOnlySpan<char> codeSpan, in int LineNumber, in int ColumnNumber)
         {
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;
@@ -26,9 +26,9 @@ namespace ScriptRuner.Loot.DSL
     }
 
 
-    internal class IdentifierRule : TokenRules
+    internal class IdentifierRule : ILexicalRules
     {
-        public override unsafe RuleTestResult Test(in ReadOnlySpan<char> codeSpan, in int LineNumber, in int ColumnNumber)
+        public unsafe RuleTestResult Test(in ReadOnlySpan<char> codeSpan, in int LineNumber, in int ColumnNumber)
         {
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;
@@ -91,7 +91,7 @@ namespace ScriptRuner.Loot.DSL
             symbolProvider.Register(Symbols.FORCE);
         }
 
-        protected override void RegisterTokenRegexs(List<TokenRules> tokenRules)
+        protected override void RegisterTokenRegexs(List<ILexicalRules> tokenRules)
         {
             tokenRules.Add(new RowCommentRule());
             tokenRules.Add(new BlockCommentRule());

@@ -36,7 +36,7 @@ namespace Language.Parser
         public String Directory { get; private set; }
 
         private List<Token> tokens = new List<Token>();
-        private List<TokenRules> _TokenRules { get; set; } = new List<TokenRules>();
+        private List<ILexicalRules> _TokenRules { get; set; } = new List<ILexicalRules>();
         private Int32 readOffset { get; set; } = 0;
         private Int32 bufferLength { get; set; } = 0;
         public Int32 Position { get; private set; } = 0;
@@ -62,12 +62,12 @@ namespace Language.Parser
             this.Position = 0;
         }
 
-        private void AddRegex(TokenRules rule)
+        private void AddRegex(ILexicalRules rule)
         {
             this._TokenRules.Add(rule);
         }
 
-        protected abstract void RegisterTokenRegexs(List<TokenRules> tokenRules);
+        protected abstract void RegisterTokenRegexs(List<ILexicalRules> tokenRules);
 
         protected abstract void RegisterSymbols(SymbolProvider symbolProvider);
 

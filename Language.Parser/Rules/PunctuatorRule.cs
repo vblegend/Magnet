@@ -3,9 +3,9 @@
 
 namespace Language.Parser.Rules
 {
-    internal class PunctuatorRule : TokenRules
+    internal class PunctuatorRule : ILexicalRules
     {
-        public override RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
+        public RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
         {
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;

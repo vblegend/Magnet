@@ -3,9 +3,9 @@
 
 namespace Language.Parser.Rules
 {
-    public class RowCommentRule : TokenRules
+    public class RowCommentRule : ILexicalRules
     {
-        public override RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
+        public RuleTestResult Test(in ReadOnlySpan<Char> codeSpan, in Int32 LineNumber, in Int32 ColumnNumber)
         {
             var result = new RuleTestResult();
             result.ColumnNumber = ColumnNumber;
