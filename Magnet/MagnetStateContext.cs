@@ -30,6 +30,10 @@ namespace Magnet
         public void Dispose()
         {
             this.engine = null;
+            foreach (var instance in this.instances)
+            {
+                instance.UnInitialize();
+            }
             this.instances.Clear();
             this.instancesByType.Clear();
             this.instancesByString.Clear();
@@ -116,7 +120,15 @@ namespace Magnet
                         {
                             if (field.SlotName == null || field.SlotName == item.SlotName)
                             {
-                                field.FieldInfo.SetValue(instance, item.Instance);
+                                if (field.FieldInfo.IsStatic)
+                                {
+                                    field.FieldInfo.SetValue(null,item.Instance);
+                                }
+                                else
+                                {
+                                    field.FieldInfo.SetValue(instance, item.Instance);
+                                }
+             
                                 break;
                             }
                         }

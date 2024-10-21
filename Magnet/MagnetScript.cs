@@ -213,9 +213,19 @@ namespace Magnet
             {
                 throw new Exception("Wrong state");
             }
+
+            var parseOptions = CSharpParseOptions.Default;
+            var symbols = new List<String>();
+            if (this.Options.Mode == ScriptRunMode.Debug) symbols.Add("DEBUG");
+            if (this.Options.UseDebugger) symbols.Add("USE_DEBUGGER");
+            if (this.Options.PreprocessorSymbols != null && this.Options.PreprocessorSymbols.Length > 0) symbols.AddRange(this.Options.PreprocessorSymbols);
+            if (symbols.Count > 0)
+            {
+                parseOptions = parseOptions.WithPreprocessorSymbols(symbols);
+            }
             var rootDir = Path.GetFullPath(this.Options.BaseDirectory);
             var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, SearchOption.AllDirectories);
-            var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file))).ToArray();
+            var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file), parseOptions)).ToArray();
             var syntaxTrees = new List<SyntaxTree>(Task.WhenAll(parseTasks).Result);
             SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText($"[assembly: Magnet.Core.ScriptAssembly({this.UniqueId})]\n[assembly: System.Reflection.AssemblyVersion(\"1.0.0.0\")]");
             syntaxTrees.Insert(0, assemblyAttribute);
@@ -257,7 +267,7 @@ namespace Magnet
             var type = metaInfo.ScriptType;
             while (type != null)
             {
-                var _fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                var _fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Static);
                 foreach (var fieldInfo in _fields)
                 {
                     var attribute = fieldInfo.GetCustomAttribute<AutowiredAttribute>();
@@ -339,17 +349,8 @@ namespace Magnet
             SurvivalStates.Remove(state.Identity, out var value);
         }
 
-        private async Task<SyntaxTree> ParseSyntaxTree(String filePath)
+        private async Task<SyntaxTree> ParseSyntaxTree(String filePath, CSharpParseOptions parseOptions)
         {
-            var parseOptions = CSharpParseOptions.Default;
-            if (this.Options.Mode == ScriptRunMode.Debug)
-            {
-                parseOptions = parseOptions.WithPreprocessorSymbols("DEBUG");
-            }
-            if (this.Options.UseDebugger)
-            {
-                parseOptions = parseOptions.WithPreprocessorSymbols("USE_DEBUGGER");
-            }
             var code = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
             var syntaxTree = CSharpSyntaxTree.ParseText(text: code, options: parseOptions, path: filePath, encoding: Encoding.UTF8);
             return GlobalUsings(syntaxTree, baseUsing.Concat(this.Options.Using).ToArray());

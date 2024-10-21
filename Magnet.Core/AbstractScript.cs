@@ -5,8 +5,6 @@ using System.Runtime.CompilerServices;
 
 namespace Magnet.Core
 {
-
-
     /// <summary>
     /// Base script object, script object needs to inherit this type, provides some basic scripting mechanisms
     /// </summary>
@@ -17,6 +15,12 @@ namespace Magnet.Core
         private IStateContext stateContext;
 
 
+        public IStateContext GetState()
+        {
+            return stateContext;
+        }
+
+
         protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
 
         /// <summary>
@@ -24,7 +28,6 @@ namespace Magnet.Core
         /// </summary>
         ////
         [DebuggerHidden] // JUMP BREAK CALLER
-        // [DebuggerStepThrough]
         [Conditional("USE_DEBUGGER")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void debugger()
@@ -44,27 +47,35 @@ namespace Magnet.Core
         }
 
 
-        private void LaunchDebugger()
-        {
-            if (!Debugger.IsAttached)
-            {
-                Debugger.Launch();
-            }
-        }
-
-
-
         void IScriptInstance.Initialize()
         {
             this.Initialize();
         }
 
-
-        protected virtual void Initialize()
+        void IScriptInstance.UnInitialize()
         {
+            this.UnInitialize();
         }
 
+        /// <summary>
+        /// Script initialization 
+        /// </summary>
+        protected virtual void Initialize()
+        {
+
+        }
+
+        /// <summary>
+        /// Script Being destroyed
+        /// </summary>
+        protected virtual void UnInitialize()
+        {
+
+        }
+
+#if RELEASE 
         [DebuggerHidden]
+#endif
         public void Output(MessageType type, String message)
         {
             stateContext.Output.Write(type, message);
@@ -137,13 +148,17 @@ namespace Magnet.Core
 
         }
 
+#if RELEASE 
         [DebuggerHidden]
+#endif
         public T? Script<T>() where T : AbstractScript
         {
             return stateContext.InstanceOfType<T>();
         }
 
+#if RELEASE 
         [DebuggerHidden]
+#endif
         public void Script<T>(Action<T> callback) where T : AbstractScript
         {
             var script = Script<T>();

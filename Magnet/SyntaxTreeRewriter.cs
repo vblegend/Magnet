@@ -18,7 +18,39 @@ namespace Magnet
             this.ReplaceTypes = ReplaceTypes;
         }
 
+        /// <summary>
+        /// (Type)value
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        public override SyntaxNode VisitCastExpression(CastExpressionSyntax node)
+        {
+            var typeInfo = semanticModel.GetTypeInfo(node);
+            if (this.ReplaceTypes.TryGetValue(typeInfo.Type?.ToString(), out var newTypeName))
+            {
+                return node.WithType(this.MakeNameSyntax(newTypeName));
+            }
+            return base.VisitCastExpression(node);
+        }
 
+
+        /// <summary>
+        /// as  is
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        public override SyntaxNode VisitBinaryExpression(BinaryExpressionSyntax node)
+        {
+            if (node.Kind() == SyntaxKind.AsExpression || node.Kind() == SyntaxKind.IsExpression)
+            {
+                var typeInfo = semanticModel.GetTypeInfo(node);
+                if (this.ReplaceTypes.TryGetValue(typeInfo.Type?.ToString(), out var newTypeName))
+                {
+                    return node.WithRight(this.MakeNameSyntax(newTypeName));
+                }
+            }
+            return base.VisitBinaryExpression(node);
+        }
 
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {

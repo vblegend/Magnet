@@ -52,6 +52,8 @@ namespace Magnet
         public IOutput Output { get; private set; } = new ConsoleOutput();
 
 
+        public String[] PreprocessorSymbols { get; private set; } = [];
+
 
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
@@ -190,6 +192,20 @@ namespace Magnet
             return this;
         }
 
+        /// <summary>
+        /// 
+        /// [Conditional("SYMBOL")]
+        /// </summary>
+        /// <param name="preprocessorSymbols"></param>
+        /// <returns></returns>
+        public ScriptOptions WithPreprocessorSymbols(params string[]? preprocessorSymbols)
+        {
+            this.PreprocessorSymbols = preprocessorSymbols;
+            return this;
+        }
+
+
+
         public ScriptOptions WithDebug(Boolean useDebuggerBreak = true)
         {
             this.Mode = ScriptRunMode.Debug;
@@ -258,8 +274,9 @@ namespace Magnet
             this.ReplaceType(typeof(System.Runtime.InteropServices.ComImportAttribute), typeof(Magnet.Safety.ComImportAttribute));
 
 
+            this.ReplaceType(typeof(Magnet.Core.IScriptInstance), typeof(Magnet.Safety.IScriptInstance));
 
-
+            
 
             return this;
         }

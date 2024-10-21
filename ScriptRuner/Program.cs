@@ -26,13 +26,13 @@ public static class Program
         ScriptOptions options = new ScriptOptions();
         options.WithName(name);
         options.WithOutPutFile("123.dll");
-        options.WithDebug(true);
+        options.WithDebug(false);
 
         //options.WithRelease();
         options.WithAllowAsync(false);
         options.AddReferences<LoginContext>();
         options.WithDirectory("../../../../Scripts");
-
+        options.WithPreprocessorSymbols("USE_FILE");
 
         // Insecure
         options.DisabledInsecureTypes();
@@ -222,7 +222,7 @@ public static class Program
             var weakAttackEvent = stateTest.ScriptAs<IPlayerGameEvent>();
             if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
             {
-                attackEvent.OnAttack();
+                attackEvent.OnAttack(null);
                 attackEvent = null;
             }
 

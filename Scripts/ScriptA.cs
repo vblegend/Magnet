@@ -11,16 +11,22 @@ public class ScriptA : MyScript
     [Autowired]
     private IKilledContext KilledContext;
 
-    //[Autowired]
-    private IKilledContext KilledContext2 { get; set; }
-
-
 
     [Function]
     public void Login(LoginContext context)
     {
-        
+        this.PRINT(KilledContext.ObjectId);
         Script<Raffler>().Draw(context);
+
+        //if (this is IScriptInstance instance)
+        //{
+        //    this.PRINT(instance.GetState());
+        //}
+        //var s = this as IScriptInstance;
+        //this.PRINT(s.GetState());
+        //var s2 = (IScriptInstance)this;
+        //this.PRINT(s2.GetState());
+
 
 
         UI.DIALOG(120).TO(SELF)
@@ -42,7 +48,7 @@ public class ScriptA : MyScript
         this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
         GLOBAL.S[1] = "Hello Wrold";
 
-        ENABLED_TIMER(0, Initialize, 5);
+        ENABLE_TIMER(0);
 
 
         var typed = typeof(Thread);

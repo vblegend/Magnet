@@ -115,5 +115,13 @@ namespace Magnet.Safety
     {
     }
 
+    /// <summary>
+    /// Prohibit scripts from directly accessing interface IScriptInstance
+    /// </summary>
+    public interface IScriptInstance
+    {
+
+    }
+
 
 }
