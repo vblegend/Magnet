@@ -23,13 +23,9 @@ namespace Magnet
             this.ReferenceTrackers = engine.ReferenceTrackers;
         }
 
-
-
         public IOutput Output => engine.Options.Output;
 
         public ScriptRunMode RunMode => engine.Options.Mode;
-
-        public bool UseDebuggerBreak => engine.Options.UseDebugger;
 
         public void Dispose()
         {

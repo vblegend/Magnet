@@ -341,8 +341,17 @@ namespace Magnet
 
         private async Task<SyntaxTree> ParseSyntaxTree(String filePath)
         {
+            var parseOptions = CSharpParseOptions.Default;
+            if (this.Options.Mode == ScriptRunMode.Debug)
+            {
+                parseOptions = parseOptions.WithPreprocessorSymbols("DEBUG");
+            }
+            if (this.Options.UseDebugger)
+            {
+                parseOptions = parseOptions.WithPreprocessorSymbols("USE_DEBUGGER");
+            }
             var code = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
-            var syntaxTree = CSharpSyntaxTree.ParseText(text: code, path: filePath, encoding: Encoding.UTF8);
+            var syntaxTree = CSharpSyntaxTree.ParseText(text: code, options: parseOptions, path: filePath, encoding: Encoding.UTF8);
             return GlobalUsings(syntaxTree, baseUsing.Concat(this.Options.Using).ToArray());
         }
 

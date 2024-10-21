@@ -9,8 +9,6 @@ namespace Magnet.Core
         public AbstractScript InstanceOfType(Type type);
         public AbstractScript InstanceOfName(String scriptName);
         public ScriptRunMode RunMode { get; }
-        public Boolean UseDebuggerBreak { get; }
-
         public IOutput Output { get; }
     }
 }

@@ -3,18 +3,16 @@
 
 using App.Core;
 using App.Core.Events;
-using App.Core.Probability;
-using App.Core.Quad;
+
 using Magnet;
-using Magnet.Core;
+using QuadTrees;
+using QuadTrees.QTreePoint;
 using ScriptRuner;
-using ScriptRuner.Loot;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Security.Principal;
 using System.Threading;
 
 public static class Program
@@ -28,7 +26,7 @@ public static class Program
         ScriptOptions options = new ScriptOptions();
         options.WithName(name);
         options.WithOutPutFile("123.dll");
-        options.WithDebug(false);
+        options.WithDebug(true);
 
         //options.WithRelease();
         options.WithAllowAsync(false);
@@ -55,11 +53,9 @@ public static class Program
     }
 
 
-    class Hum : ILocalizable
+    class Hum : IPointQuadStorable
     {
-        public int X { get; } = 650;
-
-        public int Y { get; } = 22;
+        public Point Point { get; set; } = new Point(650, 22);
     }
 
     public static void Main()
@@ -68,25 +64,27 @@ public static class Program
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
+
+
+
+
+        QuadTreePoint<Hum> quadTree = new QuadTreePoint<Hum>(1, 1, 1024, 1024);
+        var hum = new Hum() { Point = new Point(100, 240) };
+        quadTree.Add(hum);
+        var objs1 = quadTree.GetObjects(888, 888);
+        var objs2 = quadTree.GetObjects(100, 240);
+        hum.Point = new Point(888,888);
+        quadTree.Move(hum);
+        var objs3 = quadTree.GetObjects(888, 888);
+        var objs4 = quadTree.GetObjects(100, 240);
+        quadTree.Remove(hum);
+        Console.WriteLine();
+
+
         //var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
-
         //var lootGenerator = LootGenerator<String>.Load("loots/default.loot");
-
         //TestSccriptUnload();
 
-
-
-
-
-        QuadTree<Hum> quadTree = new QuadTree<Hum>(1,1,1024,1024);
-
-
-        for (int i = 0; i < 64; i++)
-        {
-            quadTree.Insert(new Hum());
-        }
-
-        Console.WriteLine(quadTree);
 
         //using (new WatchTimer("Loot Generate 100000"))
         //{
@@ -152,6 +150,7 @@ public static class Program
         //    }
         //    Console.WriteLine(count);
         //}
+
 
         //var weakLogin = TestSccriptUnload();
 

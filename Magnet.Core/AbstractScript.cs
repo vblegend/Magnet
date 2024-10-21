@@ -1,7 +1,6 @@
 ﻿
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Magnet.Core
@@ -13,21 +12,28 @@ namespace Magnet.Core
     /// </summary>
     public abstract class AbstractScript : IScriptInstance
     {
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IStateContext stateContext;
 
-        
+
         protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
 
         /// <summary>
         /// Enter the debug breakpoint in debug mode
         /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        protected Action debugger
+        ////
+        [DebuggerHidden] // JUMP BREAK CALLER
+        // [DebuggerStepThrough]
+        [Conditional("USE_DEBUGGER")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void debugger()
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get;
-            private set;
+            if (!Debugger.IsAttached)
+            {
+                Debugger.Launch();
+            }
+            Debugger.Break();
         }
 
 
@@ -35,15 +41,6 @@ namespace Magnet.Core
         void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
             this.stateContext = stateContext;
-            if (this.stateContext.UseDebuggerBreak)
-            {
-                this.debugger = LaunchDebugger;
-                this.debugger += Debugger.Break;
-            }
-            else
-            {
-                this.debugger = () => { };
-            }
         }
 
 
@@ -67,6 +64,7 @@ namespace Magnet.Core
         {
         }
 
+        [DebuggerHidden]
         public void Output(MessageType type, String message)
         {
             stateContext.Output.Write(type, message);
@@ -139,11 +137,13 @@ namespace Magnet.Core
 
         }
 
+        [DebuggerHidden]
         public T? Script<T>() where T : AbstractScript
         {
             return stateContext.InstanceOfType<T>();
         }
 
+        [DebuggerHidden]
         public void Script<T>(Action<T> callback) where T : AbstractScript
         {
             var script = Script<T>();
