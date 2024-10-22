@@ -1,9 +1,22 @@
 ﻿using System;
+using System.Drawing;
 
 namespace App.Core
 {
+
+
+
+
+
+
     public interface IObjectContext
     {
-        Int64 ObjectId { get; }
+        SnowflakeId ObjectId { get; }
+
+        Point Position { get; }
+
+
+
+
     }
 }

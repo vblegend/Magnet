@@ -17,7 +17,7 @@ using System.Threading;
 
 public static class Program
 {
-    public delegate void LoginHandler(LoginContext context);
+
 
     private static GlobalVariableStore GLOBAL = new GlobalVariableStore();
 
@@ -67,10 +67,6 @@ public static class Program
         GLOBAL.S[1] = "This is Global String Variable.";
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
-
-
-
-
 
         QuadTreePoint<Hum> quadTree = new QuadTreePoint<Hum>(1, 1, 1024, 1024);
         var hum = new Hum() { Point = new Point(100, 240) };
@@ -166,87 +162,25 @@ public static class Program
         var result = scriptManager.Compile();
         if (result.Success)
         {
-            List<MagnetState> states = new List<MagnetState>();
-            using (new WatchTimer("Create State 100000"))
-            {
-                for (int i = 0; i < 100000; i++)
-                {
-                    var state = scriptManager.CreateState();
-                    states.Add(state);
-                }
-            }
-
-            using (new WatchTimer("Create Delegate 100000"))
-            {
-                var state = scriptManager.CreateState();
-                for (int i = 0; i < 100000; i++)
-                {
-                    state.MethodDelegate<LoginHandler>("ScriptA", "Login");
-                }
-                state = null;
-            }
-
-            using (new WatchTimer("Dispose State 10000"))
-            {
-                foreach (var state in states)
-                {
-                    state.Dispose();
-                }
-            }
-            states.Clear();
-
             var stateOptions = StateOptions.Default;
             stateOptions.Identity = 666;
             stateOptions.RegisterProvider(new TimerService());
-
             var stateTest = scriptManager.CreateState(stateOptions);
-
-            var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
-            if (weak != null && weak.TryGetTarget(out var handler2))
+            var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
+            if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
-                handler2(null);
-                handler2 = null;
+                using (new WatchTimer("With Call Main()")) main();
+                main = null;
             }
 
-
-            var weakSetter = stateTest.PropertySetterDelegate<Double>("ScriptExample", "Target");
-            if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
+            var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
+            if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
-                setter(123.45);
-                setter = null;
-            }
-
-            var weakGetter = stateTest.PropertyGetterDelegate<Double>("ScriptExample", "Target");
-            if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
-            {
-                Console.WriteLine(getter());
-                getter = null;
-            }
-
-
-            var weakAttackEvent = stateTest.ScriptAs<IPlayLifeEvent>();
-            if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
-            {
-                attackEvent.OnOnline(null);
-                attackEvent = null;
-            }
-
-            try
-            {
-                CallLogin(stateTest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
+                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
+                lifeEvent = null;
             }
             stateTest = null;
             scriptManager.Unload(true);
-            //status = GC.WaitForFullGCComplete();
-            //if (weak.TryGetTarget(out var handler))
-            //{
-            //    handler(null);
-            //}
-            //ArrayPool<Char>.Shared.Rent(1);
         }
         else
         {
@@ -261,53 +195,22 @@ public static class Program
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
         {
             var obj = new byte[1024 * 1024];
-            //GC.Collect();
             Thread.Sleep(10);
         }
         GC.Collect();
-        Console.WriteLine("OK");
-        //while (true)
-        //{
-        //    GC.Collect();
-        //    Thread.Sleep(1000);
-        //}
         Console.WriteLine("=====================================================================================");
         Console.ReadKey();
     }
 
     private static void ScriptManager_Unloaded(MagnetScript obj)
     {
-        Console.WriteLine($"脚本[{obj.Name}]卸载完毕.");
+        Console.WriteLine($"脚本[{obj.Name}({obj.UniqueId})]卸载完毕.");
     }
 
     private static void ScriptManager_Unloading(MagnetScript obj)
     {
-        Console.WriteLine($"收到脚本[{obj.Name}]卸载请求.");
+        Console.WriteLine($"脚本[{obj.Name}({obj.UniqueId})]卸载请求.");
     }
-
-    private static WeakReference<LoginHandler> TestSccriptUnload()
-    {
-        MagnetScript scriptManager = new MagnetScript(Options("Unload.Test"));
-        scriptManager.Unloading += ScriptManager_Unloading;
-        scriptManager.Unloaded += ScriptManager_Unloaded;
-
-        var result = scriptManager.Compile();
-        if (!result.Success)
-        {
-            foreach (var item in result.Diagnostics)
-            {
-                Console.WriteLine(item.ToString());
-            }
-            return null;
-        }
-        List<MagnetState> states = new List<MagnetState>();
-        var state = scriptManager.CreateState();
-        var weak = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
-        state.Dispose();
-        scriptManager.Unload();
-        return weak;
-    }
-
 
 
 
@@ -329,12 +232,12 @@ public static class Program
 
     private static void CallLogin(MagnetState state)
     {
-        var login = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
+        var login = state.MethodDelegate<Action>("ScriptA", "Main");
         var context = new LoginContext();
         context.UserName = "Administrator";
         if (login.TryGetTarget(out var target))
         {
-            target(context);
+            target();
             target = null;
         }
         state = null;

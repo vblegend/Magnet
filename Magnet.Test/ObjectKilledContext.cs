@@ -1,13 +1,8 @@
 ﻿using App.Core;
 using App.Core.Events;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ScriptRuner
+
+namespace Magnet.Test
 {
     internal class ObjectKilledContext : IKillContext
     {

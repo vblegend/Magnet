@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Drawing;
 
 namespace App.Core
 {
@@ -7,6 +8,8 @@ namespace App.Core
     {
         public String UserName= "";
 
-        public long ObjectId => 12345678;
+        public SnowflakeId ObjectId => 12345678;
+
+        public Point Position =>  new Point(333,333);
     }
 }

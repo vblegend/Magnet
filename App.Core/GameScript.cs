@@ -17,9 +17,9 @@ namespace App.Core
         protected readonly GlobalVariableStore GLOBAL;
 
         [Autowired("SELF")]
-        protected readonly IObjectContext SELF;
+        protected readonly IObjectContext Player;
 
-        [Autowired()]
+        [Autowired]
         private readonly ITimerManager timerManager;
 
 
@@ -143,7 +143,7 @@ namespace App.Core
 
         public void Print(Object message)
         {
-            this.Output(MessageType.Print, message.ToString());
+            this.Output(MessageType.Print, $"{message}");
         }
 
         public void Print(string format, params object?[] args)

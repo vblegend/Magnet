@@ -3,20 +3,21 @@ using Magnet.Core;
 using System.Threading;
 using System.Collections.Generic;
 using App.Core.UserInterface;
+using App.Core.Events;
 
 
 [Script(nameof(ScriptA))]
 public class ScriptA : GameScript
 {
     [Autowired]
-    private IKilledContext KilledContext;
+    private IKillContext KilledContext;
 
 
     [Function]
-    public void Login(LoginContext context)
+    public void Main()
     {
-        this.Print(KilledContext.ObjectId);
-        Script<Raffler>().Draw(context);
+        this.Print(KilledContext.Target);
+        Script<Raffler>().Draw(null);
 
         //if (this is IScriptInstance instance)
         //{
@@ -29,7 +30,7 @@ public class ScriptA : GameScript
 
 
 
-        UI.DIALOG(120).TO(SELF)
+        UI.DIALOG(120).TO(Player)
           .POSITION(11, 22)
           .TEXT([
               "====[<$name>]====",
