@@ -9,6 +9,7 @@ namespace Magnet
         {
             if (type == MessageType.Error) Console.ForegroundColor = ConsoleColor.Red;
             if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss "));
             Console.WriteLine(message);
             if (type == MessageType.Error) Console.ForegroundColor = ConsoleColor.Gray;
             if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Gray;
@@ -18,6 +19,7 @@ namespace Magnet
         {
             if (type == MessageType.Error) Console.ForegroundColor = ConsoleColor.Red;
             if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss "));
             Console.WriteLine(format, arg);
             if (type == MessageType.Error) Console.ForegroundColor = ConsoleColor.Black;
             if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Black;

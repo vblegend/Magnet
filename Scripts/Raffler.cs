@@ -32,7 +32,7 @@ public class Raffler : GameScript
             var item = _myOnceLottery.Draw();
             if (item != null)
             {
-                this.DEBUG($"Draw Item {item}");
+                this.Debug($"Draw Item {item}");
             }
         }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 
 
@@ -22,10 +23,15 @@ namespace Magnet
         internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
         {
             this.engine = engine;
-            this.Providers = new List<ObjectProvider>(engine.Options.Providers);
-            foreach (var item in stateOptions.Providers)
+            this.Providers = engine.Options.Providers;
+
+            if (stateOptions.Providers.Count > 0)
             {
-                this.RegisterProvider(item.Type, item.Instance, item.SlotName);
+                this.Providers = new List<ObjectProvider>(engine.Options.Providers);
+                foreach (var item in stateOptions.Providers)
+                {
+                    this.RegisterProviderInternal(item.Type, item.Instance, item.SlotName);
+                }
             }
             this.ReferenceTrackers = engine.ReferenceTrackers;
         }
@@ -49,40 +55,13 @@ namespace Magnet
 
         #region Autowired
 
-
-
         /// <summary>
         /// Register the State private Providers
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <param name="slotName"></param>
-        public void RegisterProvider<T>(T value, String slotName = null)
-        {
-            var type = typeof(T);
-            foreach (var item in Providers)
-            {
-                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
-            }
-            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
-            if (String.IsNullOrWhiteSpace(slotName))
-            {
-                Providers.Add(_object);
-            }
-            else
-            {
-                Providers.Insert(0, _object);
-            }
-        }
-
-
-        /// <summary>
-        /// Register the State private Providers
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="slotName"></param>
-        public void RegisterProvider(Type objectType, Object value, String slotName = null)
+        private void RegisterProviderInternal(Type objectType, Object value, String slotName = null)
         {
             var type = objectType;
             foreach (var item in Providers)
@@ -119,9 +98,6 @@ namespace Magnet
             }
         }
 
-
-
-
         public void Autowired(IReadOnlyDictionary<Type, Object> objectMap)
         {
             foreach (var pair in instancesByType)
@@ -140,7 +116,6 @@ namespace Magnet
                 }
             }
         }
-
 
         public void Autowired<TObject>(TObject @object, String slotName = null)
         {
@@ -221,6 +196,68 @@ namespace Magnet
             return null;
         }
         #endregion
+
+
+
+        #region Property
+
+
+
+
+        public Getter<T> GetScriptPropertyGetter<T>(String scriptName, String propertyName)
+        {
+            var key = $"$get_{scriptName}.{propertyName}";
+            if (DelegateCache == null) DelegateCache = new Dictionary<String, Delegate>();
+            Delegate _delegate = null;
+            if (this.DelegateCache.TryGetValue(key, out _delegate))
+            {
+                return (Getter<T>)_delegate;
+            }
+            AbstractScript script = this.InstanceOfName(scriptName);
+            if (script != null)
+            {
+                Type type = script.GetType();
+                PropertyInfo propertyInfo = type.GetProperty(propertyName);
+                if (propertyInfo != null)
+                {
+                    var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), script, propertyInfo.GetMethod);
+                    this.DelegateCache.Add(key, getter);
+                    ReferenceTrackers.Add(getter);
+                    return getter;
+                }
+
+            }
+            return null;
+        }
+
+
+        public Setter<T> GetScriptPropertySetter<T>(String scriptName, String propertyName) 
+        {
+            var key = $"$set_{scriptName}.{propertyName}";
+            if (DelegateCache == null) DelegateCache = new Dictionary<String, Delegate>();
+            Delegate _delegate = null;
+            if (this.DelegateCache.TryGetValue(key, out _delegate))
+            {
+                return (Setter<T>)_delegate;
+            }
+            AbstractScript script = this.InstanceOfName(scriptName);
+            if (script != null)
+            {
+                Type type = script.GetType();
+                PropertyInfo propertyInfo = type.GetProperty(propertyName);
+                if (propertyInfo != null)
+                {
+                    var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), script, propertyInfo.SetMethod);
+                    DelegateCache.Add(key, setter);
+                    ReferenceTrackers.Add(setter);
+                    return setter;
+                }
+            }
+            return null;
+        }
+        #endregion
+
+
 
 
 

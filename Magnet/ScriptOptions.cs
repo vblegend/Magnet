@@ -18,53 +18,38 @@ namespace Magnet
 
     public class ScriptOptions
     {
-
         public String Name { get; private set; } = "Magnet.Script";
-
-
         public String OutPutFile { get; private set; }
-
         public ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
-
         public String BaseDirectory { get; private set; }
-
         public String ScriptFilePattern { get; private set; } = "*.cs";
-
-
         public AssemblyLoadDelegate AssemblyLoad { get; private set; }
-
-        /// <summary>
-        /// add using xxxx;
-        /// </summary>
         public List<String> Using { get; private set; } = [];
-
-        /// <summary>
-        /// import Assemblys
-        /// </summary>
         public List<Assembly> References { get; private set; } = [];
-
         public Boolean UseDebugger { get; private set; }
-
         public Boolean AllowAsync { get; private set; } = false;
-
         public IOutput Output { get; private set; } = new ConsoleOutput();
-
-
         public readonly List<ITypeProcessor> TypeProcessors = new List<ITypeProcessor> ();
         public String[] PreprocessorSymbols { get; private set; } = [];
-
-
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
 
-
+        /// <summary>
+        /// Set the output stream of the script
+        /// </summary>
+        /// <param name="messagePrinter"></param>
+        /// <returns></returns>
         public ScriptOptions SetOutput(IOutput messagePrinter)
         {
             this.Output = messagePrinter;
             return this;
         }
 
-
+        /// <summary>
+        /// Sets the script's assembly load interceptor
+        /// </summary>
+        /// <param name="assemblyLoad"></param>
+        /// <returns></returns>
         public ScriptOptions SetAssemblyLoadCallback(AssemblyLoadDelegate assemblyLoad)
         {
             this.AssemblyLoad = assemblyLoad;
@@ -72,14 +57,22 @@ namespace Magnet
         }
 
 
-
+        /// <summary>
+        /// Add a script type processor
+        /// </summary>
+        /// <param name="processor"></param>
+        /// <returns></returns>
         public ScriptOptions AddTypeProcessor(ITypeProcessor processor)
         {
             this.TypeProcessors.Add(processor);
             return this;
         }
 
-
+        /// <summary>
+        /// Add a default using reference for the script
+        /// </summary>
+        /// <param name="nameSpaces"></param>
+        /// <returns></returns>
         public ScriptOptions AddUsings(params String[] nameSpaces)
         {
             foreach (var name in nameSpaces)
@@ -91,6 +84,15 @@ namespace Magnet
 
         internal List<ObjectProvider> Providers { get; private set; } = [];
 
+
+        /// <summary>
+        /// Register the state global provider(injected object)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="slotName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public ScriptOptions RegisterProvider<T>(T value, String slotName = null)
         {
             var type = typeof(T);
@@ -113,13 +115,60 @@ namespace Magnet
 
 
 
+        /// <summary>
+        /// To replace the specified type in the script as the new type, you must use the full type name with namespace
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <param name="newType"></param>
+        /// <returns></returns>
+        public ScriptOptions ReplaceType(String sourceType, String newType)
+        {
+            ReplaceTypes.Add(sourceType, newType);
+            return this;
+        }
+
+
+        /// <summary>
+        /// To replace the specified type in the script as the new type
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <param name="newType"></param>
+        /// <returns></returns>
+        public ScriptOptions ReplaceType(Type sourceType, Type newType)
+        {
+            ReplaceTypes.Add(sourceType.FullName, newType.FullName);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a reference to the assembly in which the generic type resides to the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public ScriptOptions AddReferences<T>() where T : class
+        {
+            this.References.Add(typeof(T).Assembly);
+            return this;
+        }
+
+
+
+        /// <summary>
+        /// Adds a reference to the assembly to the script
+        /// </summary>
+        /// <param name="assemblies"></param>
+        /// <returns></returns>
         public ScriptOptions AddReferences(params Assembly[] assemblies)
         {
             this.References.AddRange(assemblies);
             return this;
         }
 
-
+        /// <summary>
+        /// A reference that adds the type's owning assembly to the script
+        /// </summary>
+        /// <param name="typeOfAssembles"></param>
+        /// <returns></returns>
         public ScriptOptions AddReferences(params Type[] typeOfAssembles)
         {
             foreach (var type in typeOfAssembles)
@@ -130,29 +179,11 @@ namespace Magnet
         }
 
 
-
-        public ScriptOptions ReplaceType(String sourceType, String newType)
-        {
-            ReplaceTypes.Add(sourceType, newType);
-            return this;
-        }
-
-
-        public ScriptOptions ReplaceType(Type sourceType, Type newType)
-        {
-            ReplaceTypes.Add(sourceType.FullName, newType.FullName);
-            return this;
-        }
-
-
-        public ScriptOptions AddReferences<T>() where T : class
-        {
-            this.References.Add(typeof(T).Assembly);
-            return this;
-        }
-
-
-
+        /// <summary>
+        /// Adds an assembly reference with the specified name to the script
+        /// </summary>
+        /// <param name="assemblies"></param>
+        /// <returns></returns>
         public ScriptOptions AddReferences(params String[] assemblies)
         {
             foreach (var name in assemblies)
@@ -164,20 +195,33 @@ namespace Magnet
 
 
 
-
+        /// <summary>
+        /// The output file name of the script assembly is not output if it is empty
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public ScriptOptions WithOutPutFile(String name)
         {
             this.OutPutFile = name;
             return this;
         }
 
-
+        /// <summary>
+        /// set Script name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public ScriptOptions WithName(String name)
         {
             this.Name = name;
             return this;
         }
 
+        /// <summary>
+        /// Whether to enable the asynchronous function
+        /// </summary>
+        /// <param name="allowAsync"></param>
+        /// <returns></returns>
         public ScriptOptions WithAllowAsync(Boolean allowAsync)
         {
             this.AllowAsync = allowAsync;
@@ -185,14 +229,22 @@ namespace Magnet
         }
 
 
-
+        /// <summary>
+        /// Set the file name extension of the script. The default is ".cs"
+        /// </summary>
+        /// <param name="filePattern"></param>
+        /// <returns></returns>
         public ScriptOptions WithFilePattern(String filePattern)
         {
             this.ScriptFilePattern = filePattern;
             return this;
         }
 
-
+        /// <summary>
+        /// Set the scan directory for the script
+        /// </summary>
+        /// <param name="baseDirectory"></param>
+        /// <returns></returns>
         public ScriptOptions WithDirectory(String baseDirectory)
         {
             this.BaseDirectory = baseDirectory;
@@ -200,8 +252,7 @@ namespace Magnet
         }
 
         /// <summary>
-        /// 
-        /// [Conditional("SYMBOL")]
+        /// A SYMBOL that declares the compiler for [Conditional("SYMBOL")] and the #if macro definition within the script
         /// </summary>
         /// <param name="preprocessorSymbols"></param>
         /// <returns></returns>
@@ -212,7 +263,11 @@ namespace Magnet
         }
 
 
-
+        /// <summary>
+        /// Whether to compile the debug version
+        /// </summary>
+        /// <param name="useDebuggerBreak"></param>
+        /// <returns></returns>
         public ScriptOptions WithDebug(Boolean useDebuggerBreak = true)
         {
             this.Mode = ScriptRunMode.Debug;
@@ -220,7 +275,11 @@ namespace Magnet
             return this;
         }
 
-
+        /// <summary>
+        /// Whether to compile the release version
+        /// </summary>
+        /// <param name="useDebuggerBreak"></param>
+        /// <returns></returns>
         public ScriptOptions WithRelease(Boolean useDebuggerBreak = false)
         {
             this.Mode = ScriptRunMode.Release;
@@ -234,7 +293,10 @@ namespace Magnet
 
 
 
-
+        /// <summary>
+        /// Disable some insecure script types
+        /// </summary>
+        /// <returns></returns>
         public ScriptOptions DisabledInsecureTypes()
         {
 

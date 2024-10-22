@@ -166,37 +166,34 @@ public static class Program
         var result = scriptManager.Compile();
         if (result.Success)
         {
+            List<MagnetState> states = new List<MagnetState>();
+            using (new WatchTimer("Create State 100000"))
+            {
+                for (int i = 0; i < 100000; i++)
+                {
+                    var state = scriptManager.CreateState();
+                    states.Add(state);
+                }
+            }
 
-            //List<MagnetState> states = new List<MagnetState>();
-            //using (new WatchTimer("Create State 100000"))
-            //{
-            //    for (int i = 0; i < 100000; i++)
-            //    {
-            //        var state = scriptManager.CreateState();
-            //        states.Add(state);
-            //    }
-            //}
+            using (new WatchTimer("Create Delegate 100000"))
+            {
+                var state = scriptManager.CreateState();
+                for (int i = 0; i < 100000; i++)
+                {
+                    state.MethodDelegate<LoginHandler>("ScriptA", "Login");
+                }
+                state = null;
+            }
 
-            //using (new WatchTimer("Create Delegate 100000"))
-            //{
-            //    var state = scriptManager.CreateState();
-            //    for (int i = 0; i < 100000; i++)
-            //    {
-            //        state.MethodDelegate<LoginHandler>("ScriptA", "Login");
-            //    }
-            //    state = null;
-            //}
-
-            //using (new WatchTimer("Dispose State 10000"))
-            //{
-            //    foreach (var state in states)
-            //    {
-            //        state.Dispose();
-            //    }
-            //}
-            //states.Clear();
-
-
+            using (new WatchTimer("Dispose State 10000"))
+            {
+                foreach (var state in states)
+                {
+                    state.Dispose();
+                }
+            }
+            states.Clear();
 
             var stateOptions = StateOptions.Default;
             stateOptions.Identity = 666;
@@ -209,7 +206,6 @@ public static class Program
             {
                 handler2(null);
                 handler2 = null;
-                //
             }
 
 
@@ -244,7 +240,7 @@ public static class Program
                 Console.WriteLine(ex);
             }
             stateTest = null;
-            scriptManager.Unload();
+            scriptManager.Unload(true);
             //status = GC.WaitForFullGCComplete();
             //if (weak.TryGetTarget(out var handler))
             //{
@@ -262,21 +258,19 @@ public static class Program
         }
 
 
-        while (scriptManager.IsAlive)
+        while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
         {
             var obj = new byte[1024 * 1024];
             //GC.Collect();
             Thread.Sleep(10);
         }
-
+        GC.Collect();
         Console.WriteLine("OK");
-
-        while (true)
-        {
-            GC.Collect();
-            Thread.Sleep(1000);
-        }
-
+        //while (true)
+        //{
+        //    GC.Collect();
+        //    Thread.Sleep(1000);
+        //}
         Console.WriteLine("=====================================================================================");
         Console.ReadKey();
     }

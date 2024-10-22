@@ -116,41 +116,56 @@ namespace App.Core
 
         #region DEBUG
         [Conditional("DEBUG")]
-        public void DEBUG(Object @object, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
         {
             this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {@object}");
         }
 
 
         [Conditional("DEBUG")]
-        public void DEBUG(string message, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public void Debug(string message, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
         {
             this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {message}");
         }
 
         [Conditional("DEBUG")]
-        public void DEBUG(string format, object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public void Debug(string format, object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
         {
             this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {String.Format(format, args)}");
         }
         #endregion
 
         #region PRINT
-        public void PRINT(string message)
+        public void Print(string message)
         {
             this.Output(MessageType.Print, message);
         }
 
-        public void PRINT(Object message)
+        public void Print(Object message)
         {
             this.Output(MessageType.Print, message.ToString());
         }
 
-        public void PRINT(string format, params object?[] args)
+        public void Print(string format, params object?[] args)
         {
-            this.PRINT(message: String.Format(format, args));
+            this.Print(message: String.Format(format, args));
         }
         #endregion
+
+
+
+
+        #region Assert
+
+        [DebuggerHidden]
+        public void Assert(Boolean condition)
+        {
+            System.Diagnostics.Debug.Assert(condition);
+        }
+
+        #endregion
+
+
 
     }
 }

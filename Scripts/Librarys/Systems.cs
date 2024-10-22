@@ -29,7 +29,7 @@ public class Systems : GameScript
     [Function("Login")]
     public void SystemInitialize(Object args)
     {
-        this.PRINT(args);
+        this.Print(args);
     }
 
 

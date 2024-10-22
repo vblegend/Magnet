@@ -21,6 +21,14 @@ namespace Magnet
         }
 
 
+        /// <summary>
+        /// Register the state private provider
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="slotName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public StateOptions RegisterProvider<T>(T value, String slotName = null)
         {
             var type = typeof(T);
@@ -43,22 +51,22 @@ namespace Magnet
     }
 
 
-
+    /// <summary>
+    /// Script state
+    /// </summary>
     public class MagnetState : IDisposable
     {
         private MagnetScript engine;
         private MagnetStateContext stateContext;
+
         public event Action<MagnetState> Unloading;
         public readonly Int64 Identity;
-        private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
-        internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
         internal MagnetState(MagnetScript engine, StateOptions createStateOptions)
         {
             this.Identity = createStateOptions.Identity;
             this.engine = engine;
             this.stateContext = new MagnetStateContext(engine, createStateOptions);
-            this.ReferenceTrackers = engine.ReferenceTrackers;
             this.CreateState();
         }
 
@@ -148,10 +156,6 @@ namespace Magnet
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
-
-
-
-
         /// <summary>
         /// Gets a weak reference to the script's property Getter delegate
         /// Note: Script Unload is blocked when external references to reference objects inside the script
@@ -162,32 +166,8 @@ namespace Magnet
         /// <returns></returns>
         public WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName)
         {
-            var key = $"get {scriptName}.{propertyName}()";
-            if (delegateCache.TryGetValue(key, out var @delegate))
-            {
-                return new WeakReference<Getter<T>>((Getter<T>)@delegate);
-            }
-            else
-            {
-                AbstractScript script = this.stateContext.InstanceOfName(scriptName);
-                if (script != null)
-                {
-                    // 获取对象的类型
-                    Type type = script.GetType();
-                    // 获取方法信息 (MethodInfo)
-                    PropertyInfo propertyInfo = type.GetProperty(propertyName);
-                    if (propertyInfo != null)
-                    {
-                        // 创建一个 Delegate 并绑定到 obj 对象
-                        var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), script, propertyInfo.GetMethod);
-                        delegateCache.Add(key, getter);
-                        ReferenceTrackers.Add(getter);
-                        return new WeakReference<Getter<T>>(getter);
-                    }
-
-                }
-            }
-            return null;
+            var getter = this.stateContext.GetScriptPropertyGetter<T>(scriptName, propertyName);
+            return getter != null ? new WeakReference<Getter<T>>(getter) : null;
         }
 
         /// <summary>
@@ -199,38 +179,9 @@ namespace Magnet
         /// <returns></returns>
         public WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName)
         {
-            var key = $"set {scriptName}.{propertyName}()";
-            if (delegateCache.TryGetValue(key, out var @delegate))
-            {
-                return new WeakReference<Setter<T>>((Setter<T>)@delegate);
-            }
-            else
-            {
-                AbstractScript script = this.stateContext.InstanceOfName(scriptName);
-                if (script != null)
-                {
-                    // 获取对象的类型
-                    Type type = script.GetType();
-                    // 获取方法信息 (MethodInfo)
-                    PropertyInfo propertyInfo = type.GetProperty(propertyName);
-                    if (propertyInfo != null)
-                    {
-                        // 创建一个 Delegate 并绑定到 obj 对象
-                        var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), script, propertyInfo.SetMethod);
-                        delegateCache.Add(key, setter);
-                        ReferenceTrackers.Add(setter);
-                        return new WeakReference<Setter<T>>(setter);
-                    }
-
-                }
-            }
-            return null;
+            var setter = this.stateContext.GetScriptPropertySetter<T>(scriptName, propertyName);
+            return setter != null ? new WeakReference<Setter<T>>(setter) : null;
         }
-
-
-
-
-
 
         /// <summary>
         /// Get the value of the field in the script (not recommended)
@@ -274,8 +225,6 @@ namespace Magnet
 
         public void Dispose()
         {
-            this.delegateCache?.Clear();
-            this.delegateCache = null;
             this.Unloading?.Invoke(this);
             this.Unloading = null;
             this.stateContext?.Dispose();

@@ -15,7 +15,7 @@ public class ScriptA : GameScript
     [Function]
     public void Login(LoginContext context)
     {
-        this.PRINT(KilledContext.ObjectId);
+        this.Print(KilledContext.ObjectId);
         Script<Raffler>().Draw(context);
 
         //if (this is IScriptInstance instance)
@@ -45,7 +45,7 @@ public class ScriptA : GameScript
           ])
           .SEND();
 
-        this.DEBUG($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
+        Debug($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
         GLOBAL.S[1] = "Hello Wrold";
 
         ENABLE_TIMER(0);
@@ -54,14 +54,19 @@ public class ScriptA : GameScript
 
         var typed = typeof(Thread);
 
-        this.PRINT(typed.FullName);
+        Print(typed.FullName);
+
+        Assert(typed.FullName == "Magnet.Safety.Thread");
 
         DISABLE_TIMER(0);
+        DISABLE_TIMER(1);
         List<string> list = [];
 
         debugger();
 
-        this.PRINT("System.Drawing.dll");
+        Print("System.Drawing.dll");
+
+
         Call("ScriptB", "Test", []);
         Call("ScriptB", "PrintMessage", ["Help"]);
         TryCall("ScriptB", "PrintMessage1", ["Help"]);

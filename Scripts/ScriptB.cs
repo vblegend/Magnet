@@ -10,13 +10,13 @@ public class ScriptB : GameScript
 
     public void Test()
     {
-        this.PRINT("无参数函数");
+        this.Print("无参数函数");
 
     }
 
     public void PrintMessage(string message)
     {
-        this.PRINT(message);
+        this.Print(message);
         //Assembly.Load("System.Drawing.dll");
     }
 }

@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -47,34 +48,67 @@ namespace Magnet
 
     public delegate void CompileCompleteHandler(MagnetScript magnetScript, Assembly assembly, Stream assemblyStream, Stream pdbStream = null);
 
-
+    /// <summary>
+    /// Magnet script compiler
+    /// </summary>
     public sealed partial class MagnetScript
     {
         private String[] baseUsing = ["System", "Magnet.Core"];
-        public ScriptOptions Options { get; private set; }
+        internal ScriptOptions Options { get; private set; }
         private List<String> diagnostics;
         internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
         private readonly WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
-        public IReadOnlyList<String> Diagnostics => diagnostics;
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         private ScriptLoadContext scriptLoadContext;
-        public event Action<MagnetScript> Unloading;
-        public event Action<MagnetScript> Unloaded;
-        public event CompileErrorHandler CompileError;
-        public event CompileCompleteHandler CompileComplete;
-
         private readonly List<ITypeProcessor> TypeProcessors;
-        private readonly Int64 UniqueId = Random.Shared.NextInt64();
-        public readonly String Name;
+
         private readonly Dictionary<Int64, MagnetState> SurvivalStates = new();
         private static GCEventListener gcEventListener = new GCEventListener();
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
-        public ScrriptStatus Status { get; private set; }
-
-
         private static readonly Assembly[] ImportantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly,];
 
 
+
+        /// <summary>
+        /// The unique ID of the assembly compiled by the script
+        /// </summary>
+        public readonly Int64 UniqueId = Random.Shared.NextInt64();
+
+        /// <summary>
+        /// The name of the script may not be unique, but UniqueId is
+        /// </summary>
+        public readonly String Name;
+        public IReadOnlyList<String> Diagnostics => diagnostics;
+
+        /// <summary>
+        /// Current status of the Magnet script
+        /// </summary>
+        public ScrriptStatus Status { get; private set; }
+
+        /// <summary>
+        /// Received a request to uninstall the script
+        /// </summary>
+        public event Action<MagnetScript> Unloading;
+
+        /// <summary>
+        /// The script has been unmounted from memory
+        /// </summary>
+        public event Action<MagnetScript> Unloaded;
+
+        /// <summary>
+        /// Script compilation error
+        /// </summary>
+        public event CompileErrorHandler CompileError;
+
+        /// <summary>
+        /// Script compilation completed
+        /// </summary>
+        public event CompileCompleteHandler CompileComplete;
+
+
+        /// <summary>
+        /// Whether the script still resides in memory
+        /// </summary>
         public Boolean IsAlive
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -157,7 +191,7 @@ namespace Magnet
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
             this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
-            this.compilationOptions = this.compilationOptions.WithModuleName(this.Options.Name);
+            this.compilationOptions = this.compilationOptions.WithModuleName(this.Name);
             gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
         }
 
@@ -191,10 +225,6 @@ namespace Magnet
             // 更新语法树
             return syntaxTree.WithRootAndOptions(compilationUnit, syntaxTree.Options);
         }
-
-
-
-
 
 
         private UsingDirectiveSyntax MakeUsingDirective(string usingName)
@@ -237,7 +267,13 @@ namespace Magnet
             var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, SearchOption.AllDirectories);
             var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file), parseOptions)).ToArray();
             var syntaxTrees = new List<SyntaxTree>(Task.WhenAll(parseTasks).Result);
-            SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText($"[assembly: Magnet.Core.ScriptAssembly({this.UniqueId})]\n[assembly: System.Reflection.AssemblyVersion(\"1.0.0.0\")]");
+            var assemblyInfo = $"[assembly: System.Reflection.AssemblyTitle(\"{this.Name}\")]\n[assembly: Magnet.Core.ScriptAssembly({this.UniqueId})]\n[assembly: System.Reflection.AssemblyVersion(\"1.0.0.0\")]\n[assembly: System.Reflection.AssemblyFileVersion(\"1.0.0.0\")]";
+            var targetFrameworkAttribute = (TargetFrameworkAttribute)typeof(Assembly).Assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute));
+            if (targetFrameworkAttribute != null)
+            {
+                assemblyInfo +=  $"\n[assembly: System.Runtime.Versioning.TargetFramework(\"{targetFrameworkAttribute.FrameworkName}\", FrameworkDisplayName = \"{targetFrameworkAttribute.FrameworkDisplayName}\")]";
+            }
+            SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText(assemblyInfo);
             syntaxTrees.Insert(0, assemblyAttribute);
             var result = CompileSyntaxTree(syntaxTrees);
             if (result.Success)
@@ -392,8 +428,7 @@ namespace Magnet
 
 
             var compilation = CSharpCompilation.Create(
-
-                assemblyName: this.Options.Name,
+                assemblyName: this.Name,
                 syntaxTrees: syntaxTrees,
                 references: references,
                 options: this.compilationOptions
