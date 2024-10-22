@@ -6,7 +6,7 @@ using System;
 
 
 [Script(nameof(QFunction0))]
-public class QFunction0 : MyScript, IPlayerGameEvent
+public class QFunction0 : GameScript, IPlayerGameEvent
 {
     [Function(null, "攻击事件")]
     public void OnAttack(IAttackContext ctx)

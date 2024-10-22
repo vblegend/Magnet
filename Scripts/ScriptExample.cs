@@ -14,7 +14,7 @@ public class ScriptExample : AbstractScript
 
     protected override void Initialize()
     {
-        //DEBUG("ScriptExample.Initialize");
+
     }
 
 
@@ -22,7 +22,7 @@ public class ScriptExample : AbstractScript
     [Function("Hello")]
     public void Hello(String name)
     {
-        this.PRINT($"Hello {name}!");
+        this.Output(MessageType.Print, $"Hello {name}!");
     }
 
 
@@ -35,7 +35,7 @@ public class ScriptExample : AbstractScript
         }
         set
         {
-            this.PRINT(value);
+            this.Output(MessageType.Print, $"{value}");
         }
     }
 }

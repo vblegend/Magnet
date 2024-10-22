@@ -1,7 +1,5 @@
 ﻿using Magnet.Core;
-using Microsoft.CodeAnalysis;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -10,7 +8,7 @@ namespace Magnet
 
     public delegate Assembly AssemblyLoadDelegate(ScriptLoadContext context, AssemblyName assemblyName);
 
-    public class Objectinstance
+    public class ObjectProvider
     {
         public Type Type;
         public String SlotName;
@@ -52,6 +50,7 @@ namespace Magnet
         public IOutput Output { get; private set; } = new ConsoleOutput();
 
 
+        public readonly List<ITypeProcessor> TypeProcessors = new List<ITypeProcessor> ();
         public String[] PreprocessorSymbols { get; private set; } = [];
 
 
@@ -73,6 +72,14 @@ namespace Magnet
         }
 
 
+
+        public ScriptOptions AddTypeProcessor(ITypeProcessor processor)
+        {
+            this.TypeProcessors.Add(processor);
+            return this;
+        }
+
+
         public ScriptOptions AddUsings(params String[] nameSpaces)
         {
             foreach (var name in nameSpaces)
@@ -82,23 +89,23 @@ namespace Magnet
             return this;
         }
 
-        internal List<Objectinstance> InjectedObjects { get; private set; } = [];
+        internal List<ObjectProvider> Providers { get; private set; } = [];
 
-        public ScriptOptions AddInjectedObject<T>(T value, String slotName = null)
+        public ScriptOptions RegisterProvider<T>(T value, String slotName = null)
         {
             var type = typeof(T);
-            foreach (var item in InjectedObjects)
+            foreach (var item in Providers)
             {
                 if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
             }
-            var _object = new Objectinstance() { Type = type, Instance = value, SlotName = slotName };
+            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
             if (String.IsNullOrWhiteSpace(slotName))
             {
-                InjectedObjects.Add(_object);
+                Providers.Add(_object);
             }
             else
             {
-                InjectedObjects.Insert(0, _object);
+                Providers.Insert(0, _object);
             }
             return this;
         }

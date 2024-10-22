@@ -3,7 +3,7 @@ using Magnet.Core;
 using System;
 
 [Script(nameof(Systems))]
-public class Systems : MyScript
+public class Systems : GameScript
 {
 
     public static Double Value = Math.PI;

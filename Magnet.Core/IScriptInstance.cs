@@ -2,11 +2,31 @@
 
 namespace Magnet.Core
 {
+    /// <summary>
+    /// Abstract interface to a script instance 
+    /// </summary>
     public interface IScriptInstance
     {
+        /// <summary>
+        /// Injected script context
+        /// </summary>
+        /// <param name="stateContext"></param>
         void InjectedContext(IStateContext stateContext);
-        IStateContext GetState();
+
+        /// <summary>
+        /// all script loaded , initialize
+        /// </summary>
         void Initialize();
+
+        /// <summary>
+        /// script being destory
+        /// </summary>
         void UnInitialize();
+
+        /// <summary>
+        /// get script state
+        /// </summary>
+        /// <returns></returns>
+        IStateContext GetStateContext();
     }
 }

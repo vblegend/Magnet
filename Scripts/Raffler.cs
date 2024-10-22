@@ -5,7 +5,7 @@ using System;
 
 
 [Script(nameof(Raffler))]
-public class Raffler : MyScript
+public class Raffler : GameScript
 {
     // Global Lottery
     [Global]
@@ -37,6 +37,7 @@ public class Raffler : MyScript
         }
 
     }
+
 
 }
 

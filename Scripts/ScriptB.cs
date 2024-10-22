@@ -1,11 +1,10 @@
 
 using App.Core;
 using Magnet.Core;
-using System;
 
 
 [Script("ScriptB")]
-public class ScriptB : MyScript
+public class ScriptB : GameScript
 {
 
 

@@ -16,14 +16,21 @@ namespace Magnet
 
         public Dictionary<String, Delegate> DelegateCache;
 
+        private List<ObjectProvider> Providers;
 
-        internal MagnetStateContext(MagnetScript engine)
+
+        internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
         {
             this.engine = engine;
+            this.Providers = new List<ObjectProvider>(engine.Options.Providers);
+            foreach (var item in stateOptions.Providers)
+            {
+                this.RegisterProvider(item.Type, item.Instance, item.SlotName);
+            }
             this.ReferenceTrackers = engine.ReferenceTrackers;
         }
 
-        public IOutput Output => engine.Options.Output;
+        public IOutput Output => engine?.Options?.Output;
 
         public ScriptRunMode RunMode => engine.Options.Mode;
 
@@ -40,10 +47,58 @@ namespace Magnet
             this.ReferenceTrackers = null;
         }
 
-
-
-
         #region Autowired
+
+
+
+        /// <summary>
+        /// Register the State private Providers
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="slotName"></param>
+        public void RegisterProvider<T>(T value, String slotName = null)
+        {
+            var type = typeof(T);
+            foreach (var item in Providers)
+            {
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
+            }
+            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                Providers.Add(_object);
+            }
+            else
+            {
+                Providers.Insert(0, _object);
+            }
+        }
+
+
+        /// <summary>
+        /// Register the State private Providers
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="slotName"></param>
+        public void RegisterProvider(Type objectType, Object value, String slotName = null)
+        {
+            var type = objectType;
+            foreach (var item in Providers)
+            {
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
+            }
+            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                Providers.Add(_object);
+            }
+            else
+            {
+                Providers.Insert(0, _object);
+            }
+        }
 
         public void Autowired<TObject>(AbstractScript instance, TObject @object, String slotName = null)
         {
@@ -108,11 +163,11 @@ namespace Magnet
 
 
 
-        public void Autowired(Type instanceType, AbstractScript instance, IReadOnlyList<Objectinstance> objectList)
+        public void Autowired(Type instanceType, AbstractScript instance)
         {
             if (instancesByType.TryGetValue(instanceType, out var scriptInstance))
             {
-                foreach (var item in objectList)
+                foreach (var item in this.Providers)
                 {
                     foreach (var field in scriptInstance.Metadata.AutowriredFields)
                     {
@@ -122,17 +177,16 @@ namespace Magnet
                             {
                                 if (field.FieldInfo.IsStatic)
                                 {
-                                    field.FieldInfo.SetValue(null,item.Instance);
+                                    field.FieldInfo.SetValue(null, item.Instance);
                                 }
                                 else
                                 {
                                     field.FieldInfo.SetValue(instance, item.Instance);
                                 }
-             
+
                                 break;
                             }
                         }
-
                     }
                 }
             }
@@ -198,6 +252,21 @@ namespace Magnet
 
 
 
+        public T GetProvider<T>(string providerName = null) where T : class
+        {
+            var typed = typeof(T);
+            foreach (var provider in this.Providers)
+            {
+                if (typed == provider.Type || typed.IsAssignableFrom(provider.Type))
+                {
+                    if (String.IsNullOrEmpty(providerName) || provider.SlotName == providerName)
+                    {
+                        return provider.Instance as T;
+                    }
+                }
+            }
+            return null;
+        }
 
 
 
@@ -248,6 +317,7 @@ namespace Magnet
             instancesByType.TryGetValue(type, out ScriptInstance instance);
             return instance.Instance;
         }
+
 
         internal IReadOnlyList<IScriptInstance> Instances => instances;
         internal IEnumerable<ScriptInstance> Instances2 => instancesByString.Values;

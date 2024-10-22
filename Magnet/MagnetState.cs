@@ -6,6 +6,44 @@ using System.Reflection;
 
 namespace Magnet
 {
+
+    public class StateOptions
+    {
+        public static StateOptions Default => new StateOptions();
+        public Int64 Identity { get; set; } = -1;
+
+        internal List<ObjectProvider> Providers = [];
+
+        internal StateOptions WithIdentity(Int64 identity)
+        {
+            this.Identity = identity;
+            return this;
+        }
+
+
+        public StateOptions RegisterProvider<T>(T value, String slotName = null)
+        {
+            var type = typeof(T);
+            foreach (var item in Providers)
+            {
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
+            }
+            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                Providers.Add(_object);
+            }
+            else
+            {
+                Providers.Insert(0, _object);
+            }
+            return this;
+        }
+
+    }
+
+
+
     public class MagnetState : IDisposable
     {
         private MagnetScript engine;
@@ -15,11 +53,11 @@ namespace Magnet
         private Dictionary<string, Delegate> delegateCache = new Dictionary<string, Delegate>();
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
-        internal MagnetState(MagnetScript engine, Int64 identity)
+        internal MagnetState(MagnetScript engine, StateOptions createStateOptions)
         {
-            this.Identity = identity;
+            this.Identity = createStateOptions.Identity;
             this.engine = engine;
-            this.stateContext = new MagnetStateContext(engine);
+            this.stateContext = new MagnetStateContext(engine, createStateOptions);
             this.ReferenceTrackers = engine.ReferenceTrackers;
             this.CreateState();
         }
@@ -31,7 +69,7 @@ namespace Magnet
             {
                 var instance = (AbstractScript)Activator.CreateInstance(meta.ScriptType);
                 this.stateContext.AddInstance(meta, instance);
-                this.stateContext.Autowired(meta.ScriptType, instance, engine.Options.InjectedObjects);
+                this.stateContext.Autowired(meta.ScriptType, instance);
             }
             //Injected Data
             foreach (var instance in this.stateContext.Instances)
@@ -50,12 +88,10 @@ namespace Magnet
         /// Batch inject objects into all script instances
         /// </summary>
         /// <param name="objectMap"></param>
-        public void Inject(IReadOnlyDictionary<Type, Object> objectMap)
+        public void InjectProvider(IReadOnlyDictionary<Type, Object> objectMap)
         {
             this.stateContext.Autowired(objectMap);
         }
-
-
 
         /// <summary>
         /// Inject objects into all script instances
@@ -63,9 +99,9 @@ namespace Magnet
         /// <typeparam name="TObject"></typeparam>
         /// <param name="obj"></param>
         /// <param name="slotName">[Autowired] Specifies the slot name</param>
-        public void Inject<TObject>(TObject obj, String slotName = null)
+        public void InjectProvider<TObject>(TObject obj, String slotName = null)
         {
-            this.stateContext.Autowired<TObject>(obj,slotName);
+            this.stateContext.Autowired<TObject>(obj, slotName);
         }
 
 

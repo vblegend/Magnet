@@ -3,7 +3,7 @@
 
 using App.Core;
 using App.Core.Events;
-
+using App.Core.Timer;
 using Magnet;
 using QuadTrees;
 using QuadTrees.QTreePoint;
@@ -34,13 +34,17 @@ public static class Program
         options.WithDirectory("../../../../Scripts");
         options.WithPreprocessorSymbols("USE_FILE");
 
+        var timerProvider = new TimerProvider();
+        options.AddTypeProcessor(timerProvider);
+        options.RegisterProvider(timerProvider);
+
         // Insecure
         options.DisabledInsecureTypes();
         //
         options.SetAssemblyLoadCallback(AssemblyLoad);
-        options.AddInjectedObject<ObjectKilledContext>(new ObjectKilledContext());
-        options.AddInjectedObject(GLOBAL);
-        options.AddInjectedObject<IObjectContext>(new HumContext(), "SELF");
+        options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
+        options.RegisterProvider(GLOBAL);
+        options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");
 
         return options;
     }
@@ -163,37 +167,42 @@ public static class Program
         if (result.Success)
         {
 
-            List<MagnetState> states = new List<MagnetState>();
-            using (new WatchTimer("Create State 100000"))
-            {
-                for (int i = 0; i < 100000; i++)
-                {
-                    var state = scriptManager.CreateState();
-                    states.Add(state);
-                }
-            }
+            //List<MagnetState> states = new List<MagnetState>();
+            //using (new WatchTimer("Create State 100000"))
+            //{
+            //    for (int i = 0; i < 100000; i++)
+            //    {
+            //        var state = scriptManager.CreateState();
+            //        states.Add(state);
+            //    }
+            //}
 
-            using (new WatchTimer("Create Delegate 100000"))
-            {
-                var state = scriptManager.CreateState(345);
-                for (int i = 0; i < 100000; i++)
-                {
-                    state.MethodDelegate<LoginHandler>("ScriptA", "Login");
-                }
-                state = null;
-            }
+            //using (new WatchTimer("Create Delegate 100000"))
+            //{
+            //    var state = scriptManager.CreateState();
+            //    for (int i = 0; i < 100000; i++)
+            //    {
+            //        state.MethodDelegate<LoginHandler>("ScriptA", "Login");
+            //    }
+            //    state = null;
+            //}
 
-            using (new WatchTimer("Dispose State 10000"))
-            {
-                foreach (var state in states)
-                {
-                    state.Dispose();
-                }
-            }
-            states.Clear();
+            //using (new WatchTimer("Dispose State 10000"))
+            //{
+            //    foreach (var state in states)
+            //    {
+            //        state.Dispose();
+            //    }
+            //}
+            //states.Clear();
 
-            var stateTest = scriptManager.CreateState(123);
 
+
+            var stateOptions = StateOptions.Default;
+            stateOptions.Identity = 666;
+            stateOptions.RegisterProvider(new TimerService());
+
+            var stateTest = scriptManager.CreateState(stateOptions);
 
             var weak = stateTest.MethodDelegate<LoginHandler>("ScriptA", "Login");
             if (weak != null && weak.TryGetTarget(out var handler2))
@@ -219,10 +228,10 @@ public static class Program
             }
 
 
-            var weakAttackEvent = stateTest.ScriptAs<IPlayerGameEvent>();
+            var weakAttackEvent = stateTest.ScriptAs<IPlayLifeEvent>();
             if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
             {
-                attackEvent.OnAttack(null);
+                attackEvent.OnOnline(null);
                 attackEvent = null;
             }
 
@@ -235,7 +244,7 @@ public static class Program
                 Console.WriteLine(ex);
             }
             stateTest = null;
-            scriptManager.Unload(true);
+            scriptManager.Unload();
             //status = GC.WaitForFullGCComplete();
             //if (weak.TryGetTarget(out var handler))
             //{
@@ -298,7 +307,7 @@ public static class Program
             return null;
         }
         List<MagnetState> states = new List<MagnetState>();
-        var state = scriptManager.CreateState(999);
+        var state = scriptManager.CreateState();
         var weak = state.MethodDelegate<LoginHandler>("ScriptA", "Login");
         state.Dispose();
         scriptManager.Unload();

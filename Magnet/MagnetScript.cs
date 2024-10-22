@@ -43,6 +43,9 @@ namespace Magnet
     }
 
 
+    public delegate void CompileErrorHandler(MagnetScript magnetScript, ImmutableArray<Diagnostic> diagnostics);
+
+    public delegate void CompileCompleteHandler(MagnetScript magnetScript, Assembly assembly, Stream assemblyStream, Stream pdbStream = null);
 
 
     public sealed partial class MagnetScript
@@ -57,6 +60,10 @@ namespace Magnet
         private ScriptLoadContext scriptLoadContext;
         public event Action<MagnetScript> Unloading;
         public event Action<MagnetScript> Unloaded;
+        public event CompileErrorHandler CompileError;
+        public event CompileCompleteHandler CompileComplete;
+
+        private readonly List<ITypeProcessor> TypeProcessors;
         private readonly Int64 UniqueId = Random.Shared.NextInt64();
         public readonly String Name;
         private readonly Dictionary<Int64, MagnetState> SurvivalStates = new();
@@ -114,6 +121,8 @@ namespace Magnet
                     state = null;
                 }
             }
+            foreach (var provider in TypeProcessors) provider.Dispose();
+            this.TypeProcessors.Clear();
             this.Unloading?.Invoke(this);
             this.Unloading = null;
             this.diagnostics.Clear();
@@ -142,6 +151,7 @@ namespace Magnet
             this.Options = options;
             this.Name = options.Name;
             this.Status = ScrriptStatus.NotReady;
+            this.TypeProcessors = Options.TypeProcessors;
             this.scriptLoadContext = new ScriptLoadContext(options);
             this.compilationOptions = this.compilationOptions.WithAllowUnsafe(false);
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
@@ -245,10 +255,11 @@ namespace Magnet
                                                 scriptConfig.ScriptAlias = String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias;
                                                 ParseScriptAutowriredFields(scriptConfig);
                                                 ParseScriptMethods(scriptConfig);
+
+                                                EmitTypeProcessScript(type);
                                                 //Console.WriteLine($"Found Script：{type.Name}");
                                                 return scriptConfig;
                                             }).ToImmutableList();
-
                     assembly = null;
                 }
 
@@ -259,8 +270,14 @@ namespace Magnet
         }
 
 
-
-
+        private void EmitTypeProcessScript(Type type)
+        {
+            foreach (var provider in this.TypeProcessors) provider.ProcessScript(type);
+        }
+        private void EmitTypeProcessAssembly(Assembly assembly)
+        {
+            foreach (var provider in this.TypeProcessors) provider.ProcessAssembly(assembly);
+        }
         private void ParseScriptAutowriredFields(ScriptMetadata metaInfo)
         {
             var fieldList = new List<FieldInfo>();
@@ -276,15 +293,16 @@ namespace Magnet
                         var autowrired = new AutowriredField();
                         autowrired.FieldInfo = fieldInfo;
                         autowrired.RequiredType = attribute.Type;
-                        autowrired.SlotName = attribute.SlotName;
+                        autowrired.SlotName = attribute.ProviderName;
                         metaInfo.AutowriredFields.Add(autowrired);
                     }
                 }
 
                 type = type.BaseType;
             }
-
         }
+
+
 
         private void ParseScriptMethods(ScriptMetadata metaInfo)
         {
@@ -293,7 +311,6 @@ namespace Magnet
             while (type != null)
             {
                 var _methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-
                 foreach (var methodInfo in _methods)
                 {
                     var attribute = methodInfo.GetCustomAttribute<FunctionAttribute>();
@@ -302,13 +319,11 @@ namespace Magnet
                         var exportMethod = new ScriptExportMethod();
                         exportMethod.MethodInfo = methodInfo;
                         exportMethod.Alias = String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias;
-
                         metaInfo.ExportMethods.Add(exportMethod.Alias, exportMethod);
                     }
                 }
                 type = type.BaseType;
             }
-
         }
 
 
@@ -319,28 +334,32 @@ namespace Magnet
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public MagnetState CreateState(Int64 identity = -1)
+        public MagnetState CreateState(StateOptions options = null)
         {
             if (this.Status != ScrriptStatus.Ready || !this.scriptAssembly.TryGetTarget(out _))
             {
                 throw new Exception("A copy of the script is unavailable, uncompiled, or failed to compile");
             }
-            if (identity == -1)
+            if (options == null) options = StateOptions.Default;
+            if (options.Identity == -1)
             {
+                Int64 identity = -1;
                 while (identity == -1 || SurvivalStates.ContainsKey(identity))
                 {
                     identity = Random.Shared.NextInt64();
                 }
+
+                options.WithIdentity(identity);
             }
-            if (SurvivalStates.ContainsKey(identity))
+            if (SurvivalStates.ContainsKey(options.Identity))
             {
                 throw new Exception("The Identity state already exists.");
             }
-            var state = new MagnetState(this, identity);
+            var state = new MagnetState(this, options);
             state.Unloading += State_Unloading;
             //this.ReferenceTrackers.Add(state);
             // TODO 性能问题
-            SurvivalStates.TryAdd(identity, state);
+            SurvivalStates.TryAdd(options.Identity, state);
             return state;
         }
 
@@ -423,7 +442,6 @@ namespace Magnet
 
 
 
-
         private EmitResult emitStream(CSharpCompilation compilation)
         {
             var emitOptions = new EmitOptions();
@@ -439,8 +457,11 @@ namespace Magnet
             {
                 execStream.Seek(0, SeekOrigin.Begin);
                 if (pdbStream != null) pdbStream.Seek(0, SeekOrigin.Begin);
-                this.scriptAssembly.SetTarget(scriptLoadContext.LoadFromStream(execStream, pdbStream));
+                var assembly = scriptLoadContext.LoadFromStream(execStream, pdbStream);
+                this.scriptAssembly.SetTarget(assembly);
                 this.Status = ScrriptStatus.Ready;
+                EmitTypeProcessAssembly(assembly);
+                CompileComplete?.Invoke(this, assembly, execStream, pdbStream);
                 if (pdbStream != null) pdbStream.Dispose();
                 if (execStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
                 {
@@ -451,6 +472,7 @@ namespace Magnet
             else
             {
                 this.Status = ScrriptStatus.CompileError;
+                CompileError?.Invoke(this, result.Diagnostics);
             }
             execStream.Dispose();
             return result;

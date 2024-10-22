@@ -15,15 +15,15 @@ namespace Magnet.Core
             
         }
 
-        public AutowiredAttribute(Type type, String slotName)
+        public AutowiredAttribute(Type type, String providerName)
         {
-            this.SlotName = slotName;
+            this.ProviderName = providerName;
             this.Type = type;
         }
 
         public AutowiredAttribute(String name)
         {
-            this.SlotName = name;
+            this.ProviderName = name;
         }
 
         public AutowiredAttribute(Type type)
@@ -35,7 +35,7 @@ namespace Magnet.Core
         /// <summary>
         /// You must specify the name of the slot
         /// </summary>
-        public String SlotName { get; set; }
+        public String ProviderName { get; set; }
 
         /// <summary>
         /// Specifies the type of slot

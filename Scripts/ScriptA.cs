@@ -6,7 +6,7 @@ using App.Core.UserInterface;
 
 
 [Script(nameof(ScriptA))]
-public class ScriptA : MyScript
+public class ScriptA : GameScript
 {
     [Autowired]
     private IKilledContext KilledContext;
@@ -50,12 +50,13 @@ public class ScriptA : MyScript
 
         ENABLE_TIMER(0);
 
+        ENABLE_TIMER(1);
 
         var typed = typeof(Thread);
 
         this.PRINT(typed.FullName);
 
-
+        DISABLE_TIMER(0);
         List<string> list = [];
 
         debugger();

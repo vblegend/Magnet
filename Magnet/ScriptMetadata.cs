@@ -24,5 +24,6 @@ namespace Magnet
         public String ScriptAlias { get;  set; }
         public List<AutowriredField> AutowriredFields { get; set; } = new List<AutowriredField>();
         public Dictionary<String, ScriptExportMethod> ExportMethods { get; set; } = new Dictionary<string, ScriptExportMethod>();
+
     }
 }

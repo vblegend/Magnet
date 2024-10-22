@@ -5,7 +5,8 @@ namespace Magnet.Core
 
 
     /// <summary>
-    /// Define a method that can be called by another script or host
+    /// Define a method that can be called by another script or host.
+    /// use ScriptState.MethodDelegate()
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class FunctionAttribute : Attribute

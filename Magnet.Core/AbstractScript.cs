@@ -15,10 +15,11 @@ namespace Magnet.Core
         private IStateContext stateContext;
 
 
-        public IStateContext GetState()
+        public IStateContext GetStateContext()
         {
             return stateContext;
         }
+
 
 
         protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
