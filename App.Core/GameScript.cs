@@ -116,20 +116,20 @@ namespace App.Core
 
         #region DEBUG
         [Conditional("DEBUG")]
-        public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
             this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {@object}");
         }
 
 
         [Conditional("DEBUG")]
-        public void Debug(string message, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public void Debug(string message, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
             this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {message}");
         }
 
         [Conditional("DEBUG")]
-        public void Debug(string format, object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public void Debug(string format, object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
             this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {String.Format(format, args)}");
         }
@@ -146,7 +146,7 @@ namespace App.Core
             this.Output(MessageType.Print, $"{message}");
         }
 
-        public void Print(string format, params object?[] args)
+        public void Print(string format, params object[] args)
         {
             this.Print(message: String.Format(format, args));
         }

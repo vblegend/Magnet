@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Magnet.Test
+namespace Toolkit.Privite
 {
     internal class WatchTimer : IDisposable
     {
@@ -24,8 +24,8 @@ namespace Magnet.Test
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor= ConsoleColor.Red;
             Console.Write($"Task: {this.name} use {this.stopwatch.ElapsedMilliseconds}ms");
-            Console.ForegroundColor = f;
-            Console.BackgroundColor = b;
+            this.stopwatch = null;
+            Console.ResetColor();
             Console.WriteLine();
         }
     }

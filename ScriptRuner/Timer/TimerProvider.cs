@@ -9,7 +9,7 @@ using Magnet;
 
 namespace App.Core.Timer
 {
-    public class TimerProvider : ITimerManager, IAssemblyAnalyzer, ITypeAnalyzer, IInstanceAsalyzer
+    public class TimerProvider : ITimerManager, ITypeAnalyzer
     {
         private struct TimerInfo
         {
@@ -17,7 +17,7 @@ namespace App.Core.Timer
             public TimerAttribute Options;
         }
 
-        private ITimerService? timerService;
+        private ITimerService timerService;
 
         private Dictionary<int, TimerInfo> timersDefine = new Dictionary<int, TimerInfo>();
 
@@ -26,7 +26,7 @@ namespace App.Core.Timer
             timersDefine.Clear();
         }
 
-        public void SetTimerService(ITimerService? timerService)
+        public void SetTimerService(ITimerService timerService)
         {
             this.timerService = timerService;
         }
@@ -84,11 +84,6 @@ namespace App.Core.Timer
 
 
         #region Analyzers
-        void IAssemblyAnalyzer.DefineAssembly(Assembly assembly)
-        {
-
-        }
-
         void ITypeAnalyzer.DefineType(Type type)
         {
             var fieldList = new List<MethodInfo>();
@@ -112,15 +107,6 @@ namespace App.Core.Timer
                 type = type.BaseType;
             }
         }
-
-
-        public void DefineInstance(ScriptMetadata metadata, AbstractScript script, IStateContext context)
-        {
-
-        }
-
-
-
         #endregion
 
     }

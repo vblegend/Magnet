@@ -10,7 +10,7 @@ namespace Magnet.Core
         public String CallerMethodName { get; private set; }
 
 
-        public ScriptRunException(string? message, String fileName, Int32 lineNumber, String methodName) : base(message)
+        public ScriptRunException(string message, String fileName, Int32 lineNumber, String methodName) : base(message)
         {
             this.CallerLineNumber = lineNumber;
             this.CallerMethodName = methodName;
@@ -18,12 +18,12 @@ namespace Magnet.Core
         }
 
 
-        public ScriptRunException(string? message) : base(message)
+        public ScriptRunException(string message) : base(message)
         {
 
         }
 
-        public ScriptRunException(string? message, String fileName, Int32 lineNumber, String methodName, Exception? innerException) : base(message, innerException)
+        public ScriptRunException(string message, String fileName, Int32 lineNumber, String methodName, Exception innerException) : base(message, innerException)
         {
             this.CallerLineNumber = lineNumber;
             this.CallerMethodName = methodName;
@@ -31,7 +31,7 @@ namespace Magnet.Core
         }
 
 
-        public ScriptRunException(string? message, Exception? innerException) : base(message, innerException)
+        public ScriptRunException(string message, Exception innerException) : base(message, innerException)
         {
 
         }

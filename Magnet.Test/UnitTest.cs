@@ -21,7 +21,7 @@ namespace Magnet.Test
 
             //options.WithRelease();
             options.WithAllowAsync(false);
-            options.AddReferences<LoginContext>();
+            options.AddReferences<GameScript>();
             options.WithDirectory("../../../../Scripts");
             options.WithPreprocessorSymbols("USE_FILE");
 
@@ -32,7 +32,7 @@ namespace Magnet.Test
             // Insecure
             options.DisabledInsecureTypes();
             //
-            options.SetAssemblyLoadCallback(AssemblyLoad);
+            options.WithAssemblyLoadCallback(AssemblyLoad);
             options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
             options.RegisterProvider(GLOBAL);
             options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");
@@ -43,28 +43,25 @@ namespace Magnet.Test
 
 
 
-        static Assembly AssemblyLoad(ScriptLoadContext context, AssemblyName assemblyName)
+        static Assembly? AssemblyLoad(ScriptLoadContext context, AssemblyName assemblyName)
         {
             return null;
         }
 
 
-        private MagnetScript scriptManager = null;
+        private MagnetScript? scriptManager = null;
+        private MagnetState? state = null;
 
-     
-        private MagnetState state = null;
 
         [TearDown]
         public void TearDown()
         {
-            state.Dispose();
+            state?.Dispose();
         }
 
 
 
-
         [SetUp]
-
         public void Compile()
         {
             Console.WriteLine("Compile");
@@ -106,8 +103,8 @@ namespace Magnet.Test
                 {
                     var stateOptions = StateOptions.Default;
                     stateOptions.RegisterProvider(new TimerService());
-                    var state = scriptManager.CreateState(stateOptions);
-                    states.Add(state);
+                    var state = scriptManager?.CreateState(stateOptions);
+                    states.Add(state!);
                 }
             }
 
@@ -130,10 +127,10 @@ namespace Magnet.Test
 
             using (new WatchTimer("Create Delegate 100000"))
             {
-                var state = scriptManager.CreateState();
+                var state = scriptManager?.CreateState();
                 for (int i = 0; i < 100000; i++)
                 {
-                    state.MethodDelegate<Action>("ScriptA", "Login");
+                    state?.MethodDelegate<Action>("ScriptA", "Login");
                 }
                 state = null;
             }
@@ -176,7 +173,7 @@ namespace Magnet.Test
         [Test]
         public void CallScriptMethod()
         {
-            var weak = state.MethodDelegate<Action>("ScriptA", "Main");
+            var weak = state?.MethodDelegate<Action>("ScriptA", "Main");
             if (weak != null && weak.TryGetTarget(out var handler2))
             {
                 handler2();
@@ -190,7 +187,7 @@ namespace Magnet.Test
         [Test]
         public void PropertySetter()
         {
-            var weakSetter = state.PropertySetterDelegate<Double>("ScriptExample", "Target");
+            var weakSetter = state?.PropertySetterDelegate<Double>("ScriptExample", "Target");
             if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
             {
                 setter(123.45);
@@ -204,7 +201,7 @@ namespace Magnet.Test
         [Test]
         public void PropertyGetter()
         {
-            var weakGetter = state.PropertyGetterDelegate<Double>("ScriptExample", "Target");
+            var weakGetter = state?.PropertyGetterDelegate<Double>("ScriptExample", "Target");
             if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
             {
                 Console.WriteLine(getter());
@@ -218,7 +215,7 @@ namespace Magnet.Test
         [Test]
         public void ScriptTypeOf()
         {
-            var weakAttackEvent = state.ScriptAs<IPlayLifeEvent>();
+            var weakAttackEvent = state?.ScriptAs<IPlayLifeEvent>();
             if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
             {
                 attackEvent.OnOnline(null);
@@ -238,10 +235,10 @@ namespace Magnet.Test
 
 
 
-    [Test]
+        [Test]
         public void DisposeState()
         {
-            state.Dispose();
+            state?.Dispose();
             state = null;
         }
 

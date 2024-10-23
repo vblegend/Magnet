@@ -11,8 +11,7 @@ namespace Magnet
             if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss "));
             Console.WriteLine(message);
-            if (type == MessageType.Error) Console.ForegroundColor = ConsoleColor.Gray;
-            if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Gray;
+            Console.ResetColor();
         }
 
         public void Write(MessageType type, string format, params object[] arg)
@@ -21,8 +20,7 @@ namespace Magnet
             if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss "));
             Console.WriteLine(format, arg);
-            if (type == MessageType.Error) Console.ForegroundColor = ConsoleColor.Black;
-            if (type == MessageType.Warning) Console.ForegroundColor = ConsoleColor.Black;
+            Console.ResetColor();
         }
     }
 }

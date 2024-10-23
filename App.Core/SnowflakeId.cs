@@ -94,7 +94,7 @@ namespace App.Core
             return unchecked((int)((long)m_value)) ^ (int)(m_value >> 32);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj is SnowflakeId id)
             {

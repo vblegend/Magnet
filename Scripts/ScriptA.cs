@@ -17,7 +17,6 @@ public class ScriptA : GameScript
     public void Main()
     {
         this.Print(KilledContext.Target);
-        Script<Raffler>().Draw(null);
 
         //if (this is IScriptInstance instance)
         //{
@@ -25,9 +24,6 @@ public class ScriptA : GameScript
         //}
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
-        //var s2 = (IScriptInstance)this;
-        //this.PRINT(s2.GetState());
-
 
 
         UI.DIALOG(120).TO(Player)

@@ -107,7 +107,7 @@ namespace Magnet.Test.Timer
                         timersDefine.Add(timerAttr.TimerIndex, new TimerInfo() { MethodInfo = methodInfo, Options = timerAttr });
                     }
                 }
-                type = type.BaseType;
+                type = type.BaseType!;
             }
         }
 

@@ -93,7 +93,7 @@ namespace Magnet.Core
         /// <param name="args"></param>
         /// <returns></returns>
         /// <exception cref="ScriptRunException"></exception>
-        public Object? Call(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public Object Call(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
             var script = stateContext.InstanceOfName(scriptName);
             if (script == null)
@@ -123,7 +123,7 @@ namespace Magnet.Core
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        public Object? TryCall(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string? callMethod = null)
+        public Object TryCall(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
             var script = stateContext.InstanceOfName(scriptName);
             if (script == null)
@@ -143,7 +143,7 @@ namespace Magnet.Core
             }
             catch (Exception ex)
             {
-                this.Output(MessageType.Warning, $"{callFilePath}({callLineNumber}) [{callMethod}] => TryCall(\"{scriptName}\",\"{methodName}\",??) an exception was encountered that could not be handled.");
+                this.Output(MessageType.Warning, $"{callFilePath}({callLineNumber}) [{callMethod}] => TryCall(\"{scriptName}\",\"{methodName}\",??) an exception was encountered that could not be handled. \n{ex.ToString()}");
                 return null;
             }
 
@@ -152,7 +152,7 @@ namespace Magnet.Core
 #if RELEASE 
         [DebuggerHidden]
 #endif
-        public T? Script<T>() where T : AbstractScript
+        public T Script<T>() where T : AbstractScript
         {
             return stateContext.InstanceOfType<T>();
         }

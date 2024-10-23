@@ -7,8 +7,6 @@ using App.Core.Timer;
 using Magnet;
 
 using Microsoft.CodeAnalysis;
-using QuadTrees;
-using QuadTrees.QTreePoint;
 using ScriptRuner;
 using System;
 using System.Drawing;
@@ -29,16 +27,18 @@ public static class Program
 
     private static ScriptOptions Options(String name)
     {
-        ScriptOptions options = new ScriptOptions();
+        ScriptOptions options = ScriptOptions.Default;
         options.WithName(name);
         options.WithOutPutFile("123.dll");
         options.WithDebug(false);
 
         //options.WithRelease();
         options.WithAllowAsync(false);
-        options.AddReferences<LoginContext>();
         options.WithDirectory("../../../../Scripts");
         options.WithPreprocessorSymbols("USE_FILE");
+
+        options.AddReferences<GameScript>();
+
 
         var timerProvider = new TimerProvider();
         options.AddAnalyzer(timerProvider);
@@ -49,7 +49,7 @@ public static class Program
         options.WithTypeRewriter(new TypeRewriter());
         options.UseDefaultSuppressDiagnostics();
         //
-        options.SetAssemblyLoadCallback(AssemblyLoad);
+        options.WithAssemblyLoadCallback(AssemblyLoad);
         options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
         options.RegisterProvider(GLOBAL);
         options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");
@@ -65,102 +65,12 @@ public static class Program
     }
 
 
-    class Hum : IPointQuadStorable
-    {
-        public Point Point { get; set; } = new Point(650, 22);
-    }
-
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
         RemoveDir("../../../../Scripts/obj");
         RemoveDir("../../../../Scripts/bin");
 
-        QuadTreePoint<Hum> quadTree = new QuadTreePoint<Hum>(1, 1, 1024, 1024);
-        var hum = new Hum() { Point = new Point(100, 240) };
-        quadTree.Add(hum);
-        var objs1 = quadTree.GetObjects(888, 888);
-        var objs2 = quadTree.GetObjects(100, 240);
-        hum.Point = new Point(888, 888);
-        quadTree.Move(hum);
-        var objs3 = quadTree.GetObjects(888, 888);
-        var objs4 = quadTree.GetObjects(100, 240);
-        quadTree.Remove(hum);
-        Console.WriteLine();
-
-
-        //var lottery = Lottery<String>.Load("lotterys/unlimited.txt");
-        //var lootGenerator = LootGenerator<String>.Load("loots/default.loot");
-        //TestSccriptUnload();
-
-
-        //using (new WatchTimer("Loot Generate 100000"))
-        //{
-        //    for (int i = 0; i < 100000; i++)
-        //    {
-        //        lootGenerator.Generate();
-        //    }
-        //}
-
-
-        //using (new WatchTimer("Loot Generate 1"))
-        //{
-        //    var loots = lootGenerator.Generate(1);
-        //    if (loots.Count() > 0)
-        //    {
-        //        foreach (var loot in loots)
-        //        {
-        //            Console.WriteLine($"Drop Item: {loot}");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("Not Dorp Items。");
-        //    }
-        //}
-
-        //using (new WatchTimer("Draw SS With"))
-        //{
-        //    var count = 0;
-        //    while (true)
-        //    {
-        //        count++;
-        //        var drops = lootGenerator.Generate(1.0);
-        //        var Count = drops.Where(e => e.Value == "SSS").Count();
-
-        //        if (Count > 0) break;
-        //    }
-        //    Console.WriteLine(count);
-        //}
-
-        //using (new WatchTimer("Draw Minimum Guarantee 75"))
-        //{
-        //    for (int i = 0; i < 100; i++)
-        //    {
-        //        var drawItem = lottery.Draw();
-        //        if (drawItem == null) break;
-        //        Console.Write($"Draw Item ");
-        //        if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Red;
-        //        Console.Write(drawItem);
-        //        if (drawItem[0] == 'S') Console.BackgroundColor = ConsoleColor.Black;
-        //        Console.WriteLine($" With {i + 1} Count.");
-        //    }
-        //}
-        //using (new WatchTimer("Draw SSS With"))
-        //{
-        //    var count = 0;
-        //    while (true)
-        //    {
-        //        count++;
-        //        var lottery2 = lottery.Clone();
-        //        var drawItem = lottery2.Draw();
-        //        if (drawItem == "SSS") break;
-        //    }
-        //    Console.WriteLine(count);
-        //}
-
-
-        //var weakLogin = TestSccriptUnload();
 
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         scriptManager.Unloading += ScriptManager_Unloading;
@@ -197,6 +107,7 @@ public static class Program
 
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
         {
+            //GC
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
         }
@@ -207,19 +118,13 @@ public static class Program
 
     private static void ScriptManager_Unloaded(MagnetScript obj)
     {
-        Console.WriteLine($"脚本[{obj.Name}({obj.UniqueId})]卸载完毕.");
+        Console.WriteLine($"脚本[{obj.Name}:{obj.UniqueId}]卸载完毕.");
     }
 
     private static void ScriptManager_Unloading(MagnetScript obj)
     {
-        Console.WriteLine($"脚本[{obj.Name}({obj.UniqueId})]卸载请求.");
+        Console.WriteLine($"脚本[{obj.Name}:{obj.UniqueId}]卸载请求.");
     }
-
-
-
-
-
-
 
 
     private static void RemoveDir(String dirPath)

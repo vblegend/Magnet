@@ -33,7 +33,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\App.Core\App.Core.csproj" />
-    <ProjectReference Include="..\Language.Parser\Language.Parser.csproj" />
     <ProjectReference Include="..\Magnet\Magnet.csproj" />
   </ItemGroup>
 

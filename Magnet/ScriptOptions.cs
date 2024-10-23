@@ -20,6 +20,26 @@ namespace Magnet
 
     public class ScriptOptions
     {
+
+        public static ScriptOptions Default
+        {
+            get
+            {
+                return new ScriptOptions();
+            }
+        }
+
+
+        public static ScriptOptions Safety
+        {
+            get
+            {
+                return new ScriptOptions().DisabledInsecureTypes();
+            }
+        }
+
+
+
         public String Name { get; private set; } = "Magnet.Script";
         public String OutPutFile { get; private set; }
         public ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
@@ -70,7 +90,7 @@ namespace Magnet
         /// </summary>
         /// <param name="messagePrinter"></param>
         /// <returns></returns>
-        public ScriptOptions SetOutput(IOutput messagePrinter)
+        public ScriptOptions WithOutput(IOutput messagePrinter)
         {
             this.Output = messagePrinter;
             return this;
@@ -81,7 +101,7 @@ namespace Magnet
         /// </summary>
         /// <param name="assemblyLoad"></param>
         /// <returns></returns>
-        public ScriptOptions SetAssemblyLoadCallback(AssemblyLoadDelegate assemblyLoad)
+        public ScriptOptions WithAssemblyLoadCallback(AssemblyLoadDelegate assemblyLoad)
         {
             this.AssemblyLoad = assemblyLoad;
             return this;
@@ -152,7 +172,7 @@ namespace Magnet
         /// <param name="sourceType"></param>
         /// <param name="newType"></param>
         /// <returns></returns>
-        public ScriptOptions ReplaceType(String sourceType, String newType)
+        public ScriptOptions AddReplaceType(String sourceType, String newType)
         {
             ReplaceTypes.Add(sourceType, newType);
             return this;
@@ -165,7 +185,7 @@ namespace Magnet
         /// <param name="sourceType"></param>
         /// <param name="newType"></param>
         /// <returns></returns>
-        public ScriptOptions ReplaceType(Type sourceType, Type newType)
+        public ScriptOptions AddReplaceType(Type sourceType, Type newType)
         {
             ReplaceTypes.Add(sourceType.FullName, newType.FullName);
             return this;
@@ -287,7 +307,7 @@ namespace Magnet
         /// </summary>
         /// <param name="preprocessorSymbols"></param>
         /// <returns></returns>
-        public ScriptOptions WithPreprocessorSymbols(params string[]? preprocessorSymbols)
+        public ScriptOptions WithPreprocessorSymbols(params string[] preprocessorSymbols)
         {
             this.PreprocessorSymbols = preprocessorSymbols;
             return this;
@@ -354,50 +374,50 @@ namespace Magnet
         public ScriptOptions DisabledInsecureTypes()
         {
 
-            this.ReplaceType(typeof(System.GC), typeof(Magnet.Safety.GC));
-            this.ReplaceType(typeof(System.Threading.Thread), typeof(Magnet.Safety.Thread));
-            this.ReplaceType(typeof(System.Threading.ThreadPool), typeof(Magnet.Safety.ThreadPool));
-            this.ReplaceType(typeof(System.Threading.Tasks.Task), typeof(Magnet.Safety.Task));
-            this.ReplaceType(typeof(System.AppDomain), typeof(Magnet.Safety.AppDomain));
+            this.AddReplaceType(typeof(System.GC), typeof(Magnet.Safety.GC));
+            this.AddReplaceType(typeof(System.Threading.Thread), typeof(Magnet.Safety.Thread));
+            this.AddReplaceType(typeof(System.Threading.ThreadPool), typeof(Magnet.Safety.ThreadPool));
+            this.AddReplaceType(typeof(System.Threading.Tasks.Task), typeof(Magnet.Safety.Task));
+            this.AddReplaceType(typeof(System.AppDomain), typeof(Magnet.Safety.AppDomain));
 
 
             // code safe
-            this.ReplaceType(typeof(System.Activator), typeof(Magnet.Safety.Activator));
-            this.ReplaceType(typeof(System.Type), typeof(Magnet.Safety.Type));
-            this.ReplaceType(typeof(System.Reflection.Assembly), typeof(Magnet.Safety.Assembly));
-            this.ReplaceType(typeof(System.Reflection.Emit.DynamicMethod), typeof(Magnet.Safety.DynamicMethod));
-            this.ReplaceType(typeof(System.Linq.Expressions.DynamicExpression), typeof(Magnet.Safety.DynamicMethod));
-            this.ReplaceType(typeof(System.Linq.Expressions.Expression), typeof(Magnet.Safety.DynamicMethod));
-            this.ReplaceType(typeof(System.Runtime.CompilerServices.CallSite), typeof(Magnet.Safety.DynamicMethod));
+            this.AddReplaceType(typeof(System.Activator), typeof(Magnet.Safety.Activator));
+            this.AddReplaceType(typeof(System.Type), typeof(Magnet.Safety.Type));
+            this.AddReplaceType(typeof(System.Reflection.Assembly), typeof(Magnet.Safety.Assembly));
+            this.AddReplaceType(typeof(System.Reflection.Emit.DynamicMethod), typeof(Magnet.Safety.DynamicMethod));
+            this.AddReplaceType(typeof(System.Linq.Expressions.DynamicExpression), typeof(Magnet.Safety.DynamicMethod));
+            this.AddReplaceType(typeof(System.Linq.Expressions.Expression), typeof(Magnet.Safety.DynamicMethod));
+            this.AddReplaceType(typeof(System.Runtime.CompilerServices.CallSite), typeof(Magnet.Safety.DynamicMethod));
 
             //
-            this.ReplaceType(typeof(System.Environment), typeof(Magnet.Safety.Environment));
-            this.ReplaceType(typeof(System.Diagnostics.Process), typeof(Magnet.Safety.Process));
-            this.ReplaceType(typeof(System.Runtime.InteropServices.Marshal), typeof(Magnet.Safety.Marshal));
+            this.AddReplaceType(typeof(System.Environment), typeof(Magnet.Safety.Environment));
+            this.AddReplaceType(typeof(System.Diagnostics.Process), typeof(Magnet.Safety.Process));
+            this.AddReplaceType(typeof(System.Runtime.InteropServices.Marshal), typeof(Magnet.Safety.Marshal));
 
             // IO
-            this.ReplaceType(typeof(System.IO.File), typeof(Magnet.Safety.File));
-            this.ReplaceType(typeof(System.IO.Directory), typeof(Magnet.Safety.Directory));
-            this.ReplaceType(typeof(System.IO.FileStream), typeof(Magnet.Safety.FileStream));
-            this.ReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Safety.StreamWriter));
-            this.ReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Safety.StreamReader));
+            this.AddReplaceType(typeof(System.IO.File), typeof(Magnet.Safety.File));
+            this.AddReplaceType(typeof(System.IO.Directory), typeof(Magnet.Safety.Directory));
+            this.AddReplaceType(typeof(System.IO.FileStream), typeof(Magnet.Safety.FileStream));
+            this.AddReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Safety.StreamWriter));
+            this.AddReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Safety.StreamReader));
 
 
 
             // NET
-            this.ReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Safety.Socket));
-            this.ReplaceType(typeof(System.Net.WebClient), typeof(Magnet.Safety.WebClient));
-            this.ReplaceType(typeof(System.Net.Http.HttpClient), typeof(Magnet.Safety.HttpClient));
+            this.AddReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Safety.Socket));
+            this.AddReplaceType(typeof(System.Net.WebClient), typeof(Magnet.Safety.WebClient));
+            this.AddReplaceType(typeof(System.Net.Http.HttpClient), typeof(Magnet.Safety.HttpClient));
 
 
             //
-            this.ReplaceType(typeof(System.Runtime.InteropServices.DllImportAttribute), typeof(Magnet.Safety.DllImportAttribute));
-            this.ReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Safety.ModuleInitializerAttribute));
-            this.ReplaceType(typeof(System.Runtime.InteropServices.LibraryImportAttribute), typeof(Magnet.Safety.LibraryImportAttribute));
-            this.ReplaceType(typeof(System.Runtime.InteropServices.ComImportAttribute), typeof(Magnet.Safety.ComImportAttribute));
+            this.AddReplaceType(typeof(System.Runtime.InteropServices.DllImportAttribute), typeof(Magnet.Safety.DllImportAttribute));
+            this.AddReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Safety.ModuleInitializerAttribute));
+            this.AddReplaceType(typeof(System.Runtime.InteropServices.LibraryImportAttribute), typeof(Magnet.Safety.LibraryImportAttribute));
+            this.AddReplaceType(typeof(System.Runtime.InteropServices.ComImportAttribute), typeof(Magnet.Safety.ComImportAttribute));
 
 
-            this.ReplaceType(typeof(Magnet.Core.IScriptInstance), typeof(Magnet.Safety.IScriptInstance));
+            this.AddReplaceType(typeof(Magnet.Core.IScriptInstance), typeof(Magnet.Safety.IScriptInstance));
 
 
 

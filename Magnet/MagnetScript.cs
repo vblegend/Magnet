@@ -195,7 +195,7 @@ namespace Magnet
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
             this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             this.compilationOptions = this.compilationOptions.WithModuleName(this.Name);
-            Dictionary<string, ReportDiagnostic>? values = new Dictionary<string, ReportDiagnostic>();
+            Dictionary<string, ReportDiagnostic> values = new Dictionary<string, ReportDiagnostic>();
             foreach (var sd in options.suppressDiagnostics)
             {
                 values[sd] = ReportDiagnostic.Suppress;

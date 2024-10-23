@@ -22,6 +22,6 @@ namespace Magnet.Core
     {
         void Write(MessageType type, string message);
 
-        void Write(MessageType type, string format, params object?[]? arg);
+        void Write(MessageType type, string format, params object[] arg);
     }
 }

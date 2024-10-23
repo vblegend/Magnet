@@ -6,7 +6,7 @@ using System.Reflection;
 namespace Magnet
 {
 
-    public class ScriptExportMethod
+    public readonly struct ScriptExportMethod
     {
         internal ScriptExportMethod(MethodInfo methodInfo, String alias)
         {
@@ -17,7 +17,7 @@ namespace Magnet
         public readonly MethodInfo MethodInfo;
     }
 
-    public class AutowriredField
+    public readonly struct AutowriredField
     {
 
         internal AutowriredField(FieldInfo fieldInfo, Type requiredType, String slotName)
@@ -31,7 +31,7 @@ namespace Magnet
         public readonly FieldInfo FieldInfo;
     }
 
-    public class ScriptMetadata
+    public readonly struct ScriptMetadata
     {
         internal ScriptMetadata(Type scriptType, String scriptAlias)
         {
@@ -43,12 +43,6 @@ namespace Magnet
         public readonly String ScriptAlias;
         public readonly IReadOnlyList<AutowriredField> AutowriredFields  = new List<AutowriredField>();
         public readonly IReadOnlyDictionary<String, ScriptExportMethod> ExportMethods = new Dictionary<string, ScriptExportMethod>();
-
-
-
-
-
-
 
         internal void AddExportMethod(String key, ScriptExportMethod method)
         {
