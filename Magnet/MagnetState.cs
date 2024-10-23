@@ -1,4 +1,5 @@
-﻿using Magnet.Core;
+﻿using Magnet.Analysis;
+using Magnet.Core;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -58,12 +59,13 @@ namespace Magnet
     {
         private MagnetScript engine;
         private MagnetStateContext stateContext;
-
+        private readonly AnalyzerCollection Analyzers;
         public event Action<MagnetState> Unloading;
         public readonly Int64 Identity;
 
         internal MagnetState(MagnetScript engine, StateOptions createStateOptions)
         {
+            this.Analyzers = engine.Analyzers;
             this.Identity = createStateOptions.Identity;
             this.engine = engine;
             this.stateContext = new MagnetStateContext(engine, createStateOptions);
@@ -78,6 +80,7 @@ namespace Magnet
                 var instance = (AbstractScript)Activator.CreateInstance(meta.ScriptType);
                 this.stateContext.AddInstance(meta, instance);
                 this.stateContext.Autowired(meta.ScriptType, instance);
+                Analyzers.DefineInstance(meta, instance, stateContext);
             }
             //Injected Data
             foreach (var instance in this.stateContext.Instances)

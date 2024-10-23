@@ -1,66 +1,32 @@
 ﻿using Magnet.Core;
+using Magnet.Analysis;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Magnet;
 
 
 
 namespace App.Core.Timer
 {
-    public class TimerProvider : ITypeProcessor, ITimerManager
+    public class TimerProvider : ITimerManager, IAssemblyAnalyzer, ITypeAnalyzer, IInstanceAsalyzer
     {
         private struct TimerInfo
         {
             public MethodInfo MethodInfo;
             public TimerAttribute Options;
         }
-        #region Type Processor 
 
+        private ITimerService? timerService;
 
         private Dictionary<int, TimerInfo> timersDefine = new Dictionary<int, TimerInfo>();
 
-        void ITypeProcessor.ProcessAssembly(Assembly assembly)
-        {
-        }
-
-        void ITypeProcessor.ProcessScript(Type scriptType)
-        {
-            var fieldList = new List<MethodInfo>();
-            var type = scriptType;
-            while (type != null)
-            {
-                var _methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                foreach (var methodInfo in _methods)
-                {
-                    var timerAttr = methodInfo.GetCustomAttribute<TimerAttribute>();
-                    if (timerAttr != null)
-                    {
-                        var attributeType = timerAttr.GetType();
-                        if (timersDefine.TryGetValue(timerAttr.TimerIndex, out var timeInfo))
-                        {
-                            Console.WriteLine($"Repetitive Timer Index: {timerAttr.TimerIndex}  existing: {timeInfo.MethodInfo.DeclaringType!.Name}.{timeInfo.MethodInfo.Name}, ignored: {methodInfo.DeclaringType!.Name}.{methodInfo.Name}.");
-                            continue;
-                        }
-                        timersDefine.Add(timerAttr.TimerIndex, new TimerInfo() { MethodInfo = methodInfo, Options = timerAttr });
-                    }
-                }
-                type = type.BaseType;
-            }
-        }
-
-        void IDisposable.Dispose()
+        public void Dispose()
         {
             timersDefine.Clear();
         }
 
-
-        #endregion
-
-        private TimerService? timerService;
-
-
-
-        public void SetTimerService(TimerService? timerService)
+        public void SetTimerService(ITimerService? timerService)
         {
             this.timerService = timerService;
         }
@@ -115,5 +81,47 @@ namespace App.Core.Timer
                 timerService.Clear();
             }
         }
+
+
+        #region Analyzers
+        void IAssemblyAnalyzer.DefineAssembly(Assembly assembly)
+        {
+
+        }
+
+        void ITypeAnalyzer.DefineType(Type type)
+        {
+            var fieldList = new List<MethodInfo>();
+            while (type != null)
+            {
+                var _methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                foreach (var methodInfo in _methods)
+                {
+                    var timerAttr = methodInfo.GetCustomAttribute<TimerAttribute>();
+                    if (timerAttr != null)
+                    {
+                        var attributeType = timerAttr.GetType();
+                        if (timersDefine.TryGetValue(timerAttr.TimerIndex, out var timeInfo))
+                        {
+                            Console.WriteLine($"Repetitive Timer Index: {timerAttr.TimerIndex}  existing: {timeInfo.MethodInfo.DeclaringType!.Name}.{timeInfo.MethodInfo.Name}, ignored: {methodInfo.DeclaringType!.Name}.{methodInfo.Name}.");
+                            continue;
+                        }
+                        timersDefine.Add(timerAttr.TimerIndex, new TimerInfo() { MethodInfo = methodInfo, Options = timerAttr });
+                    }
+                }
+                type = type.BaseType;
+            }
+        }
+
+
+        public void DefineInstance(ScriptMetadata metadata, AbstractScript script, IStateContext context)
+        {
+
+        }
+
+
+
+        #endregion
+
     }
 }

@@ -4,13 +4,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 
-namespace Magnet
+namespace Magnet.Tracker
 {
     public class ReferenceTracker
     {
         private GCHandle _handle;
 
-        public ReferenceTracker(Object target)
+        public ReferenceTracker(object target)
         {
             if (target != null)
             {
@@ -18,7 +18,7 @@ namespace Magnet
             }
         }
 
-        public void SetTarget(Object target)
+        public void SetTarget(object target)
         {
             if (_handle.IsAllocated) _handle.Free();
             _handle = GCHandle.Alloc(target, GCHandleType.Weak);
@@ -36,21 +36,21 @@ namespace Magnet
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGetTarget([MaybeNullWhen(false), NotNullWhen(true)] out Object target)
+        public bool TryGetTarget([MaybeNullWhen(false), NotNullWhen(true)] out object target)
         {
-            Object? o = this.Target;
+            object o = Target;
             target = o!;
             return o != null;
         }
 
-        public Object Target
+        public object Target
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (_handle.IsAllocated)
                 {
-                    return _handle.Target ;
+                    return _handle.Target;
                 }
                 return null;
             }

@@ -5,16 +5,15 @@ using System.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualBasic.FileIO;
 using System.Runtime.CompilerServices;
 
 
-namespace Magnet
+namespace Magnet.Syntax
 {
     public class ForbiddenSymbols
     {
-        public String Method;
-        public String Typed;
+        public string Method;
+        public string Typed;
     }
 
     // ms
@@ -24,7 +23,7 @@ namespace Magnet
     {
 
         private SemanticModel semanticModel;
-        public readonly List<String> ForbiddenApis = new List<String>();
+        public readonly List<string> ForbiddenApis = new List<string>();
         private ScriptOptions scriptOptions;
 
         public ForbiddenApiWalker(ScriptOptions scriptOptions)
@@ -44,7 +43,7 @@ namespace Magnet
 
         public void VisitWith(SemanticModel model, SyntaxNode root)
         {
-            this.semanticModel = model;
+            semanticModel = model;
             base.Visit(root);
         }
 
@@ -71,7 +70,7 @@ namespace Magnet
         public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
             // 获取左侧表达式的类型信息
-            var typeInfo = this.semanticModel.GetTypeInfo(node.Expression);
+            var typeInfo = semanticModel.GetTypeInfo(node.Expression);
             var type = typeInfo.Type?.ToString();
 
             if (node.Name.Identifier.Text == "Socket")
@@ -90,13 +89,13 @@ namespace Magnet
 
 
 
-        private Boolean HasAttribute(MemberDeclarationSyntax node, String AttributeFullName)
+        private bool HasAttribute(MemberDeclarationSyntax node, string AttributeFullName)
         {
             foreach (var attributeList in node.AttributeLists)
             {
                 foreach (var attribute in attributeList.Attributes)
                 {
-                    var symbolInfo = this.semanticModel.GetSymbolInfo(attribute);
+                    var symbolInfo = semanticModel.GetSymbolInfo(attribute);
                     var attributeSymbol = symbolInfo.Symbol as IMethodSymbol;
                     if (attributeSymbol?.ContainingType.ToString() == AttributeFullName) return true;
                 }
@@ -111,7 +110,7 @@ namespace Magnet
             // 检查是否有 static 修饰符
             if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
             {
-                if (!this.HasAttribute(node, "Magnet.Core.GlobalAttribute"))
+                if (!HasAttribute(node, "Magnet.Core.GlobalAttribute"))
                 {
                     // 提取字段类型和字段名
                     var variableDeclaration = node.Declaration;
@@ -121,7 +120,7 @@ namespace Magnet
                     {
                         var fieldName = variable.Identifier.Text;
 
-                        this.AddReport(node, $"未确定的全局变量定义 {fieldName}，类型: {fieldType}，如果该成员为全局变量，请使用[Global]属性标记。");
+                        AddReport(node, $"未确定的全局变量定义 {fieldName}，类型: {fieldType}，如果该成员为全局变量，请使用[Global]属性标记。");
                     }
                 }
             }
@@ -139,11 +138,11 @@ namespace Magnet
             // 检查是否有 static 修饰符
             if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
             {
-                if (!this.HasAttribute(node, "Magnet.Core.GlobalAttribute"))
+                if (!HasAttribute(node, "Magnet.Core.GlobalAttribute"))
                 {
                     var propertyType = node.Type.ToString();
                     var propertyName = node.Identifier.Text;
-                    this.AddReport(node, $"未确定的全局变量定义 {propertyName}，类型: {propertyType}，如果该成员为全局变量，请使用[Global]属性标记。");
+                    AddReport(node, $"未确定的全局变量定义 {propertyName}，类型: {propertyType}，如果该成员为全局变量，请使用[Global]属性标记。");
                 }
             }
             base.VisitPropertyDeclaration(node);
@@ -158,10 +157,10 @@ namespace Magnet
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
             // 获取方法的语义信息
-            var symbol = this.semanticModel.GetDeclaredSymbol(node);
+            var symbol = semanticModel.GetDeclaredSymbol(node);
 
             // 检查是否有 async 修饰符
-            if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && (!this.scriptOptions.AllowAsync))
+            if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && !scriptOptions.AllowAsync)
             {
                 Console.WriteLine($"异步方法: {node.Identifier.Text}, 行: {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}");
             }
@@ -170,14 +169,14 @@ namespace Magnet
                 var ModuleInitializerAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.CompilerServices.ModuleInitializerAttribute");
                 if (ModuleInitializerAttribute != null)
                 {
-                    this.AddReport(node, $"ModuleInitializer");
+                    AddReport(node, $"ModuleInitializer");
                 }
 
                 // 检查方法的特性是否包含 DllImport
                 var dllImportAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.InteropServices.DllImportAttribute");
                 if (dllImportAttribute != null)
                 {
-                    this.AddReport(node, $"DllImport");
+                    AddReport(node, $"DllImport");
                 }
             }
 
@@ -218,10 +217,10 @@ namespace Magnet
                         typeName = typeInfo.Type.Name;
                     }
                 }
-                var symbols = forbiddenSymbols.Find(e => e.Typed == typeName && (String.IsNullOrEmpty(e.Method) || e.Method == methodName));
+                var symbols = forbiddenSymbols.Find(e => e.Typed == typeName && (string.IsNullOrEmpty(e.Method) || e.Method == methodName));
                 if (symbols != null)
                 {
-                    this.AddReport(node, $"{typeName}.{methodName}");
+                    AddReport(node, $"{typeName}.{methodName}");
                 }
             }
 
@@ -235,7 +234,7 @@ namespace Magnet
         public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
             // 检查是否是 Socket 的实例化
-            var typeInfo = this.semanticModel.GetTypeInfo(node);
+            var typeInfo = semanticModel.GetTypeInfo(node);
             var type = typeInfo.Type?.ToString();
             if (type == "System.Threading.Thread")
             {
@@ -243,12 +242,12 @@ namespace Magnet
                 var location = node.GetLocation();
                 var lineSpan = location.GetLineSpan();
 
-                this.AddReport(node, $"new {type}");
+                AddReport(node, $"new {type}");
             }
             base.VisitObjectCreationExpression(node);
         }
 
-        private void AddReport(CSharpSyntaxNode node, String message)
+        private void AddReport(CSharpSyntaxNode node, string message)
         {
 
             // 获取位置并打印行列信息

@@ -1,4 +1,6 @@
-﻿using Magnet.Core;
+﻿using Magnet.Analysis;
+using Magnet.Core;
+using Magnet.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -29,9 +31,38 @@ namespace Magnet
         public Boolean UseDebugger { get; private set; }
         public Boolean AllowAsync { get; private set; } = false;
         public IOutput Output { get; private set; } = new ConsoleOutput();
-        public readonly List<ITypeProcessor> TypeProcessors = new List<ITypeProcessor> ();
+        public readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
         public String[] PreprocessorSymbols { get; private set; } = [];
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
+
+        internal List<String> suppressDiagnostics = new List<string>();
+        internal ITypeRewriter typeRewriter;
+
+        /// <summary>
+        /// Set the script type rewriter, which is used to replace or check the type of a script.
+        /// When ReplaceType fails, this object method is called to rewrite the type
+        /// </summary>
+        /// <param name="typeRewriter"></param>
+        /// <returns></returns>
+        public ScriptOptions WithTypeRewriter(ITypeRewriter typeRewriter)
+        {
+            this.typeRewriter = typeRewriter;
+            return this;
+        }
+
+
+
+        /// <summary>
+        /// Add compiler suppress diagnostic 
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public ScriptOptions AddSuppressDiagnostic(String code)
+        {
+            suppressDiagnostics.Add(code);
+            return this;
+        }
+
 
 
         /// <summary>
@@ -62,9 +93,9 @@ namespace Magnet
         /// </summary>
         /// <param name="processor"></param>
         /// <returns></returns>
-        public ScriptOptions AddTypeProcessor(ITypeProcessor processor)
+        public ScriptOptions AddAnalyzer(IAnalyzer analyzer)
         {
-            this.TypeProcessors.Add(processor);
+            this.Analyzers.Add(analyzer);
             return this;
         }
 
@@ -292,6 +323,29 @@ namespace Magnet
 
 
 
+        public ScriptOptions UseDefaultSuppressDiagnostics()
+        {
+            suppressDiagnostics.Add("CA1050");
+            suppressDiagnostics.Add("CA1822");
+            suppressDiagnostics.Add("CS1701");
+            suppressDiagnostics.Add("CS1702");
+            suppressDiagnostics.Add("CS1705");
+            suppressDiagnostics.Add("CS2008");
+            suppressDiagnostics.Add("CS8019");
+            suppressDiagnostics.Add("CS162"); //- Unreachable code detected.
+            suppressDiagnostics.Add("CS0219");// - The variable 'V' is assigned but its value is never used.
+            suppressDiagnostics.Add("CS0414");// - The private field 'F' is assigned but its value is never used.
+            suppressDiagnostics.Add("CS0616");// - Member is obsolete.
+            suppressDiagnostics.Add("CS0649");// - Field 'F' is never assigned to, and will always have its default value.
+            suppressDiagnostics.Add("CS0693");// - Type parameter 'type parameter' has the same name as the type parameter from outer type 'T'
+            suppressDiagnostics.Add("CS1591");// - Missing XML comment for publicly visible type or member 'Type_or_Member'
+            suppressDiagnostics.Add("CS1998");// - This async method lacks 'await' operators and will run synchronously
+            return this;
+        }
+
+
+
+
 
         /// <summary>
         /// Disable some insecure script types
@@ -345,7 +399,7 @@ namespace Magnet
 
             this.ReplaceType(typeof(Magnet.Core.IScriptInstance), typeof(Magnet.Safety.IScriptInstance));
 
-            
+
 
             return this;
         }

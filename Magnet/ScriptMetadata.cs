@@ -1,29 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Reflection;
 
 namespace Magnet
 {
 
-    internal class ScriptExportMethod
+    public class ScriptExportMethod
     {
-        public String Alias { get; set; }
-        public MethodInfo MethodInfo { get; set; }
+        internal ScriptExportMethod(MethodInfo methodInfo, String alias)
+        {
+            this.MethodInfo = methodInfo;
+            this.Alias = alias;
+        }
+        public readonly String Alias;
+        public readonly MethodInfo MethodInfo;
     }
 
-    internal class AutowriredField
+    public class AutowriredField
     {
-        public String SlotName { get; set; }
-        public Type RequiredType { get; set; }
-        public FieldInfo FieldInfo { get; set; }
+
+        internal AutowriredField(FieldInfo fieldInfo, Type requiredType, String slotName)
+        {
+            this.FieldInfo = fieldInfo;
+            this.SlotName = slotName;
+            this.RequiredType = requiredType;
+        }
+        public readonly String SlotName;
+        public readonly Type RequiredType;
+        public readonly FieldInfo FieldInfo;
     }
 
-    internal class ScriptMetadata
+    public class ScriptMetadata
     {
-        public Type ScriptType { get; set; }
-        public String ScriptAlias { get;  set; }
-        public List<AutowriredField> AutowriredFields { get; set; } = new List<AutowriredField>();
-        public Dictionary<String, ScriptExportMethod> ExportMethods { get; set; } = new Dictionary<string, ScriptExportMethod>();
+        internal ScriptMetadata(Type scriptType, String scriptAlias)
+        {
+            this.ScriptType = scriptType;
+            this.ScriptAlias = scriptAlias;
+        }
 
+        public readonly Type ScriptType;
+        public readonly String ScriptAlias;
+        public readonly IReadOnlyList<AutowriredField> AutowriredFields  = new List<AutowriredField>();
+        public readonly IReadOnlyDictionary<String, ScriptExportMethod> ExportMethods = new Dictionary<string, ScriptExportMethod>();
+
+
+
+
+
+
+
+        internal void AddExportMethod(String key, ScriptExportMethod method)
+        {
+            (ExportMethods as Dictionary<string, ScriptExportMethod>).Add(key, method);
+        }
+
+        internal void AddAutowriredField(AutowriredField field)
+        {
+            (AutowriredFields as List<AutowriredField>).Add(field);
+        }
     }
 }

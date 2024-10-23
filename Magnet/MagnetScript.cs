@@ -1,4 +1,8 @@
-﻿using Magnet.Core;
+﻿using Magnet.Analysis;
+using Magnet.Core;
+using Magnet.Exceptions;
+using Magnet.Syntax;
+using Magnet.Tracker;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -60,12 +64,12 @@ namespace Magnet
         private readonly WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         private ScriptLoadContext scriptLoadContext;
-        private readonly List<ITypeProcessor> TypeProcessors;
+        internal readonly AnalyzerCollection Analyzers;
 
         private readonly Dictionary<Int64, MagnetState> SurvivalStates = new();
         private static GCEventListener gcEventListener = new GCEventListener();
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
-        private static readonly Assembly[] ImportantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly,];
+        private static readonly Assembly[] ImportantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly];
 
 
 
@@ -155,8 +159,7 @@ namespace Magnet
                     state = null;
                 }
             }
-            foreach (var provider in TypeProcessors) provider.Dispose();
-            this.TypeProcessors.Clear();
+            this.Analyzers?.Dispose();
             this.Unloading?.Invoke(this);
             this.Unloading = null;
             this.diagnostics.Clear();
@@ -185,13 +188,19 @@ namespace Magnet
             this.Options = options;
             this.Name = options.Name;
             this.Status = ScrriptStatus.NotReady;
-            this.TypeProcessors = Options.TypeProcessors;
+            this.Analyzers = new AnalyzerCollection(Options.Analyzers);
             this.scriptLoadContext = new ScriptLoadContext(options);
             this.compilationOptions = this.compilationOptions.WithAllowUnsafe(false);
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
             this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
             this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             this.compilationOptions = this.compilationOptions.WithModuleName(this.Name);
+            Dictionary<string, ReportDiagnostic>? values = new Dictionary<string, ReportDiagnostic>();
+            foreach (var sd in options.suppressDiagnostics)
+            {
+                values[sd] = ReportDiagnostic.Suppress;
+            }
+            this.compilationOptions = this.compilationOptions.WithSpecificDiagnosticOptions(values);
             gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
         }
 
@@ -286,13 +295,10 @@ namespace Magnet
                                             .Select(type =>
                                             {
                                                 var attribute = type.GetCustomAttribute<ScriptAttribute>();
-                                                var scriptConfig = new ScriptMetadata();
-                                                scriptConfig.ScriptType = type;
-                                                scriptConfig.ScriptAlias = String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias;
+                                                var scriptConfig = new ScriptMetadata(type, String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias);
                                                 ParseScriptAutowriredFields(scriptConfig);
                                                 ParseScriptMethods(scriptConfig);
-
-                                                EmitTypeProcessScript(type);
+                                                this.Analyzers.DefineType(type);
                                                 //Console.WriteLine($"Found Script：{type.Name}");
                                                 return scriptConfig;
                                             }).ToImmutableList();
@@ -306,14 +312,7 @@ namespace Magnet
         }
 
 
-        private void EmitTypeProcessScript(Type type)
-        {
-            foreach (var provider in this.TypeProcessors) provider.ProcessScript(type);
-        }
-        private void EmitTypeProcessAssembly(Assembly assembly)
-        {
-            foreach (var provider in this.TypeProcessors) provider.ProcessAssembly(assembly);
-        }
+
         private void ParseScriptAutowriredFields(ScriptMetadata metaInfo)
         {
             var fieldList = new List<FieldInfo>();
@@ -326,11 +325,8 @@ namespace Magnet
                     var attribute = fieldInfo.GetCustomAttribute<AutowiredAttribute>();
                     if (attribute != null)
                     {
-                        var autowrired = new AutowriredField();
-                        autowrired.FieldInfo = fieldInfo;
-                        autowrired.RequiredType = attribute.Type;
-                        autowrired.SlotName = attribute.ProviderName;
-                        metaInfo.AutowriredFields.Add(autowrired);
+                        var autowrired = new AutowriredField(fieldInfo, attribute.Type, attribute.ProviderName);
+                        metaInfo.AddAutowriredField(autowrired);
                     }
                 }
 
@@ -352,10 +348,8 @@ namespace Magnet
                     var attribute = methodInfo.GetCustomAttribute<FunctionAttribute>();
                     if (attribute != null)
                     {
-                        var exportMethod = new ScriptExportMethod();
-                        exportMethod.MethodInfo = methodInfo;
-                        exportMethod.Alias = String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias;
-                        metaInfo.ExportMethods.Add(exportMethod.Alias, exportMethod);
+                        var exportMethod = new ScriptExportMethod(methodInfo, String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias);
+                        metaInfo.AddExportMethod(exportMethod.Alias, exportMethod);
                     }
                 }
                 type = type.BaseType;
@@ -425,8 +419,6 @@ namespace Magnet
             .Distinct()
             .Select(a => MetadataReference.CreateFromFile(a.Location));
 
-
-
             var compilation = CSharpCompilation.Create(
                 assemblyName: this.Name,
                 syntaxTrees: syntaxTrees,
@@ -435,8 +427,9 @@ namespace Magnet
             );
 
             // 检查是否有不允许的 API 调用
+            var typeResolver = new TypeResolver(this.Options);
             var walker = new ForbiddenApiWalker(this.Options);
-            var rewriter = new SyntaxTreeRewriter(this.Options.ReplaceTypes);
+            var rewriter = new SyntaxTreeRewriter(typeResolver);
             for (int i = 0; i < syntaxTrees.Count; i++)
             {
                 var syntaxTree = syntaxTrees[i];
@@ -495,7 +488,7 @@ namespace Magnet
                 var assembly = scriptLoadContext.LoadFromStream(execStream, pdbStream);
                 this.scriptAssembly.SetTarget(assembly);
                 this.Status = ScrriptStatus.Ready;
-                EmitTypeProcessAssembly(assembly);
+                this.Analyzers.DefineAssembly(assembly);
                 CompileComplete?.Invoke(this, assembly, execStream, pdbStream);
                 if (pdbStream != null) pdbStream.Dispose();
                 if (execStream != null && !String.IsNullOrEmpty(Options.OutPutFile))

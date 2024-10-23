@@ -6,7 +6,7 @@ namespace App.Core.Timer
     /// <summary>
     /// Simulate Timer Service
     /// </summary>
-    public class TimerService
+    public class TimerService: ITimerService
     {
         private Dictionary<Int32, System.Threading.Timer> _timers = new Dictionary<int, System.Threading.Timer>();
 

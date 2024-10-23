@@ -1,19 +1,16 @@
-﻿using Microsoft.CodeAnalysis.Scripting;
+﻿
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Magnet
+
+namespace Magnet.Exceptions
 {
     public sealed class ScriptExistException : Exception
     {
-        public String Name { get; private set; }
+        public string Name { get; private set; }
 
         public ScriptExistException(string name)
         {
-            Name = name;    
+            Name = name;
         }
     }
 

@@ -1,6 +1,7 @@
 using App.Core;
 using App.Core.Events;
 using App.Core.Timer;
+using Magnet.Test.Timer;
 using System;
 using System.Reflection;
 
@@ -25,7 +26,7 @@ namespace Magnet.Test
             options.WithPreprocessorSymbols("USE_FILE");
 
             var timerProvider = new TimerProvider();
-            options.AddTypeProcessor(timerProvider);
+            options.AddAnalyzer(timerProvider);
             options.RegisterProvider(timerProvider);
 
             // Insecure
@@ -49,7 +50,19 @@ namespace Magnet.Test
 
 
         private MagnetScript scriptManager = null;
+
+     
         private MagnetState state = null;
+
+        [TearDown]
+        public void TearDown()
+        {
+            state.Dispose();
+        }
+
+
+
+
         [SetUp]
 
         public void Compile()

@@ -6,16 +6,16 @@ using System.Collections.Generic;
 using System.Reflection;
 
 
-namespace Magnet
+namespace Magnet.Syntax
 {
     internal class SyntaxTreeRewriter : CSharpSyntaxRewriter
     {
         private SemanticModel semanticModel;
 
-        private Dictionary<String, String> ReplaceTypes;
-        public SyntaxTreeRewriter(Dictionary<String, String> ReplaceTypes)
+        private TypeResolver typeResolver;
+        public SyntaxTreeRewriter(TypeResolver typeResolver)
         {
-            this.ReplaceTypes = ReplaceTypes;
+            this.typeResolver = typeResolver;
         }
 
         /// <summary>
@@ -26,9 +26,10 @@ namespace Magnet
         public override SyntaxNode VisitCastExpression(CastExpressionSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node);
-            if (this.ReplaceTypes.TryGetValue(typeInfo.Type?.ToString(), out var newTypeName))
+            var typeFullName = this.typeResolver.TypeCast(typeInfo.Type);
+            if (!String.IsNullOrEmpty(typeFullName))
             {
-                return node.WithType(this.MakeNameSyntax(newTypeName));
+                return node.WithType(this.MakeNameSyntax(typeFullName));
             }
             return base.VisitCastExpression(node);
         }
@@ -44,9 +45,18 @@ namespace Magnet
             if (node.Kind() == SyntaxKind.AsExpression || node.Kind() == SyntaxKind.IsExpression)
             {
                 var typeInfo = semanticModel.GetTypeInfo(node);
-                if (this.ReplaceTypes.TryGetValue(typeInfo.Type?.ToString(), out var newTypeName))
+                String typeFullName = null;
+                if (node.Kind() == SyntaxKind.AsExpression)
                 {
-                    return node.WithRight(this.MakeNameSyntax(newTypeName));
+                    typeFullName = this.typeResolver.AsType(typeInfo.Type);
+                }
+                else
+                {
+                    typeFullName = this.typeResolver.IsType(typeInfo.Type);
+                }
+                if (!String.IsNullOrEmpty(typeFullName))
+                {
+                    return node.WithRight(this.MakeNameSyntax(typeFullName));
                 }
             }
             return base.VisitBinaryExpression(node);
@@ -55,9 +65,10 @@ namespace Magnet
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node);
-            if (this.ReplaceTypes.TryGetValue(typeInfo.Type?.ToString(), out var newTypeName))
+            var typeFullName = this.typeResolver.TypeCreation(typeInfo.Type);
+            if (!String.IsNullOrEmpty(typeFullName))
             {
-                return node.WithType(MakeNameSyntax(newTypeName));
+                return node.WithType(this.MakeNameSyntax(typeFullName));
             }
             return base.VisitObjectCreationExpression(node);
         }
@@ -67,17 +78,17 @@ namespace Magnet
             // 获取 typeof 内的类型
             var typeSyntax = node.Type;
             // 使用语义模型获取类型信息
-            var typeInfo = this.semanticModel.GetTypeInfo(typeSyntax);
-
-            if (this.ReplaceTypes.TryGetValue(typeInfo.ConvertedType.ToString(), out var newTypeName))
+            var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
+            var typeFullName = this.typeResolver.TypeOf(typeInfo.Type);
+            if (!String.IsNullOrEmpty(typeFullName))
             {
-                return node.WithType(this.MakeNameSyntax(newTypeName));
+                return node.WithType(this.MakeNameSyntax(typeFullName));
             }
             return base.VisitTypeOfExpression(node);
         }
 
 
-        public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
+        public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             // 获取方法的符号信息
             var symbolInfo = semanticModel.GetSymbolInfo(node);
@@ -86,10 +97,11 @@ namespace Magnet
             // 判断是否是 Thread.Sleep 方法
             if (methodSymbol != null && methodSymbol.IsStatic)
             {
-                if (this.ReplaceTypes.TryGetValue(methodSymbol.ContainingType?.ToString(), out var newTypeName))
+                var typeFullName = this.typeResolver.TypeStaticMethodCall(methodSymbol.ContainingType, methodSymbol);
+                if (!String.IsNullOrEmpty(typeFullName))
                 {
                     //构建新的 ThreadProxy.Sleep 调用
-                    var newExpression = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, MakeNameSyntax(newTypeName), SyntaxFactory.IdentifierName(methodSymbol.Name));
+                    var newExpression = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, MakeNameSyntax(typeFullName), SyntaxFactory.IdentifierName(methodSymbol.Name));
                     //替换原来的方法调用表达式
                     var newInvocation = node.WithExpression(newExpression);
                     return newInvocation;
@@ -99,22 +111,16 @@ namespace Magnet
         }
 
 
-        public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        public override SyntaxNode VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
-            // 获取属性或字段的符号信息
             var symbolInfo = semanticModel.GetSymbolInfo(node);
             var memberSymbol = symbolInfo.Symbol as ISymbol;
-
             if (memberSymbol != null && memberSymbol.IsStatic && (memberSymbol.Kind == SymbolKind.Property || memberSymbol.Kind == SymbolKind.Field))
             {
-                if (this.ReplaceTypes.TryGetValue(memberSymbol.ContainingType?.ToString(), out var newTypeName))
+                var typeFullName = this.typeResolver.TypeStaticMemberAccess(memberSymbol.ContainingType, memberSymbol);
+                if (!String.IsNullOrEmpty(typeFullName))
                 {
-                    //var newExpression = SyntaxFactory.MemberAccessExpression(
-                    //    SyntaxKind.SimpleMemberAccessExpression,
-                    //    MakeNameSyntax("Magnet.Safety.ThreadProxy"),
-                    //    SyntaxFactory.IdentifierName(memberSymbol.Name)
-                    //);
-                    return node.WithExpression(MakeNameSyntax(newTypeName));
+                    return node.WithExpression(MakeNameSyntax(typeFullName));
                 }
             }
             return base.VisitMemberAccessExpression(node);
@@ -125,10 +131,10 @@ namespace Magnet
 
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            var symbol = this.semanticModel.GetDeclaredSymbol(node);
+            var symbol = semanticModel.GetDeclaredSymbol(node);
             if (symbol.IsStatic)
             {
-                if (this.VisitAttributes(node.AttributeLists, out var attributeLists))
+                if (VisitAttributes(node.AttributeLists, out var attributeLists))
                 {
                     return node.WithAttributeLists(attributeLists);
                 }
@@ -139,7 +145,7 @@ namespace Magnet
 
 
 
-        private Boolean VisitAttributes(SyntaxList<AttributeListSyntax> attributeLists, out SyntaxList<AttributeListSyntax> newList)
+        private bool VisitAttributes(SyntaxList<AttributeListSyntax> attributeLists, out SyntaxList<AttributeListSyntax> newList)
         {
             newList = SyntaxFactory.List<AttributeListSyntax>();
             var count = 0;
@@ -149,12 +155,13 @@ namespace Magnet
                 List<AttributeSyntax> attributeList2 = new List<AttributeSyntax>();
                 foreach (var attribute in attributeList.Attributes)
                 {
-                    var symbol = this.semanticModel.GetSymbolInfo(attribute).Symbol as IMethodSymbol;
+                    var symbol = semanticModel.GetSymbolInfo(attribute).Symbol as IMethodSymbol;
                     var attr = attribute;
-                    if (this.ReplaceTypes.TryGetValue(symbol.ContainingType?.ToString(), out var newTypeName))
+                    var typeFullName = this.typeResolver.MethodAttribute(symbol.ContainingType);
+                    if (!String.IsNullOrEmpty(typeFullName))
                     {
                         count++;
-                        attr = attribute.WithName(SyntaxFactory.ParseName(newTypeName));
+                        attr = attribute.WithName(SyntaxFactory.ParseName(typeFullName));
                     }
                     attributeList2.Add(attr);
                 }
@@ -183,7 +190,7 @@ namespace Magnet
 
         public SyntaxNode VisitWith(SemanticModel model, SyntaxNode root)
         {
-            this.semanticModel = model;
+            semanticModel = model;
             return base.Visit(root);
         }
 

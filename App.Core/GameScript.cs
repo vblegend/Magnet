@@ -28,7 +28,7 @@ namespace App.Core
 
         protected override void Initialize()
         {
-            var timerService = this.StateContext?.GetProvider<TimerService>();
+            var timerService = this.StateContext?.GetProvider<ITimerService>();
             timerManager?.SetTimerService(timerService);
         }
 

@@ -5,15 +5,21 @@ using App.Core;
 using App.Core.Events;
 using App.Core.Timer;
 using Magnet;
+
+using Microsoft.CodeAnalysis;
 using QuadTrees;
 using QuadTrees.QTreePoint;
 using ScriptRuner;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
+
+
+
+
 
 public static class Program
 {
@@ -35,11 +41,13 @@ public static class Program
         options.WithPreprocessorSymbols("USE_FILE");
 
         var timerProvider = new TimerProvider();
-        options.AddTypeProcessor(timerProvider);
+        options.AddAnalyzer(timerProvider);
         options.RegisterProvider(timerProvider);
 
         // Insecure
         options.DisabledInsecureTypes();
+        options.WithTypeRewriter(new TypeRewriter());
+        options.UseDefaultSuppressDiagnostics();
         //
         options.SetAssemblyLoadCallback(AssemblyLoad);
         options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
@@ -73,7 +81,7 @@ public static class Program
         quadTree.Add(hum);
         var objs1 = quadTree.GetObjects(888, 888);
         var objs2 = quadTree.GetObjects(100, 240);
-        hum.Point = new Point(888,888);
+        hum.Point = new Point(888, 888);
         quadTree.Move(hum);
         var objs3 = quadTree.GetObjects(888, 888);
         var objs4 = quadTree.GetObjects(100, 240);
@@ -160,6 +168,10 @@ public static class Program
 
 
         var result = scriptManager.Compile();
+        foreach (var diagnostic in result.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden))
+        {
+            Console.WriteLine(diagnostic.ToString());
+        }
         if (result.Success)
         {
             var stateOptions = StateOptions.Default;
@@ -182,15 +194,6 @@ public static class Program
             stateTest = null;
             scriptManager.Unload(true);
         }
-        else
-        {
-            // 处理编译错误
-            foreach (var diagnostic in result.Diagnostics)
-            {
-                Console.WriteLine(diagnostic.ToString());
-            }
-        }
-
 
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
         {
@@ -233,8 +236,6 @@ public static class Program
     private static void CallLogin(MagnetState state)
     {
         var login = state.MethodDelegate<Action>("ScriptA", "Main");
-        var context = new LoginContext();
-        context.UserName = "Administrator";
         if (login.TryGetTarget(out var target))
         {
             target();

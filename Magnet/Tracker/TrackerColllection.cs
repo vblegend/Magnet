@@ -5,52 +5,52 @@ using System.Linq;
 
 
 
-namespace Magnet
+namespace Magnet.Tracker
 {
     public class TrackerColllection : IEnumerable<ReferenceTracker>, IEnumerable
     {
 
         // 使用 List 来存储 ReferenceTracker 实例
         private readonly List<ReferenceTracker> _trackers = new List<ReferenceTracker>();
-        private readonly Object lockedObject = new Object();
+        private readonly object lockedObject = new object();
 
 
-        public void AddRange(IEnumerable<Object> trackObjects)
+        public void AddRange(IEnumerable<object> trackObjects)
         {
             lock (lockedObject)
             {
                 if (trackObjects != null && trackObjects.Count() > 0)
                 {
-                    this._trackers.AddRange(trackObjects.Select(trackObject => new ReferenceTracker(trackObject)));
+                    _trackers.AddRange(trackObjects.Select(trackObject => new ReferenceTracker(trackObject)));
                 }
             }
 
         }
 
-        public void Add(Object trackObject)
+        public void Add(object trackObject)
         {
             lock (lockedObject)
             {
-                if (trackObject != null) this._trackers.Add(new ReferenceTracker(trackObject));
+                if (trackObject != null) _trackers.Add(new ReferenceTracker(trackObject));
             }
 
         }
 
 
-        public Int32 AliveCount
+        public int AliveCount
         {
             get
             {
                 lock (lockedObject)
                 {
-                    return this._trackers.Where(E => E.IsAlive).Count();
+                    return _trackers.Where(E => E.IsAlive).Count();
                 }
             }
         }
 
         public void Check()
         {
-            lock (lockedObject) this._trackers.RemoveAll(E => !E.IsAlive);
+            lock (lockedObject) _trackers.RemoveAll(E => !E.IsAlive);
         }
 
 
@@ -58,8 +58,8 @@ namespace Magnet
         {
             lock (lockedObject)
             {
-                this._trackers.RemoveAll(E => !E.IsAlive);
-                return this._trackers;
+                _trackers.RemoveAll(E => !E.IsAlive);
+                return _trackers;
             }
         }
 
