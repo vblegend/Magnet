@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Magnet.Tracker
 {
-    public class TrackerColllection : IEnumerable<ReferenceTracker>, IEnumerable
+    internal class TrackerColllection : IEnumerable<ReferenceTracker>, IEnumerable
     {
 
         // 使用 List 来存储 ReferenceTracker 实例

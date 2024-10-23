@@ -6,10 +6,17 @@ using System.Runtime.InteropServices;
 
 namespace Magnet.Tracker
 {
-    public class ReferenceTracker
+    /// <summary>
+    /// 
+    /// </summary>
+    internal class ReferenceTracker
     {
         private GCHandle _handle;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="target"></param>
         public ReferenceTracker(object target)
         {
             if (target != null)
@@ -18,6 +25,10 @@ namespace Magnet.Tracker
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="target"></param>
         public void SetTarget(object target)
         {
             if (_handle.IsAllocated) _handle.Free();
@@ -26,7 +37,9 @@ namespace Magnet.Tracker
 
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         ~ReferenceTracker()
         {
             if (_handle.IsAllocated)
@@ -35,6 +48,12 @@ namespace Magnet.Tracker
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetTarget([MaybeNullWhen(false), NotNullWhen(true)] out object target)
         {
@@ -43,6 +62,10 @@ namespace Magnet.Tracker
             return o != null;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         public object Target
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -56,6 +79,10 @@ namespace Magnet.Tracker
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         public bool IsAlive
         {
             get
@@ -64,6 +91,10 @@ namespace Magnet.Tracker
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void Dispose()
         {
             if (_handle.IsAllocated) _handle.Free();

@@ -74,7 +74,13 @@ namespace Magnet.Core
 
         }
 
-#if RELEASE 
+
+        /// <summary>
+        /// Output a message to the output stream
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="message"></param>
+#if RELEASE
         [DebuggerHidden]
 #endif
         public void Output(MessageType type, String message)
@@ -149,7 +155,14 @@ namespace Magnet.Core
 
         }
 
-#if RELEASE 
+
+
+        /// <summary>
+        /// Gets the script instance in state that matches the generic
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+#if RELEASE
         [DebuggerHidden]
 #endif
         public T Script<T>() where T : AbstractScript
@@ -157,7 +170,14 @@ namespace Magnet.Core
             return stateContext.InstanceOfType<T>();
         }
 
-#if RELEASE 
+
+
+        /// <summary>
+        /// Gets the script instance in state that matches the type, and calls callback if it exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="callback"></param>
+#if RELEASE
         [DebuggerHidden]
 #endif
         public void Script<T>(Action<T> callback) where T : AbstractScript

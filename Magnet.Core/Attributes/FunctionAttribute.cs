@@ -12,11 +12,19 @@ namespace Magnet.Core
     public sealed class FunctionAttribute : Attribute
     {
 
-
+        /// <summary>
+        /// Define script methods that can be called externally, using the method name as the name of the defined function
+        /// </summary>
         public FunctionAttribute()
         {
    
         }
+
+        /// <summary>
+        /// Define script methods that can be called externally, and define method aliases
+        /// </summary>
+        /// <param name="alias"></param>
+        /// <param name="description"></param>
         public FunctionAttribute(String alias = "",String description = "")
         {
             this.Alias = alias;

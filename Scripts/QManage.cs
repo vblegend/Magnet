@@ -14,6 +14,7 @@ public class QManage : GameScript, IPlayLifeEvent
     public void OnOnline(IOnlineContext ctx)
     {
         Print("上线了。。。");
+        Give(Make("木剑").Quality(5).Alias("xxl").Upgrade());
     }
 
 

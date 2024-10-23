@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 
 namespace Magnet.Syntax
 {
-    public class ForbiddenSymbols
+    internal class ForbiddenSymbols
     {
         public string Method;
         public string Typed;
@@ -19,7 +19,7 @@ namespace Magnet.Syntax
     // ms
 
     // 自定义的 Roslyn 语法树 Walker，用于检测不允许的 API 调用
-    public class ForbiddenApiWalker : CSharpSyntaxWalker
+    internal class ForbiddenApiWalker : CSharpSyntaxWalker
     {
 
         private SemanticModel semanticModel;

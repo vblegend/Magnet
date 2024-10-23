@@ -201,9 +201,10 @@ namespace Magnet
             {
                 Type type = script.GetType();
                 var field = type.GetField(variableName);
+                if (field == null) throw new Exception("Field not found");
                 return field?.GetValue(script);
             }
-            throw new Exception("Variable not found");
+            throw new Exception("Field not found");
         }
 
 
@@ -220,8 +221,10 @@ namespace Magnet
             {
                 Type type = script.GetType();
                 var field = type.GetField(variableName);
+                if (field == null) throw new Exception("Field not found");
                 field?.SetValue(script, value);
             }
+            throw new Exception("Field not found");
         }
 
 

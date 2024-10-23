@@ -10,22 +10,40 @@ namespace Magnet.Core
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public sealed class AutowiredAttribute : Attribute
     {
+
+        /// <summary>
+        /// The tag field is an injection type and can be injected by an external Provider
+        /// </summary>
         public AutowiredAttribute()
         {
             
         }
 
+        /// <summary>
+        /// Mark the field as an injection type, which can be injected by an external Provider. Set the injection type and name of the field
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="providerName"></param>
         public AutowiredAttribute(Type type, String providerName)
         {
             this.ProviderName = providerName;
             this.Type = type;
         }
 
+        /// <summary>
+        /// Mark the field as an injection type, which can be injected by an external Provider. Set the injection name of the field
+        /// </summary>
+        /// <param name="name"></param>
         public AutowiredAttribute(String name)
         {
             this.ProviderName = name;
         }
 
+
+        /// <summary>
+        /// Mark the field as an injection type, which can be injected by an external Provider. Set the injection type of the field
+        /// </summary>
+        /// <param name="type"></param>
         public AutowiredAttribute(Type type)
         {
             this.Type = type;

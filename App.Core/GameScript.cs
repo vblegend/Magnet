@@ -1,6 +1,4 @@
-﻿
-using App.Core.Timer;
-using App.Core.UserInterface;
+﻿using App.Core.Timer;
 using Magnet.Core;
 using System;
 using System.Diagnostics;
@@ -10,6 +8,9 @@ using System.Runtime.CompilerServices;
 
 namespace App.Core
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public abstract class GameScript : AbstractScript
     {
 
@@ -36,22 +37,30 @@ namespace App.Core
 
         protected sealed override void UnInitialize()
         {
-            CLEAR_TIMER();
+            ClearTimers();
         }
 
 
-#if RELEASE 
+        /// <summary>
+        /// clear state all timers
+        /// </summary>
+#if RELEASE
         [DebuggerHidden]
 #endif
-        protected void CLEAR_TIMER()
+        protected void ClearTimers()
         {
             timerManager?.ClearTimer(this);
         }
 
-#if RELEASE 
+
+        /// <summary>
+        /// enable a timer
+        /// </summary>
+        /// <param name="timerIndex"></param>
+#if RELEASE
         [DebuggerHidden]
 #endif
-        protected void ENABLE_TIMER(Int32 timerIndex)
+        protected void EnableTimer(Int32 timerIndex)
         {
             //Int64 combined = ((Int64)timerIndex << 32) | (uint)intervalSecond;
             //Int32 aRecovered = (Int32)(combined >> 32);
@@ -59,10 +68,15 @@ namespace App.Core
             timerManager?.EnableTimer(this, timerIndex);
         }
 
+
+        /// <summary>
+        ///  disable a timer
+        /// </summary>
+        /// <param name="timerIndex"></param>
 #if RELEASE
         [DebuggerHidden]
 #endif
-        protected void DISABLE_TIMER(Int32 timerIndex)
+        protected void DisableTimer(Int32 timerIndex)
         {
             timerManager?.DisableTimer(this, timerIndex);
         }
@@ -71,40 +85,38 @@ namespace App.Core
 #if RELEASE
         [DebuggerHidden]
 #endif
-        protected IItemBuilder MAKE(String item)
+        protected IItemBuilder Make(String item)
         {
-
-
-            return null;
+            return new ItemBuilder(item);
         }
 
 #if RELEASE
         [DebuggerHidden]
 #endif
-        protected IItemBuilder MAKE(Int32 itemId)
+        protected IItemBuilder Make(Int32 itemId)
         {
-
-
-            return null;
+            return new ItemBuilder(itemId);
         }
-
-#if RELEASE
-        [DebuggerHidden]
-#endif
-        protected void GIVE(IItemBuilder item)
-        {
-
-        }
-
 
 
 
 #if RELEASE
         [DebuggerHidden]
 #endif
-        protected Int32 RANDOM(Int32 maxValue)
+        protected void Give(IItemBuilder item)
         {
-            return Random.Shared.Next(maxValue);
+
+        }
+
+
+
+
+#if RELEASE
+        [DebuggerHidden]
+#endif
+        protected Int32 Random(Int32 maxValue)
+        {
+            return System.Random.Shared.Next(maxValue);
         }
 
 

@@ -13,6 +13,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading;
 
 
@@ -59,7 +60,7 @@ public static class Program
 
 
 
-    static Assembly AssemblyLoad(ScriptLoadContext context, AssemblyName assemblyName)
+    static Assembly AssemblyLoad(AssemblyLoadContext context, AssemblyName assemblyName)
     {
         return null;
     }
@@ -75,7 +76,6 @@ public static class Program
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         scriptManager.Unloading += ScriptManager_Unloading;
         scriptManager.Unloaded += ScriptManager_Unloaded;
-
 
         var result = scriptManager.Compile();
         foreach (var diagnostic in result.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden))

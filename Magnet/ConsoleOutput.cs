@@ -3,7 +3,7 @@ using System;
 
 namespace Magnet
 {
-    public class ConsoleOutput : IOutput
+    internal class ConsoleOutput : IOutput
     {
         public void Write(MessageType type, string message)
         {

@@ -4,7 +4,7 @@ using System.Runtime.Loader;
 
 namespace Magnet
 {
-    public class ScriptLoadContext : AssemblyLoadContext
+    internal class ScriptLoadContext : AssemblyLoadContext
     {
         private ScriptOptions Options;
         public ScriptLoadContext(ScriptOptions options) : base(isCollectible: true)

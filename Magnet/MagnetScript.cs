@@ -1,6 +1,5 @@
 ﻿using Magnet.Analysis;
 using Magnet.Core;
-using Magnet.Exceptions;
 using Magnet.Syntax;
 using Magnet.Tracker;
 using Microsoft.CodeAnalysis;
@@ -23,6 +22,9 @@ using System.Threading.Tasks;
 
 namespace Magnet
 {
+    /// <summary>
+    /// MagnetScript status
+    /// </summary>
     public enum ScrriptStatus
     {
         /// <summary>
@@ -146,7 +148,6 @@ namespace Magnet
         /// The unloading step is asynchronous and the Unloaded event is unloaded after completion
         /// </summary>
         /// <param name="force">Force destruction of all MagnetState instances</param>
-        /// <exception cref="ScriptUnloadFailureException">The script states is not destroyed, or resources inside the script are externally referenced</exception>
         public void Unload(Boolean force = false)
         {
             if (force)

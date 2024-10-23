@@ -4,6 +4,7 @@ using App.Core.Timer;
 using Magnet.Test.Timer;
 using System;
 using System.Reflection;
+using System.Runtime.Loader;
 
 namespace Magnet.Test
 {
@@ -43,7 +44,7 @@ namespace Magnet.Test
 
 
 
-        static Assembly? AssemblyLoad(ScriptLoadContext context, AssemblyName assemblyName)
+        static Assembly? AssemblyLoad(AssemblyLoadContext context, AssemblyName assemblyName)
         {
             return null;
         }

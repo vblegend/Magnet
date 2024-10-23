@@ -11,10 +11,18 @@ namespace Magnet.Core
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public sealed class ScriptAttribute : Attribute
     {
+
+        /// <summary>
+        /// Define the script object, using the class name as the script name
+        /// </summary>
         public ScriptAttribute()
         {
         }
 
+        /// <summary>
+        /// Defines a script object with the specified name
+        /// </summary>
+        /// <param name="alias">script name</param>
         public ScriptAttribute(string alias)
         {
             this.Alias = alias;

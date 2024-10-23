@@ -4,13 +4,14 @@ using Magnet.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.Loader;
 
 namespace Magnet
 {
 
-    public delegate Assembly AssemblyLoadDelegate(ScriptLoadContext context, AssemblyName assemblyName);
+    public delegate Assembly AssemblyLoadDelegate(AssemblyLoadContext context, AssemblyName assemblyName);
 
-    public class ObjectProvider
+    internal class ObjectProvider
     {
         public Type Type;
         public String SlotName;

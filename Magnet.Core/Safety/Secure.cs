@@ -49,21 +49,23 @@ namespace Magnet.Safety
     public sealed class ThreadPool
     {
     }
+
     public sealed class Task
     {
     }
 
-
-
     public sealed class File
     {
     }
+
     public sealed class Directory
     {
     }
+
     public sealed class FileStream
     {
     }
+
     public sealed class StreamWriter
     {
     }
@@ -80,14 +82,13 @@ namespace Magnet.Safety
     public sealed class Socket
     {
     }
+
     public sealed class HttpClient
     {
     }
-
     public sealed class WebClient
     {
     }
-
 
     public sealed class GC
     {

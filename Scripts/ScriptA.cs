@@ -45,9 +45,9 @@ public class ScriptA : GameScript
         Debug($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
         GLOBAL.S[1] = "Hello Wrold";
 
-        ENABLE_TIMER(0);
+        EnableTimer(0);
 
-        ENABLE_TIMER(1);
+        EnableTimer(1);
 
         var typed = typeof(Thread);
 
@@ -55,8 +55,8 @@ public class ScriptA : GameScript
 
         Assert(typed.FullName == "Magnet.Safety.Thread");
 
-        DISABLE_TIMER(0);
-        DISABLE_TIMER(1);
+        DisableTimer(0);
+        DisableTimer(1);
         List<string> list = [];
 
         debugger();
