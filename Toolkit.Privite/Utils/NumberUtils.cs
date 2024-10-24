@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 
 
-namespace Toolkit.Privite.Utils
+namespace Game.Toolkit.Utils
 {
     public static class NumberUtils
     {

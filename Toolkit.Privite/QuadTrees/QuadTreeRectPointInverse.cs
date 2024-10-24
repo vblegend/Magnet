@@ -1,8 +1,8 @@
-﻿using Toolkit.Private.QuadTrees.Common;
-using Toolkit.Private.QuadTrees.QTreeRect;
+﻿using Game.Toolkit.QuadTrees.Common;
+using Game.Toolkit.QuadTrees.QTreeRect;
 using System.Drawing;
 
-namespace Toolkit.Private.QuadTrees
+namespace Game.Toolkit.QuadTrees
 {
     /// <summary>
     /// A QuadTree Object that provides fast and efficient storage of Rectangles in a world space, queried using Rectangles.

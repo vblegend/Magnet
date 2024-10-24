@@ -1,12 +1,12 @@
-﻿using Toolkit.Private.Analysis;
-using Toolkit.Private.Loot.DSL;
+﻿using Game.Toolkit.Analysis;
+using Game.Toolkit.Probability.DSL;
 using System.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
 
-namespace Toolkit.Private.Loot
+namespace Game.Toolkit.Probability
 {
 
 

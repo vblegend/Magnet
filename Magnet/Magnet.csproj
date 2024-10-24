@@ -8,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>Magnet</PackageId>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Hanks</Authors>
     <Company>None</Company>
     <PackageDescription>Magnet script engine</PackageDescription>

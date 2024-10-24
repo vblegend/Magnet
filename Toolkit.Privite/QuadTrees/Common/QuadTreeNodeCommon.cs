@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 
-namespace Toolkit.Private.QuadTrees.Common
+namespace Game.Toolkit.QuadTrees.Common
 {
     public abstract class QuadTreeNodeCommon
     {

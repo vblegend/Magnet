@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Toolkit.Private.Probability
+namespace Game.Toolkit.Probability
 {
-    public sealed class Lottery<TValue>
+    /// <summary>
+    /// 轮盘赌抽奖器
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
+    public sealed class Roulette<TValue>
     {
         private class RAW_INFO
         {
-            public RAW_INFO(Lottery<TValue> lottery)
+            public RAW_INFO(Roulette<TValue> lottery)
             {
                 var count = lottery._items.Count;
                 this.items = lottery._items;
@@ -70,7 +74,10 @@ namespace Toolkit.Private.Probability
 
 
 
-
+        /// <summary>
+        /// 抽一个
+        /// </summary>
+        /// <returns></returns>
         public TValue Draw()
         {
             lock (lockObject)
@@ -131,9 +138,9 @@ namespace Toolkit.Private.Probability
         }
 
 
-        public Lottery<TValue> Clone()
+        public Roulette<TValue> Clone()
         {
-            var lottery = new Lottery<TValue>();
+            var lottery = new Roulette<TValue>();
             if (!lottery.IsReady) lottery.NormalData();
             var count = this.Raw!.items.Count;
             lottery._items = this.Raw.items;
@@ -155,9 +162,9 @@ namespace Toolkit.Private.Probability
         /// </summary>
         /// <param name="filename"></param>
         /// <returns></returns>
-        public static Lottery<String> Load(String filename)
+        public static Roulette<String> Load(String filename)
         {
-            var lottery = new Lottery<String>();
+            var lottery = new Roulette<String>();
             var lines = File.ReadAllLines(filename);
             foreach (var line in lines)
             {

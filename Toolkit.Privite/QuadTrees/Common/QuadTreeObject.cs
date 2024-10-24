@@ -1,4 +1,4 @@
-namespace Toolkit.Private.QuadTrees.Common
+namespace Game.Toolkit.QuadTrees.Common
 {
     /// <summary>
     /// Used internally to attach an Owner to each object stored in the QuadTree

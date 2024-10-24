@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "App.Core", "App.Core\App.Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Magnet.Test", "Magnet.Test\Magnet.Test.csproj", "{BF5D19CC-04EE-4C39-B00A-DB60FABF05DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toolkit.Privite", "Toolkit.Privite\Toolkit.Privite.csproj", "{71A12933-E488-450F-8B13-1890D322B18F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Game.Toolkit", "Toolkit.Privite\Game.Toolkit.csproj", "{71A12933-E488-450F-8B13-1890D322B18F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

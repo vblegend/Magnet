@@ -1,8 +1,8 @@
-using Toolkit.Private.QuadTrees.Common;
+using Game.Toolkit.QuadTrees.Common;
 using System.Drawing;
 
 
-namespace Toolkit.Private.QuadTrees.QTreeRect
+namespace Game.Toolkit.QuadTrees.QTreeRect
 {
     /// <summary>
     /// A QuadTree Object that provides fast and efficient storage of objects in a world space.

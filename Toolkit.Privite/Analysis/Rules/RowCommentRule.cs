@@ -1,8 +1,8 @@
 ﻿using System;
-using Toolkit.Privite.Analysis;
+using Game.Toolkit.Analysis;
 
 
-namespace Toolkit.Private.Analysis.Rules
+namespace Game.Toolkit.Analysis.Rules
 {
     public class RowCommentRule : ILexicalRules
     {

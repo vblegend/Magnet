@@ -298,10 +298,9 @@ namespace Magnet.Syntax
 
         public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
-            // 检查是否是 Socket 的实例化
             var typeInfo = semanticModel.GetTypeInfo(node);
             var type = typeInfo.Type?.ToDisplayString();
-            // type
+            //
             base.VisitObjectCreationExpression(node);
         }
 

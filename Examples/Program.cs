@@ -41,10 +41,13 @@ public static class Program
         options.AddAnalyzer(timerProvider);
         options.RegisterProvider(timerProvider);
 
-        //options.DisableNamespace(typeof(Thread));
+
         // Insecure
-        // options.DisableInsecureTypes();
+        //options.DisableNamespace(typeof(Thread));
+        options.DisableInsecureTypes();
         options.WithTypeRewriter(new TypeRewriter());
+
+
         options.UseDefaultSuppressDiagnostics();
         //
         options.WithAssemblyLoadCallback(AssemblyLoad);

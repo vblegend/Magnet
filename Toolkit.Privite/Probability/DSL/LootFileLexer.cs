@@ -1,11 +1,10 @@
-﻿using Toolkit.Private.Analysis;
-using Toolkit.Private.Analysis.Rules;
+﻿using Game.Toolkit.Analysis;
+using Game.Toolkit.Analysis.Rules;
 using System.Text;
-using Toolkit.Privite.Analysis;
 using System;
 using System.Collections.Generic;
 
-namespace Toolkit.Private.Loot.DSL
+namespace Game.Toolkit.Probability.DSL
 {
 
     internal class PunctuatorRule : ILexicalRules

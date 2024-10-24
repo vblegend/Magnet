@@ -1,8 +1,8 @@
 
-using Toolkit.Private.QuadTrees.Common;
+using Game.Toolkit.QuadTrees.Common;
 using System.Drawing;
 
-namespace Toolkit.Private.QuadTrees.QTreeRect
+namespace Game.Toolkit.QuadTrees.QTreeRect
 {
     /// <summary>
     /// Interface to define Rect, so that QuadTree knows how to store the object.

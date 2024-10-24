@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 
 
-namespace Toolkit.Private.Loot
+namespace Game.Toolkit.Probability
 {
+    /// <summary>
+    /// 战利品
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
     public class Loot<TValue>
     {
         internal Loot(TValue value, String[] parameters)
@@ -11,8 +15,17 @@ namespace Toolkit.Private.Loot
             this.Value = value;
             this.Parameters = parameters;
         }
+
+        /// <summary>
+        /// 战利品对象
+        /// </summary>
         public readonly TValue Value;
+        /// <summary>
+        /// 战利品参数
+        /// </summary>
         public readonly String[] Parameters;
+        
+        /// <inheritdoc/>
         public override string ToString()
         {
             return Value! + " " + String.Join(" ", Parameters);

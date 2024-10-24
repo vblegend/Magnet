@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Toolkit.Privite
+namespace Game.Toolkit
 {
     internal class WatchTimer : IDisposable
     {

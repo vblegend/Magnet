@@ -1,11 +1,11 @@
 ﻿
-using Toolkit.Private.QuadTrees.Common;
-using Toolkit.Private.QuadTrees.QTreePoint;
+using Game.Toolkit.QuadTrees.Common;
+using Game.Toolkit.QuadTrees.QTreePoint;
 using System.Drawing;
 using System.Collections.Generic;
 using System;
 
-namespace Toolkit.Private.QuadTrees
+namespace Game.Toolkit.QuadTrees
 {
     /// <summary>
     /// A QuadTree Object that provides fast and efficient storage of Points in a world space, queried using Rectangles.

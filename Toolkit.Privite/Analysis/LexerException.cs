@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Toolkit.Private.Analysis
+namespace Game.Toolkit.Analysis
 {
     internal class LexerException : Exception
     {

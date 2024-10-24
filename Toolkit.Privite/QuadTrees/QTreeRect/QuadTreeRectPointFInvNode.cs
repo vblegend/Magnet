@@ -1,7 +1,7 @@
-using Toolkit.Private.QuadTrees.Common;
+using Game.Toolkit.QuadTrees.Common;
 using System.Drawing;
 
-namespace Toolkit.Private.QuadTrees.QTreeRect
+namespace Game.Toolkit.QuadTrees.QTreeRect
 {
 
     public class QuadTreeRectPointInvNode<T> : QuadTreeRectNode<T, Point> where T : IRectQuadStorable

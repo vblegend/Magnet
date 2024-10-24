@@ -1,9 +1,9 @@
 using App.Core;
 using Magnet.Core;
-using System.Threading;
 using System.Collections.Generic;
 using App.Core.UserInterface;
 using App.Core.Events;
+using System.Threading;
 
 
 
@@ -15,14 +15,6 @@ public class ScriptA : GameScript
     [Autowired]
     private IKillContext KilledContext;
 
-
-    public async System.Threading.Tasks.Task Async()
-    {
-        new System.Threading.Thread(() =>
-        {
-            this.Debug("On new Thread");
-        }).Start();
-    }
 
 
 
@@ -38,7 +30,6 @@ public class ScriptA : GameScript
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
 
-        await this.Async();
 
         UI.DIALOG(120).TO(Player)
           .POSITION(11, 22)

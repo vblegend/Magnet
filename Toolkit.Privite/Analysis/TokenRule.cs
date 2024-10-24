@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Toolkit.Privite.Analysis
+namespace Game.Toolkit.Analysis
 {
     public enum TokenTyped
     {

@@ -1,4 +1,4 @@
-﻿namespace Toolkit.Private.Analysis
+﻿namespace Game.Toolkit.Analysis
 {
     public class Symbol
     {

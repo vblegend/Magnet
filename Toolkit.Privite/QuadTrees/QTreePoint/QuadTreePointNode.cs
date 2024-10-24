@@ -1,7 +1,7 @@
-using Toolkit.Private.QuadTrees.Common;
+using Game.Toolkit.QuadTrees.Common;
 using System.Drawing;
 
-namespace Toolkit.Private.QuadTrees.QTreePoint
+namespace Game.Toolkit.QuadTrees.QTreePoint
 {
     /// <summary>
     /// A QuadTree Object that provides fast and efficient storage of objects in a world space.

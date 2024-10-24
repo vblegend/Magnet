@@ -1,10 +1,14 @@
 ﻿using System;
 
-namespace Toolkit.Privite
+namespace Game.Toolkit
 {
     public readonly struct SnowflakeId : IEquatable<SnowflakeId>
     {
-        private readonly Int64 m_value;
+        public static readonly SnowflakeId Empty = new SnowflakeId(0);
+
+
+
+        private readonly Int64 m_value = 0;
 
         private SnowflakeId(Int64 value)
         {
@@ -20,11 +24,11 @@ namespace Toolkit.Privite
         {
             get
             {
-                return (Byte)((this.m_value >> 60) & 0xF) != 7;
+                return this.m_value == 0;
             }
         }
 
-        public Int32 type
+        public Int32 Category
         {
             get
             {
@@ -126,11 +130,11 @@ namespace Toolkit.Privite
         private static readonly object _lock = new object();
 
 
-        public static SnowflakeId Generate(Int32 type)
+        public static SnowflakeId Generate(Int32 category)
         {
-            if (type < 0 || type > 0xFFF)
+            if (category < 0 || category > 0xFFF)
             {
-                throw new ArgumentOutOfRangeException(nameof(type), $"Type must be between 0 and 0xFFF");
+                throw new ArgumentOutOfRangeException(nameof(category), $"Type must be between 0 and 0xFFF");
             }
             lock (_lock)
             {
@@ -150,7 +154,7 @@ namespace Toolkit.Privite
                 _lastTimestamp = timestamp;
                 long id =
                     ((long)0x7 << 60) |
-                    ((long)(type & 0xFFF) << 48) |
+                    ((long)(category & 0xFFF) << 48) |
                     (timestamp << 16) |
                     _sequence;
                 return new SnowflakeId(id);
