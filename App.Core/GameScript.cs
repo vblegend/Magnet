@@ -102,7 +102,10 @@ namespace App.Core
 #endif
         protected void Give(IItemBuilder item)
         {
-
+            if (item is ItemBuilder builder)
+            {
+                Console.WriteLine(builder);
+            }
         }
 
 
