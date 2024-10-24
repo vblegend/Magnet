@@ -53,6 +53,10 @@ namespace Magnet
         public Boolean AllowAsync { get; private set; } = false;
         public IOutput Output { get; private set; } = new ConsoleOutput();
         public readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
+
+
+        internal readonly List<String> DisabledNamespace = new List<String>();
+
         public String[] PreprocessorSymbols { get; private set; } = [];
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
@@ -84,6 +88,34 @@ namespace Magnet
             return this;
         }
 
+
+        /// <summary>
+        /// Disable the exact namespace
+        /// </summary>
+        /// <param name="_namespace"></param>
+        /// <returns></returns>
+        public ScriptOptions DisableNamespace(String _namespace)
+        {
+            if (!this.DisabledNamespace.Contains(_namespace))
+            {
+                this.DisabledNamespace.Add(_namespace);
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// Disable the namespace where the type resides
+        /// </summary>
+        /// <param name="disabledType"></param>
+        /// <returns></returns>
+        public ScriptOptions DisableNamespace(Type disabledType)
+        {
+            if (!this.DisabledNamespace.Contains(disabledType.Namespace))
+            {
+                this.DisabledNamespace.Add(disabledType.Namespace);
+            }
+            return this;
+        }
 
 
         /// <summary>

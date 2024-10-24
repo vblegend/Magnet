@@ -9,6 +9,8 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
 - [x] Load from file
 - [x] Disable type
 - [x] Unload 
+- [x] Rewrite Type
+- [x] Disable Namespace
 - [x] Script state isolation
 - [x] Script dependency injection
 - [x] Debugger and braek;

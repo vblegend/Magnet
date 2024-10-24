@@ -5,13 +5,9 @@ using App.Core;
 using App.Core.Events;
 using App.Core.Timer;
 using Magnet;
-
-using Microsoft.CodeAnalysis;
 using ScriptRuner;
 using System;
-using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
@@ -34,7 +30,7 @@ public static class Program
         options.WithDebug(false);
 
         //options.WithRelease();
-        options.WithAllowAsync(false);
+        options.WithAllowAsync(true);
         options.WithDirectory("../../../../Scripts");
         options.WithPreprocessorSymbols("USE_FILE");
 
@@ -45,8 +41,9 @@ public static class Program
         options.AddAnalyzer(timerProvider);
         options.RegisterProvider(timerProvider);
 
+        options.DisableNamespace(typeof(Thread));
         // Insecure
-        options.DisabledInsecureTypes();
+        //options.DisabledInsecureTypes();
         options.WithTypeRewriter(new TypeRewriter());
         options.UseDefaultSuppressDiagnostics();
         //
@@ -78,7 +75,7 @@ public static class Program
         scriptManager.Unloaded += ScriptManager_Unloaded;
 
         var result = scriptManager.Compile();
-        foreach (var diagnostic in result.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden))
+        foreach (var diagnostic in result.Diagnostics)
         {
             Console.WriteLine(diagnostic.ToString());
         }

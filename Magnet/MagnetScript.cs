@@ -49,9 +49,21 @@ namespace Magnet
         Unloaded
     }
 
-
+    /// <summary>
+    /// Compile errors callback delegate
+    /// </summary>
+    /// <param name="magnetScript"></param>
+    /// <param name="diagnostics"></param>
     public delegate void CompileErrorHandler(MagnetScript magnetScript, ImmutableArray<Diagnostic> diagnostics);
 
+
+    /// <summary>
+    /// Compile complete callback delegate
+    /// </summary>
+    /// <param name="magnetScript"></param>
+    /// <param name="assembly"></param>
+    /// <param name="assemblyStream"></param>
+    /// <param name="pdbStream"></param>
     public delegate void CompileCompleteHandler(MagnetScript magnetScript, Assembly assembly, Stream assemblyStream, Stream pdbStream = null);
 
     /// <summary>
@@ -61,7 +73,7 @@ namespace Magnet
     {
         private String[] baseUsing = ["System", "Magnet.Core"];
         internal ScriptOptions Options { get; private set; }
-        private List<String> diagnostics;
+
         internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
         private readonly WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
         private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
@@ -84,7 +96,7 @@ namespace Magnet
         /// The name of the script may not be unique, but UniqueId is
         /// </summary>
         public readonly String Name;
-        public IReadOnlyList<String> Diagnostics => diagnostics;
+
 
         /// <summary>
         /// Current status of the Magnet script
@@ -163,7 +175,6 @@ namespace Magnet
             this.Analyzers?.Dispose();
             this.Unloading?.Invoke(this);
             this.Unloading = null;
-            this.diagnostics.Clear();
             this.scriptMetaInfos = [];
             this.scriptLoadContext?.Unload();
             this.Status = ScrriptStatus.Unloading;
@@ -183,9 +194,13 @@ namespace Magnet
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="options"></param>
         public MagnetScript(ScriptOptions options)
         {
-            this.diagnostics = new List<String>();
             this.Options = options;
             this.Name = options.Name;
             this.Status = ScrriptStatus.NotReady;
@@ -207,15 +222,13 @@ namespace Magnet
 
         private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
         {
-            CompilationUnitSyntax rootCompilation = root;
-            if (rootCompilation.Usings.Any(u => u.Name.ToString() == name))
+            if (root.Usings.Any(u => u.Name.ToString() == name))
             {
                 // using statement already exists.
                 return root;
             }
-
             UsingDirectiveSyntax usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(name));
-            rootCompilation = rootCompilation.AddUsings(usingDirective);
+            var rootCompilation = root.AddUsings(usingDirective);
             return rootCompilation;
         }
 
@@ -257,7 +270,7 @@ namespace Magnet
         /// Load and compile all scripts in the directory
         /// </summary>
         /// <returns></returns>
-        public EmitResult Compile()
+        public ICompileResult Compile()
         {
             if (this.Status != ScrriptStatus.NotReady && this.Status != ScrriptStatus.CompileError)
             {
@@ -281,7 +294,7 @@ namespace Magnet
             var targetFrameworkAttribute = (TargetFrameworkAttribute)typeof(Assembly).Assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute));
             if (targetFrameworkAttribute != null)
             {
-                assemblyInfo +=  $"\n[assembly: System.Runtime.Versioning.TargetFramework(\"{targetFrameworkAttribute.FrameworkName}\", FrameworkDisplayName = \"{targetFrameworkAttribute.FrameworkDisplayName}\")]";
+                assemblyInfo += $"\n[assembly: System.Runtime.Versioning.TargetFramework(\"{targetFrameworkAttribute.FrameworkName}\", FrameworkDisplayName = \"{targetFrameworkAttribute.FrameworkDisplayName}\")]";
             }
             SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText(assemblyInfo);
             syntaxTrees.Insert(0, assemblyAttribute);
@@ -409,7 +422,7 @@ namespace Magnet
 
 
         // 使用 Roslyn 编译脚本
-        private EmitResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees)
+        private ICompileResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees)
         {
 
             var libs = ImportantAssemblies.Concat(Options.References);
@@ -428,13 +441,15 @@ namespace Magnet
             );
 
             // 检查是否有不允许的 API 调用
+            var diagnostics = new List<Diagnostic>();
             var typeResolver = new TypeResolver(this.Options);
-            var walker = new ForbiddenApiWalker(this.Options);
+            var walker = new SyntaxTreeWalker(this.Options);
             var rewriter = new SyntaxTreeRewriter(typeResolver);
             for (int i = 0; i < syntaxTrees.Count; i++)
             {
                 var syntaxTree = syntaxTrees[i];
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
+                // rewriter
                 var newRoot = rewriter.VisitWith(semanticModel, syntaxTree.GetRoot());
                 var newSyntaxTree = newRoot.SyntaxTree;
                 if (String.IsNullOrEmpty(newSyntaxTree.FilePath))
@@ -442,33 +457,51 @@ namespace Magnet
                     newSyntaxTree = CSharpSyntaxTree.Create((CSharpSyntaxNode)newRoot, (CSharpParseOptions)syntaxTree.Options, syntaxTree.FilePath, Encoding.UTF8);
                 }
                 compilation = compilation.ReplaceSyntaxTree(syntaxTree, newSyntaxTree);
-                // walker
                 semanticModel = compilation.GetSemanticModel(newSyntaxTree);
+                // walker
                 walker.VisitWith(semanticModel, newSyntaxTree.GetRoot());
-            }
 
+                //AnalyzeNamespaces(newSyntaxTree, compilation);
+
+            }
+            if (walker.Diagnostics.Count > 0)
+            {
+                diagnostics.AddRange(walker.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden));
+            }
+            if (diagnostics.Any(e => e.Severity == DiagnosticSeverity.Error))
+            {
+                return new CompileResult(false, diagnostics);
+            }
             //Console.WriteLine("===============================================================");
             //Console.WriteLine(compilation.SyntaxTrees.FirstOrDefault()?.GetRoot().ToFullString());
             //Console.WriteLine("===============================================================");
-
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                if (string.IsNullOrEmpty(tree.FilePath))
-                {
-                    //throw new InvalidOperationException("SyntaxTree 文件路径为空");
-                }
-            }
-
-            if (walker.HasForbiddenApis)
-            {
-                diagnostics.AddRange(walker.ForbiddenApis);
-                return null;
-            }
-            return emitStream(compilation);
+            var result = emitStream(compilation);
+            diagnostics.AddRange(result.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden));
+            return new CompileResult(result.Success, diagnostics);
         }
 
 
 
+        public void AnalyzeNamespaces(SyntaxTree syntaxTree, CSharpCompilation compilation)
+        {
+            var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            var root = syntaxTree.GetRoot();
+
+            // 查找所有的 UsingDirective 语法节点
+            var usingDirectives = root.DescendantNodes().OfType<UsingDirectiveSyntax>();
+
+
+
+            // 遍历所有的 using 指令并获取其符号信息
+            foreach (var usingDirective in usingDirectives)
+            {
+                var symbolInfo = semanticModel.GetSymbolInfo(usingDirective.Name);
+                if (symbolInfo.Symbol != null)
+                {
+                    Console.WriteLine($"Namespace: {symbolInfo.Symbol.ToDisplayString()}");
+                }
+            }
+        }
 
 
         private EmitResult emitStream(CSharpCompilation compilation)

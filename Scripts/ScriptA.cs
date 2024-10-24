@@ -5,6 +5,12 @@ using System.Collections.Generic;
 using App.Core.UserInterface;
 using App.Core.Events;
 
+using System.Threading;
+using Thread3 = System.Threading.Thread;
+using Thread2 = System.Threading;
+
+
+
 
 [Script(nameof(ScriptA))]
 public class ScriptA : GameScript
@@ -13,8 +19,22 @@ public class ScriptA : GameScript
     private IKillContext KilledContext;
 
 
+    public async System.Threading.Tasks.Task Async()
+    {
+        new Thread2.Thread(() =>
+        {
+
+        });
+        new System.Threading.Thread(() =>
+        {
+
+        });
+    }
+
+
+
     [Function]
-    public void Main()
+    public async void Main()
     {
         this.Print(KilledContext.Target);
 
@@ -25,6 +45,7 @@ public class ScriptA : GameScript
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
 
+        await this.Async();
 
         UI.DIALOG(120).TO(Player)
           .POSITION(11, 22)
