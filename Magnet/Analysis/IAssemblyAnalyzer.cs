@@ -8,7 +8,7 @@ namespace Magnet.Analysis
     public interface IAssemblyAnalyzer : IAnalyzer
     {
         /// <summary>
-        /// 
+        /// Assembly type loaded
         /// </summary>
         /// <param name="assembly"></param>
         void DefineAssembly(Assembly assembly);

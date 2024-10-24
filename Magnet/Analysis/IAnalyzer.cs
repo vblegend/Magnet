@@ -4,9 +4,20 @@
 namespace Magnet.Analysis
 {
     /// <summary>
-    /// script analyzer
+    /// reusable script analyzer
     /// </summary>
     public interface IAnalyzer : IDisposable
     {
+        /// <summary>
+        /// Analyzer is connected to MagnetScript
+        /// </summary>
+        /// <param name="magnet"></param>
+        void Connect(MagnetScript magnet);
+
+        /// <summary>
+        /// Analyzer disconnects from MagnetScript
+        /// </summary>
+        void Disconnect(MagnetScript magnet);
+
     }
 }

@@ -10,7 +10,7 @@ namespace Magnet.Analysis
     public interface ITypeAnalyzer: IAnalyzer
     {
         /// <summary>
-        /// 
+        /// Script type loaded
         /// </summary>
         /// <param name="type"></param>
         void DefineType(Type type);

@@ -14,7 +14,7 @@ public class QManage : GameScript, IPlayLifeEvent
     public void OnOnline(IOnlineContext ctx)
     {
         Print("上线了。。。");
-        Give(Make("木剑").Quality(5).Alias("xxl").Upgrade());
+        Give(Make("木剑").Quality(5).Count(8).Alias("xxl").Upgrade());
     }
 
 
@@ -41,7 +41,14 @@ public class QManage : GameScript, IPlayLifeEvent
 
 
 
-
+    /// <summary>
+    /// management resources release
+    /// </summary>
+    protected override void Shutdown()
+    {
+        ClearTimers();
+        base.Shutdown();
+    }
 }
 
 

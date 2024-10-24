@@ -7,21 +7,21 @@ using System.Reflection;
 
 namespace Magnet.Analysis
 {
-    internal class AnalyzerCollection : IDisposable
+    internal class AnalyzerCollection
     {
         private readonly List<IAnalyzer> _analyzers = new List<IAnalyzer>();
+        private readonly List<IInstanceAsalyzer> _instanceAnalyzers = new List<IInstanceAsalyzer>();
+
+
 
         public AnalyzerCollection(List<IAnalyzer> analyzers)
         {
-            _analyzers = new List<IAnalyzer>(analyzers);
+            foreach (var analyzer in analyzers)
+            {
+                if (analyzer is IInstanceAsalyzer instanceAnalyzer) _instanceAnalyzers.Add(instanceAnalyzer);
+                _analyzers.Add(analyzer);
+            }
         }
-
-        public void Add(IAnalyzer analyzer)
-        {
-            _analyzers.Add(analyzer);
-        }
-
-
 
         public void DefineAssembly(Assembly assembly)
         {
@@ -34,7 +34,6 @@ namespace Magnet.Analysis
             }
         }
 
-
         public void DefineType(Type scriptType)
         {
             foreach (var analyzer in _analyzers)
@@ -46,22 +45,28 @@ namespace Magnet.Analysis
             }
         }
 
+
         public void DefineInstance(ScriptMetadata metadata, AbstractScript script, IStateContext context)
         {
-            foreach (var analyzer in _analyzers)
+            foreach (var analyzer in _instanceAnalyzers)
             {
-                if (analyzer is IInstanceAsalyzer instanceAsalyzer)
-                {
-                    instanceAsalyzer.DefineInstance(metadata, script, context);
-                }
+                analyzer.DefineInstance(metadata, script, context);
             }
         }
 
-        public void Dispose()
+        public void ConnectTo(MagnetScript magnet)
         {
             foreach (IAnalyzer analyzer in _analyzers)
             {
-                analyzer.Dispose();
+                analyzer.Connect(magnet);
+            }
+        }
+
+        public void Disconnect(MagnetScript magnet)
+        {
+            foreach (IAnalyzer analyzer in _analyzers)
+            {
+                analyzer.Disconnect(magnet);
             }
             _analyzers.Clear();
         }

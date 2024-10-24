@@ -89,7 +89,7 @@ namespace App.Core.Timer
             var fieldList = new List<MethodInfo>();
             while (type != null)
             {
-                var _methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                var _methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 foreach (var methodInfo in _methods)
                 {
                     var timerAttr = methodInfo.GetCustomAttribute<TimerAttribute>();
@@ -106,6 +106,18 @@ namespace App.Core.Timer
                 }
                 type = type.BaseType;
             }
+        }
+
+
+        public void Connect(MagnetScript magnet)
+        {
+
+        }
+
+
+        public void Disconnect(MagnetScript magnet)
+        {
+
         }
         #endregion
 

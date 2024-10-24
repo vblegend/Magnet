@@ -45,7 +45,7 @@ namespace Magnet
             this.engine = null;
             foreach (var instance in this.instances)
             {
-                instance.UnInitialize();
+                instance.Shutdown();
             }
             this.instances.Clear();
             this.instancesByType.Clear();

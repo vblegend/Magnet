@@ -162,6 +162,7 @@ namespace Magnet
         /// <param name="force">Force destruction of all MagnetState instances</param>
         public void Unload(Boolean force = false)
         {
+            this.Analyzers?.Disconnect(this);
             if (force)
             {
                 var keys = SurvivalStates.Keys;
@@ -172,7 +173,6 @@ namespace Magnet
                     state = null;
                 }
             }
-            this.Analyzers?.Dispose();
             this.Unloading?.Invoke(this);
             this.Unloading = null;
             this.scriptMetaInfos = [];
@@ -204,7 +204,6 @@ namespace Magnet
             this.Options = options;
             this.Name = options.Name;
             this.Status = ScrriptStatus.NotReady;
-            this.Analyzers = new AnalyzerCollection(Options.Analyzers);
             this.scriptLoadContext = new ScriptLoadContext(options);
             this.compilationOptions = this.compilationOptions.WithAllowUnsafe(false);
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
@@ -218,6 +217,7 @@ namespace Magnet
             }
             this.compilationOptions = this.compilationOptions.WithSpecificDiagnosticOptions(values);
             gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
+            this.Analyzers = new AnalyzerCollection(Options.Analyzers);
         }
 
         private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
@@ -318,9 +318,7 @@ namespace Magnet
                                             }).ToImmutableList();
                     assembly = null;
                 }
-
-
-
+                
             }
             return result;
         }
@@ -469,6 +467,7 @@ namespace Magnet
             {
                 return new CompileResult(false, diagnostics);
             }
+
             //Console.WriteLine("===============================================================");
             //Console.WriteLine(compilation.SyntaxTrees.FirstOrDefault()?.GetRoot().ToFullString());
             //Console.WriteLine("===============================================================");
@@ -495,6 +494,7 @@ namespace Magnet
                 var assembly = scriptLoadContext.LoadFromStream(execStream, pdbStream);
                 this.scriptAssembly.SetTarget(assembly);
                 this.Status = ScrriptStatus.Ready;
+                this.Analyzers.ConnectTo(this);
                 this.Analyzers.DefineAssembly(assembly);
                 CompileComplete?.Invoke(this, assembly, execStream, pdbStream);
                 if (pdbStream != null) pdbStream.Dispose();

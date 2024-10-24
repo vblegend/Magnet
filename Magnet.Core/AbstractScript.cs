@@ -58,9 +58,9 @@ namespace Magnet.Core
             this.Initialize();
         }
 
-        void IScriptInstance.UnInitialize()
+        void IScriptInstance.Shutdown()
         {
-            this.UnInitialize();
+            this.Shutdown();
         }
 
         /// <summary>
@@ -72,9 +72,9 @@ namespace Magnet.Core
         }
 
         /// <summary>
-        /// Script Being destroyed
+        /// Script Being shutdown
         /// </summary>
-        protected virtual void UnInitialize()
+        protected virtual void Shutdown()
         {
 
         }

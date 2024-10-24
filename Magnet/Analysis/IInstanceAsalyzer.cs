@@ -9,7 +9,7 @@ namespace Magnet.Analysis
     public interface IInstanceAsalyzer : IAnalyzer
     {
         /// <summary>
-        /// 
+        /// Script instance create
         /// </summary>
         /// <param name="metadata"></param>
         /// <param name="script"></param>

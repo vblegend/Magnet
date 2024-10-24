@@ -26,19 +26,19 @@ namespace App.Core
 
         private IStateContext StateContext => (this as IScriptInstance).GetStateContext();
 
-
+        /// <inheritdoc/>
         protected override void Initialize()
         {
             var timerService = this.StateContext?.GetProvider<ITimerService>();
             timerManager?.SetTimerService(timerService);
         }
 
-
-
-        protected sealed override void UnInitialize()
+        /// <inheritdoc/>
+        protected override void Shutdown()
         {
-            ClearTimers();
+
         }
+
 
 
         /// <summary>
@@ -62,9 +62,6 @@ namespace App.Core
 #endif
         protected void EnableTimer(Int32 timerIndex)
         {
-            //Int64 combined = ((Int64)timerIndex << 32) | (uint)intervalSecond;
-            //Int32 aRecovered = (Int32)(combined >> 32);
-            //UInt32 bRecovered = (UInt32)(combined & 0xFFFFFFFF);
             timerManager?.EnableTimer(this, timerIndex);
         }
 
@@ -166,9 +163,9 @@ namespace App.Core
 
 
 
-
+       
         #region Assert
-
+        [Conditional("DEBUG")]
         [DebuggerHidden]
         public void Assert(Boolean condition)
         {

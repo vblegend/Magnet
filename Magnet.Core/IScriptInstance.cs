@@ -21,7 +21,7 @@ namespace Magnet.Core
         /// <summary>
         /// script being destory
         /// </summary>
-        void UnInitialize();
+        void Shutdown();
 
         /// <summary>
         /// get script state
