@@ -1,11 +1,15 @@
+
+<p align="center" > <span>Magnet</span> </p>
+
+<div align=center><img src="icon.png"></div>
+
+
 # What is Magnet?
 --------------
-`Magnet是基于“Microsoft.CodeAnalysis.CSharp.Scripting”开发一个高性能的c#游戏脚本引擎`
-
+`Magnet是基于“Microsoft.CodeAnalysis.CSharp.Scripting”开发一个高性能的c#游戏脚本引擎`<br/>  
 Magnet is based on "Microsoft.CodeAnalysis.CSharp.Scripting" to develop a high performance c # game Script engine
 
-`在c#语言和NET框架下，脚本具有安全、可控、灵活、状态好等特点`
-
+`在c#语言和NET框架下，脚本具有安全、可控、灵活、状态好等特点`<br/>  
 On the basis of C# language and.NET framework, the script is safe, controllable, flexible and state
 
 
