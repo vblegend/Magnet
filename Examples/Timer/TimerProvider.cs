@@ -19,12 +19,8 @@ namespace App.Core.Timer
 
         private ITimerService timerService;
 
-        private Dictionary<int, TimerInfo> timersDefine = new Dictionary<int, TimerInfo>();
+        private readonly Dictionary<int, TimerInfo> timersDefine = new Dictionary<int, TimerInfo>();
 
-        public void Dispose()
-        {
-            timersDefine.Clear();
-        }
 
         public void SetTimerService(ITimerService timerService)
         {
@@ -117,7 +113,7 @@ namespace App.Core.Timer
 
         public void Disconnect(MagnetScript magnet)
         {
-
+            timersDefine.Clear();
         }
         #endregion
 

@@ -6,7 +6,7 @@ namespace Magnet.Analysis
     /// <summary>
     /// reusable script analyzer
     /// </summary>
-    public interface IAnalyzer : IDisposable
+    public interface IAnalyzer
     {
         /// <summary>
         /// Analyzer is connected to MagnetScript

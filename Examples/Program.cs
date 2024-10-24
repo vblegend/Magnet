@@ -77,7 +77,10 @@ public static class Program
         var result = scriptManager.Compile();
         foreach (var diagnostic in result.Diagnostics)
         {
+            if (diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+            if (diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error) Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(diagnostic.ToString());
+            Console.ResetColor();
         }
         if (result.Success)
         {
