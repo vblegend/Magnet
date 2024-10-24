@@ -19,6 +19,7 @@ namespace Magnet.Syntax
         private SemanticModel semanticModel;
         public readonly List<Diagnostic> Diagnostics = new List<Diagnostic>();
         private ScriptOptions scriptOptions;
+        public readonly HashSet<String> ReferencedAssemblies = new HashSet<String>();
 
 
         private static readonly DiagnosticDescriptor InvalidScriptWarning1 = new DiagnosticDescriptor(
@@ -155,7 +156,7 @@ namespace Magnet.Syntax
             else
             {
                 var symbolInfo = semanticModel.GetSymbolInfo(node);
-                if (symbolInfo.Symbol.Kind == SymbolKind.NamedType)
+                if (symbolInfo.Symbol?.Kind == SymbolKind.NamedType)
                 {
                     var typeSymbol = (INamedTypeSymbol)symbolInfo.Symbol;
                     _namespace = typeSymbol.ContainingNamespace.ToDisplayString();
@@ -168,15 +169,19 @@ namespace Magnet.Syntax
         public override void VisitIdentifierName(IdentifierNameSyntax node)
         {
             //Console.WriteLine($"{node.Location()}  {node.Parent.GetType().Name} {node.Identifier.Text}");
-
-
-            if (node.Parent is QualifiedNameSyntax qualifiedName)
+            // 获取符号信息
+            var symbolInfo = semanticModel.GetSymbolInfo(node);
+            var symbol = symbolInfo.Symbol;
+            if (symbol != null)
             {
-                if (qualifiedName.Right.Identifier.Text.Equals(node.Identifier.Text))
+                var containingAssembly = symbol.ContainingAssembly;
+                if (containingAssembly != null)
                 {
-                    //Console.WriteLine($"{node.Location()} {qualifiedName}");
+                    // 添加引用的程序集名称
+                    ReferencedAssemblies.Add(containingAssembly.Name);
                 }
             }
+
             base.VisitIdentifierName(node);
         }
 

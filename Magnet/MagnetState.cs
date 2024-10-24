@@ -2,15 +2,24 @@
 using Magnet.Core;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 
 namespace Magnet
 {
 
+    /// <summary>
+    /// MagnetState option
+    /// </summary>
     public class StateOptions
     {
+        /// <summary>
+        /// Provide a default MagnetState option
+        /// </summary>
         public static StateOptions Default => new StateOptions();
+
+        /// <summary>
+        /// The unique ID of MagnetState is non-repeatable
+        /// </summary>
         public Int64 Identity { get; set; } = -1;
 
         internal List<ObjectProvider> Providers = [];
@@ -60,7 +69,13 @@ namespace Magnet
         private MagnetScript engine;
         private MagnetStateContext stateContext;
         private readonly AnalyzerCollection Analyzers;
+        /// <summary>
+        /// MagnetState Uninstallation or destruction event
+        /// </summary>
         public event Action<MagnetState> Unloading;
+        /// <summary>
+        /// The unique ID of MagnetState is non-repeatable
+        /// </summary>
         public readonly Int64 Identity;
 
         internal MagnetState(MagnetScript engine, StateOptions createStateOptions)
@@ -151,7 +166,6 @@ namespace Magnet
         /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="scriptName"></param>
         /// <returns></returns>
         public WeakReference<T> ScriptAs<T>() where T : class
         {
@@ -228,7 +242,9 @@ namespace Magnet
         }
 
 
-
+        /// <summary>
+        /// Destroy and uninstall MagnetState
+        /// </summary>
         public void Dispose()
         {
             this.Unloading?.Invoke(this);

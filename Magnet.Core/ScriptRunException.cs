@@ -24,18 +24,16 @@ namespace Magnet.Core
         /// </summary>
         public String CallerMethodName { get; private set; }
 
+        internal ScriptRunException(string message) : base(message)
+        {
+
+        }
 
         internal ScriptRunException(string message, String fileName, Int32 lineNumber, String methodName) : base(message)
         {
             this.CallerLineNumber = lineNumber;
             this.CallerMethodName = methodName;
             this.CallerFileName = fileName;
-        }
-
-
-        internal ScriptRunException(string message) : base(message)
-        {
-
         }
 
         internal ScriptRunException(string message, String fileName, Int32 lineNumber, String methodName, Exception innerException) : base(message, innerException)

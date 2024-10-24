@@ -460,9 +460,6 @@ namespace Magnet
                 semanticModel = compilation.GetSemanticModel(newSyntaxTree);
                 // walker
                 walker.VisitWith(semanticModel, newSyntaxTree.GetRoot());
-
-                //AnalyzeNamespaces(newSyntaxTree, compilation);
-
             }
             if (walker.Diagnostics.Count > 0)
             {
@@ -479,30 +476,6 @@ namespace Magnet
             diagnostics.AddRange(result.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden));
             return new CompileResult(result.Success, diagnostics);
         }
-
-
-
-        public void AnalyzeNamespaces(SyntaxTree syntaxTree, CSharpCompilation compilation)
-        {
-            var semanticModel = compilation.GetSemanticModel(syntaxTree);
-            var root = syntaxTree.GetRoot();
-
-            // 查找所有的 UsingDirective 语法节点
-            var usingDirectives = root.DescendantNodes().OfType<UsingDirectiveSyntax>();
-
-
-
-            // 遍历所有的 using 指令并获取其符号信息
-            foreach (var usingDirective in usingDirectives)
-            {
-                var symbolInfo = semanticModel.GetSymbolInfo(usingDirective.Name);
-                if (symbolInfo.Symbol != null)
-                {
-                    Console.WriteLine($"Namespace: {symbolInfo.Symbol.ToDisplayString()}");
-                }
-            }
-        }
-
 
         private EmitResult emitStream(CSharpCompilation compilation)
         {

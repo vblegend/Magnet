@@ -14,14 +14,19 @@ namespace Magnet.Core
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IStateContext stateContext;
 
-
+        /// <summary>
+        /// Gets the context of the script state
+        /// </summary>
+        /// <returns></returns>
         public IStateContext GetStateContext()
         {
             return stateContext;
         }
 
 
-
+        /// <summary>
+        /// Whether the current environment is in debug mode
+        /// </summary>
         protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
 
         /// <summary>
@@ -91,12 +96,16 @@ namespace Magnet.Core
 
 
 
+
         /// <summary>
         /// Calls a method of the specified script, passing in the method parameters
         /// </summary>
         /// <param name="scriptName"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        /// <param name="callFilePath">ignore</param>
+        /// <param name="callLineNumber">ignore</param>
+        /// <param name="callMethod">ignore</param>
         /// <returns></returns>
         /// <exception cref="ScriptRunException"></exception>
         public Object Call(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
@@ -121,13 +130,15 @@ namespace Magnet.Core
             }
         }
 
-
         /// <summary>
         /// Try Calls a method of the specified script, passing in the method parameters
         /// </summary>
         /// <param name="scriptName"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        /// <param name="callFilePath">ignore</param>
+        /// <param name="callLineNumber">ignore</param>
+        /// <param name="callMethod">ignore</param>
         /// <returns></returns>
         public Object TryCall(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {

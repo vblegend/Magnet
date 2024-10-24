@@ -155,7 +155,7 @@ namespace Magnet
         /// <summary>
         /// Add a script type processor
         /// </summary>
-        /// <param name="processor"></param>
+        /// <param name="analyzer"></param>
         /// <returns></returns>
         public ScriptOptions AddAnalyzer(IAnalyzer analyzer)
         {
@@ -386,7 +386,10 @@ namespace Magnet
 
 
 
-
+        /// <summary>
+        /// Use the default suppression diagnostics
+        /// </summary>
+        /// <returns></returns>
         public ScriptOptions UseDefaultSuppressDiagnostics()
         {
             suppressDiagnostics.Add("CA1050");

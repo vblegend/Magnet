@@ -58,9 +58,10 @@ namespace Magnet
         /// <summary>
         /// Register the State private Providers
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="objectType"></param>
         /// <param name="value"></param>
         /// <param name="slotName"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         private void RegisterProviderInternal(Type objectType, Object value, String slotName = null)
         {
             var type = objectType;

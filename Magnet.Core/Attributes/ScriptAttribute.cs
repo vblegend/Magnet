@@ -27,9 +27,15 @@ namespace Magnet.Core
         {
             this.Alias = alias;
         }
-
+        /// <summary>
+        ///  script alias
+        /// </summary>
         public string Alias { get; set; }
 
+
+        /// <summary>
+        /// description, It's no use
+        /// </summary>
         public string Description { get; set; }
     }
 }

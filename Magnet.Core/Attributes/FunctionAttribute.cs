@@ -31,9 +31,14 @@ namespace Magnet.Core
             this.Description = description;
         }
 
+        /// <summary>
+        /// script method alias
+        /// </summary>
         public String Alias { get; set; }
 
-
+        /// <summary>
+        /// description, It's no use
+        /// </summary>
         public String Description { get; set; }
 
     }

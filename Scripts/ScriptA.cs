@@ -5,9 +5,6 @@ using System.Collections.Generic;
 using App.Core.UserInterface;
 using App.Core.Events;
 
-using System.Threading;
-using Thread3 = System.Threading.Thread;
-using Thread2 = System.Threading;
 
 
 
@@ -21,14 +18,10 @@ public class ScriptA : GameScript
 
     public async System.Threading.Tasks.Task Async()
     {
-        new Thread2.Thread(() =>
-        {
-
-        });
         new System.Threading.Thread(() =>
         {
-
-        });
+            this.Debug("On new Thread");
+        }).Start();
     }
 
 

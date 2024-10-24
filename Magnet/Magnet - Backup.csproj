@@ -18,7 +18,7 @@
     <Title>Magnet</Title>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageTags>C# Script Engine Roslyn </PackageTags>
+    <PackageTags>C# Script Engine</PackageTags>
     <Description>Magnet是基于“Microsoft.CodeAnalysis.CSharp.Scripting”开发一个高性能的c#游戏脚本引擎</Description>
   </PropertyGroup>
 
