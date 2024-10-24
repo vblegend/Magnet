@@ -31,7 +31,7 @@ namespace Magnet.Test
             options.RegisterProvider(timerProvider);
 
             // Insecure
-            options.DisabledInsecureTypes();
+            options.DisableInsecureTypes();
             //
             options.WithAssemblyLoadCallback(AssemblyLoad);
             options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());

@@ -43,7 +43,7 @@ public static class Program
 
         //options.DisableNamespace(typeof(Thread));
         // Insecure
-        //options.DisabledInsecureTypes();
+        // options.DisableInsecureTypes();
         options.WithTypeRewriter(new TypeRewriter());
         options.UseDefaultSuppressDiagnostics();
         //

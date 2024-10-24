@@ -46,7 +46,7 @@ namespace Magnet
         {
             get
             {
-                return new ScriptOptions().DisabledInsecureTypes();
+                return new ScriptOptions().DisableInsecureTypes();
             }
         }
 
@@ -418,7 +418,7 @@ namespace Magnet
         /// Disable some insecure script types
         /// </summary>
         /// <returns></returns>
-        public ScriptOptions DisabledInsecureTypes()
+        public ScriptOptions DisableInsecureTypes()
         {
 
             this.AddReplaceType(typeof(System.GC), typeof(Magnet.Safety.GC));
