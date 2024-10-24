@@ -8,7 +8,12 @@ using System.Runtime.Loader;
 
 namespace Magnet
 {
-
+    /// <summary>
+    /// script assembly loads the callback delegate
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="assemblyName"></param>
+    /// <returns></returns>
     public delegate Assembly AssemblyLoadDelegate(AssemblyLoadContext context, AssemblyName assemblyName);
 
     internal class ObjectProvider
@@ -18,10 +23,14 @@ namespace Magnet
         public Object Instance;
     }
 
-
+    /// <summary>
+    /// Script customization options
+    /// </summary>
     public class ScriptOptions
     {
-
+        /// <summary>
+        /// Provides basic scripting options
+        /// </summary>
         public static ScriptOptions Default
         {
             get
@@ -30,7 +39,9 @@ namespace Magnet
             }
         }
 
-
+        /// <summary>
+        /// Provides a secure scripting option that disables the use of some thread, reflection, GC, process, file, socket, and other types
+        /// </summary>
         public static ScriptOptions Safety
         {
             get
@@ -41,23 +52,23 @@ namespace Magnet
 
 
 
-        public String Name { get; private set; } = "Magnet.Script";
-        public String OutPutFile { get; private set; }
-        public ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
-        public String BaseDirectory { get; private set; }
-        public String ScriptFilePattern { get; private set; } = "*.cs";
-        public AssemblyLoadDelegate AssemblyLoad { get; private set; }
-        public List<String> Using { get; private set; } = [];
-        public List<Assembly> References { get; private set; } = [];
-        public Boolean UseDebugger { get; private set; }
-        public Boolean AllowAsync { get; private set; } = false;
-        public IOutput Output { get; private set; } = new ConsoleOutput();
-        public readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
+        internal String Name { get; private set; } = "Magnet.Script";
+        internal String OutPutFile { get; private set; }
+        internal ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
+        internal String BaseDirectory { get; private set; }
+        internal String ScriptFilePattern { get; private set; } = "*.cs";
+        internal AssemblyLoadDelegate AssemblyLoad { get; private set; }
+        internal List<String> Using { get; private set; } = [];
+        internal List<Assembly> References { get; private set; } = [];
+        internal Boolean UseDebugger { get; private set; }
+        internal Boolean AllowAsync { get; private set; } = false;
+        internal IOutput Output { get; private set; } = new ConsoleOutput();
+        internal readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
 
 
         internal readonly List<String> DisabledNamespace = new List<String>();
 
-        public String[] PreprocessorSymbols { get; private set; } = [];
+        internal String[] PreprocessorSymbols { get; private set; } = [];
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
         internal List<String> suppressDiagnostics = new List<string>();

@@ -9,7 +9,6 @@ namespace ScriptRuner
     {
         public string OnAsType(ITypeSymbol typeSymbol)
         {
-
             //Console.WriteLine( $"found as {typeSymbol}" );
             return null;
         }
