@@ -6,8 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Magnet.Core;
-using System.Xml.Linq;
-using Microsoft.VisualBasic.FileIO;
 
 
 
@@ -76,6 +74,14 @@ namespace Magnet.Syntax
                DiagnosticSeverity.Error,
                isEnabledByDefault: true);
 
+        private static readonly DiagnosticDescriptor IllegalTypes = new DiagnosticDescriptor(
+               id: "SE003",
+               title: "Illegal Type, usage not allowed",
+               messageFormat: "Typed '{0}' has been disabled",
+               category: "Usage",
+               DiagnosticSeverity.Error,
+               isEnabledByDefault: true);
+
         public SyntaxTreeWalker(ScriptOptions scriptOptions)
         {
             this.scriptOptions = scriptOptions;
@@ -86,6 +92,8 @@ namespace Magnet.Syntax
             semanticModel = model;
             base.Visit(root);
         }
+
+
 
 
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
@@ -108,103 +116,88 @@ namespace Magnet.Syntax
                     Diagnostics.Add(Diagnostic.Create(InvalidScriptWarning2, node.GetLocation(), classSymbol.ToDisplayString()));
                 }
             }
+            // 获取基类和接口的声明列表
+            if (node.BaseList != null)
+            {
+                foreach (var baseTypeSyntax in node.BaseList.Types)
+                {
+                    var typeInfo = semanticModel.GetTypeInfo(baseTypeSyntax.Type);
+                    var typeSymbol = typeInfo.Type;
+                    if (typeSymbol != null)
+                    {
+                        if (typeSymbol.TypeKind == TypeKind.Class)
+                        {
+                            // base class
+                            CheckType(baseTypeSyntax, typeSymbol);
+                        }
+                        else if (typeSymbol.TypeKind == TypeKind.Interface)
+                        {
+                            // interface 
+                            CheckType(baseTypeSyntax, typeSymbol);
+                        }
+                    }
+                }
+            }
+
+
             base.VisitClassDeclaration(node);
         }
 
 
 
-        //public override void VisitUsingDirective(UsingDirectiveSyntax node)
-        //{
-        //    var _namespace = node.Name.ToFullString();
-        //    if (node.Alias is NameEqualsSyntax nameEqual)
-        //    {
-        //        var typeInfo = semanticModel.GetTypeInfo(node.Name);
-        //        if (typeInfo.ConvertedType != null)
-        //        {
-        //            _namespace = typeInfo.ConvertedType.ContainingNamespace.ToDisplayString();
-        //        }
-        //    }
-        //    // 检测 using 引用的 命名空间
-        //    // Console.WriteLine($"{node.Location()}  {node.Parent.GetType().Name} {_namespace}");
-        //    base.VisitUsingDirective(node);
-        //}
-
 
         private void CheckNamespace(CSharpSyntaxNode node, String _namespace)
         {
-            if (this.scriptOptions.DisabledNamespace.Contains(_namespace))
+            if (this.scriptOptions.DisabledNamespaces.Contains(_namespace))
             {
                 Diagnostics.Add(Diagnostic.Create(IllegalNamespaces, node.GetLocation(), _namespace));
             }
         }
 
-        public override void VisitQualifiedName(QualifiedNameSyntax node)
+        private void CheckType(CSharpSyntaxNode node, ITypeSymbol typeSymbol)
         {
-            var _namespace = node.ToFullString();
-            if (node.Parent is UsingDirectiveSyntax usingNode)
+            var typeFullName = typeSymbol.ToDisplayString();
+            var _namespace = typeSymbol.ContainingNamespace.ToDisplayString();
+            CheckNamespace(node, _namespace);
+            if (this.scriptOptions.DisabledTypes.Contains(typeFullName))
             {
-                _namespace = usingNode.Name.ToFullString();
-                if (usingNode.Alias is NameEqualsSyntax nameEqual)
+                Diagnostics.Add(Diagnostic.Create(IllegalTypes, node.GetLocation(), typeFullName));
+            }
+            //Console.WriteLine($"{node.Location()} {typeFullName}");
+        }
+
+
+
+        public override void VisitUsingDirective(UsingDirectiveSyntax node)
+        {
+            var _namespace = node.Name.ToFullString();
+            if (node.Alias is NameEqualsSyntax nameEqual)
+            {
+                var typeInfo = semanticModel.GetTypeInfo(node.Name);
+                if (typeInfo.ConvertedType != null)
                 {
-                    var typeInfo = semanticModel.GetTypeInfo(usingNode.Name);
-                    if (typeInfo.ConvertedType != null)
-                    {
-                        _namespace = typeInfo.ConvertedType.ContainingNamespace.ToDisplayString();
-                    }
+                    CheckType(node, typeInfo.Type);
+                    _namespace = typeInfo.ConvertedType.ContainingNamespace.ToDisplayString();
                 }
             }
             else
             {
-                var symbolInfo = semanticModel.GetSymbolInfo(node);
-                if (symbolInfo.Symbol?.Kind == SymbolKind.NamedType)
-                {
-                    var typeSymbol = (INamedTypeSymbol)symbolInfo.Symbol;
-                    _namespace = typeSymbol.ContainingNamespace.ToDisplayString();
-                }
+                CheckNamespace(node, _namespace);
             }
-            CheckNamespace(node, _namespace);
+            base.VisitUsingDirective(node);
         }
 
 
-        public override void VisitIdentifierName(IdentifierNameSyntax node)
+
+        public override void VisitAttributeList(AttributeListSyntax node)
         {
-            //Console.WriteLine($"{node.Location()}  {node.Parent.GetType().Name} {node.Identifier.Text}");
-            // 获取符号信息
-            var symbolInfo = semanticModel.GetSymbolInfo(node);
-            var symbol = symbolInfo.Symbol;
-            if (symbol != null)
+            foreach (var attribute in node.Attributes)
             {
-                var containingAssembly = symbol.ContainingAssembly;
-                if (containingAssembly != null)
-                {
-                    // 添加引用的程序集名称
-                    ReferencedAssemblies.Add(containingAssembly.Name);
-                }
+                var attributeTypeInfo = semanticModel.GetTypeInfo(attribute);
+                CheckType(attribute, attributeTypeInfo.Type);
             }
-
-            base.VisitIdentifierName(node);
+            base.VisitAttributeList(node);
         }
-
-
-
-
-
-
-
-
-
-
-        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        {
-            var typeInfo = semanticModel.GetTypeInfo(node.Expression);
-            var typeName = typeInfo.Type?.ToDisplayString();
-            var memberName = node.Name.Identifier.Text;
-            var isStatic = typeInfo.Type.IsStatic;
-
-
-            base.VisitMemberAccessExpression(node);
-        }
-
 
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
@@ -227,6 +220,8 @@ namespace Magnet.Syntax
 
         public override void VisitPropertyDeclaration(PropertyDeclarationSyntax node)
         {
+            var typeInfo = semanticModel.GetTypeInfo(node.Type);
+            CheckType(node.Type, typeInfo.Type);
             if (node.Modifiers.Any(SyntaxKind.StaticKeyword))
             {
                 if (!HasAttribute(node, typeof(GlobalAttribute)))
@@ -259,28 +254,76 @@ namespace Magnet.Syntax
             {
                 Diagnostics.Add(Diagnostic.Create(AsyncUsageNotAllowed, node.GetLocation()));
             }
-            //if (symbol != null)
-            //{
-            //    var ModuleInitializerAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.CompilerServices.ModuleInitializerAttribute");
-            //    if (ModuleInitializerAttribute != null)
-            //    {
-            //        AddReport(node, $"ModuleInitializer");
-            //    }
+            // Return Type
+            var typeInfo = semanticModel.GetTypeInfo(node.ReturnType);
+            CheckType(node.ReturnType, typeInfo.Type);
+            // Parameters Type
+            foreach (var parameter in node.ParameterList.Parameters)
+            {
+                var parameterTypeInfo = semanticModel.GetTypeInfo(parameter.Type);
+                if (parameterTypeInfo.Type != null)
+                {
+                    CheckType(parameter.Type, parameterTypeInfo.Type);
+                }
+            }
 
-            //    // 检查方法的特性是否包含 DllImport
-            //    var dllImportAttribute = symbol.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.ToString() == "System.Runtime.InteropServices.DllImportAttribute");
-            //    if (dllImportAttribute != null)
-            //    {
-            //        AddReport(node, $"DllImport");
-            //    }
-            //}
             base.VisitMethodDeclaration(node);
         }
 
         public override void VisitTypeOfExpression(TypeOfExpressionSyntax node)
         {
+            var typeInfo = semanticModel.GetTypeInfo(node.Type);
+            CheckType(node.Type, typeInfo.Type);
             base.VisitTypeOfExpression(node);
         }
+
+        public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
+        {
+            var typeInfo = semanticModel.GetTypeInfo(node.Type);
+            var typeSymbol = typeInfo.Type;
+            if (typeSymbol != null)
+            {
+                if (node.Type is GenericNameSyntax generic)
+                {
+                    var genericTypes = typeSymbol.ToDisplayString().Split("<", StringSplitOptions.RemoveEmptyEntries);
+                    CheckType(node.Type, typeSymbol);
+                    foreach (var typeArg in generic.TypeArgumentList.Arguments)
+                    {
+                        var typeArgInfo = semanticModel.GetTypeInfo(typeArg);
+                        CheckType(typeArg, typeArgInfo.Type);
+                    }
+                }
+                else
+                {
+                    CheckType(node.Type, typeSymbol);
+                }
+            }
+            base.VisitVariableDeclaration(node);
+        }
+
+
+        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            // 获取访问的符号信息
+            var symbolInfo = semanticModel.GetSymbolInfo(node);
+            var symbol = symbolInfo.Symbol;
+            if (symbol != null)
+            {
+                // 判断是否为静态访问
+                if (symbol.IsStatic)
+                {
+                    // 静态成员访问的静态类型
+                    CheckType(node.Name, symbol.ContainingType);
+                }
+                else
+                {        
+                    // 实例成员访问的实例类型
+                    CheckType(node.Name, symbol.ContainingType);
+                }
+            }
+            base.VisitMemberAccessExpression(node);
+        }
+
 
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
@@ -288,10 +331,21 @@ namespace Magnet.Syntax
             var methodSymbol = symbolInfo.Symbol as IMethodSymbol;
             if (methodSymbol != null)
             {
-                var methodName = methodSymbol.Name;
-                var containingTypeName = methodSymbol.ContainingType.ToDisplayString();
-                bool isStatic = methodSymbol.IsStatic;
-                //Console.WriteLine($"Method: {methodName}, Type: {containingTypeName}, IsStatic: {isStatic}");
+                // Generic Type
+                if (node.Expression is GenericNameSyntax generic)
+                {
+                    foreach (var typeArg in generic.TypeArgumentList.Arguments)
+                    {
+                        var typeArgInfo = semanticModel.GetTypeInfo(typeArg);
+                        CheckType(typeArg, typeArgInfo.Type);
+                    }
+                }
+            }
+            // nameof
+            if (node.Expression is IdentifierNameSyntax identifier && identifier.Identifier.Text == "nameof")
+            {
+                var typeInfo = semanticModel.GetTypeInfo(node.ArgumentList.Arguments[0].Expression);
+                CheckType(node.Expression, typeInfo.Type);
             }
             base.VisitInvocationExpression(node);
         }
@@ -299,8 +353,7 @@ namespace Magnet.Syntax
         public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node);
-            var type = typeInfo.Type?.ToDisplayString();
-            //
+            CheckType(node, typeInfo.Type);
             base.VisitObjectCreationExpression(node);
         }
 

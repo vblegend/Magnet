@@ -3,7 +3,8 @@ using Magnet.Core;
 using System.Collections.Generic;
 using App.Core.UserInterface;
 using App.Core.Events;
-using System.Threading;
+
+
 
 
 
@@ -17,9 +18,17 @@ public class ScriptA : GameScript
 
 
 
+    private IKillContext ddd
+    {
+        get;
+        set;
+    }
+
+
+
 
     [Function]
-    public async void Main()
+    public void Main()
     {
         this.Print(KilledContext.Target);
 
@@ -29,6 +38,7 @@ public class ScriptA : GameScript
         //}
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
+
 
 
         UI.DIALOG(120).TO(Player)
@@ -54,11 +64,11 @@ public class ScriptA : GameScript
 
         EnableTimer(1);
 
-        var typed = typeof(Thread);
+        //var typed = this.GetType().FullName; 
 
-        Print(typed.FullName);
+        //Print(typed);
 
-        Assert(typed.FullName == "Magnet.Safety.Thread");
+        //Assert(typed == "Magnet.Safety.Thread");
 
         DisableTimer(0);
         DisableTimer(1);

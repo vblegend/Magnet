@@ -11,6 +11,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
+using System.Threading.Tasks;
 
 
 
@@ -46,13 +47,11 @@ public static class Program
         options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
         options.WithScanDirectory("../../../../Scripts");
 
-
         // 定义自定义的编译宏符号
         options.WithCompileSymbols("USE_FILE");
 
-
         // 是否支持异步
-        options.WithAllowAsync(true);
+        options.WithAllowAsync(false);
 
         // 添加程序集引用
         options.AddReferences<GameScript>();
@@ -61,13 +60,16 @@ public static class Program
         // 增加一个分析器
         options.AddAnalyzer(timerProvider);
 
-
-
-        // Insecure
+        // 替换类型
+        options.AddReplaceType(typeof(Task), typeof(Task));
+        // 禁用类型
+        options.DisableType(typeof(Task));
         // 禁用命名空间
-        //options.DisableNamespace(typeof(Thread));
-        //禁用不安全类型
+        options.DisableNamespace(typeof(Thread));
+
+        //禁用不安全类型与命名空间
         options.DisableInsecureTypes();
+
         // 脚本类型重写器
         options.WithTypeRewriter(new TypeRewriter());
         // 使用默认的抑制诊断

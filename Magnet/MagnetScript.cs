@@ -499,7 +499,8 @@ namespace Magnet
             var typeResolver = new TypeResolver(this.Options);
             var walker = new SyntaxTreeWalker(this.Options);
             var rewriter = new SyntaxTreeRewriter(typeResolver);
-            for (int i = 0; i < syntaxTrees.Count; i++)
+            // 从1开始 跳过程序集属性定义脚本树
+            for (int i = 1; i < syntaxTrees.Count; i++)
             {
                 var syntaxTree = syntaxTrees[i];
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);

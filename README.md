@@ -44,6 +44,7 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
         // 发布模式 编译优化
         //options.WithRelease();
 
+
         // #1 仅编译，可输出
         options.WithCompileKind(CompileKind.Compile);
         options.WithOutPutFile("123.dll");
@@ -61,7 +62,7 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
         options.WithCompileSymbols("USE_FILE");
 
         // 是否支持异步
-        options.WithAllowAsync(true);
+        options.WithAllowAsync(false);
 
         // 添加程序集引用
         options.AddReferences<GameScript>();
@@ -70,11 +71,15 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
         // 增加一个分析器
         options.AddAnalyzer(timerProvider);
 
-        // Insecure
+        // 替换类型
+        options.AddReplaceType(typeof(Task), typeof(Task));
+        // 禁用类型
+        options.DisableType(typeof(Task));
         // 禁用命名空间
-        //options.DisableNamespace(typeof(Thread));
-        //禁用不安全类型
+        options.DisableNamespace(typeof(Thread));
+        //禁用不安全类型与命名空间
         options.DisableInsecureTypes();
+
         // 脚本类型重写器
         options.WithTypeRewriter(new TypeRewriter());
         // 使用默认的抑制诊断

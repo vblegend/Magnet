@@ -89,7 +89,7 @@ namespace Magnet
 
         internal CompileKind CompileKind { get; private set; } = CompileKind.CompileAndLoadAssembly;
 
-        internal Platform TargetPlatform {  get; private set; } = Platform.AnyCpu;
+        internal Platform TargetPlatform { get; private set; } = Platform.AnyCpu;
 
         internal String AssemblyFileName { get; private set; } = null;
 
@@ -98,7 +98,9 @@ namespace Magnet
         internal readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
 
 
-        internal readonly List<String> DisabledNamespace = new List<String>();
+        internal readonly HashSet<String> DisabledNamespaces = new HashSet<String>();
+
+        internal readonly HashSet<String> DisabledTypes = new HashSet<String>();
 
         internal String[] CompileSymbols { get; private set; } = [];
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
@@ -154,7 +156,7 @@ namespace Magnet
             return this;
         }
 
-        
+
 
 
         /// <summary>
@@ -170,16 +172,50 @@ namespace Magnet
 
 
         /// <summary>
+        /// Disable the exact type
+        /// </summary>
+        /// <param name="_namespace"></param>
+        /// <returns></returns>
+        public ScriptOptions DisableType(String _namespace)
+        {
+            this.DisabledTypes.Add(_namespace);
+            return this;
+        }
+
+        /// <summary>
+        /// Disable the type where the type resides
+        /// </summary>
+        /// <param name="disabledType"></param>
+        /// <returns></returns>
+        public ScriptOptions DisableType(Type disabledType)
+        {
+            this.DisabledTypes.Add(disabledType.FullName);
+            return this;
+        }
+
+
+
+        /// <summary>
+        /// Disable the type where the type resides
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public ScriptOptions DisableType<T>()
+        {
+            this.DisabledTypes.Add(typeof(T).FullName);
+            return this;
+        }
+
+
+
+        /// <summary>
         /// Disable the exact namespace
         /// </summary>
         /// <param name="_namespace"></param>
         /// <returns></returns>
         public ScriptOptions DisableNamespace(String _namespace)
         {
-            if (!this.DisabledNamespace.Contains(_namespace))
-            {
-                this.DisabledNamespace.Add(_namespace);
-            }
+            this.DisabledNamespaces.Add(_namespace);
             return this;
         }
 
@@ -190,13 +226,18 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions DisableNamespace(Type disabledType)
         {
-            if (!this.DisabledNamespace.Contains(disabledType.Namespace))
-            {
-                this.DisabledNamespace.Add(disabledType.Namespace);
-            }
+            this.DisabledNamespaces.Add(disabledType.Namespace);
             return this;
         }
-
+        /// <summary>
+        /// Disable the namespace where the type resides
+        /// </summary>
+        /// <returns></returns>
+        public ScriptOptions DisableNamespace<T>()
+        {
+            this.DisabledNamespaces.Add(typeof(T).Namespace);
+            return this;
+        }
 
         /// <summary>
         /// Set the output stream of the script
@@ -542,53 +583,42 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions DisableInsecureTypes()
         {
+            this.DisableType(typeof(System.Environment));
+            this.DisableType(typeof(System.GC));
+            this.DisableType(typeof(System.AppDomain));
+            this.DisableType(typeof(System.Activator));
+            this.DisableType(typeof(System.Type));
 
-            this.AddReplaceType(typeof(System.GC), typeof(Magnet.Safety.GC));
-            this.AddReplaceType(typeof(System.Threading.Thread), typeof(Magnet.Safety.Thread));
-            this.AddReplaceType(typeof(System.Threading.ThreadPool), typeof(Magnet.Safety.ThreadPool));
-            this.AddReplaceType(typeof(System.Threading.Tasks.Task), typeof(Magnet.Safety.Task));
-            this.AddReplaceType(typeof(System.AppDomain), typeof(Magnet.Safety.AppDomain));
 
+            // Threading
+            this.DisableNamespace("System.Threading");
+            this.DisableNamespace("System.Threading.Tasks");
 
             // code safe
-            this.AddReplaceType(typeof(System.Activator), typeof(Magnet.Safety.Activator));
-            this.AddReplaceType(typeof(System.Type), typeof(Magnet.Safety.Type));
-            this.AddReplaceType(typeof(System.Reflection.Assembly), typeof(Magnet.Safety.Assembly));
-            this.AddReplaceType(typeof(System.Reflection.Emit.DynamicMethod), typeof(Magnet.Safety.DynamicMethod));
-            this.AddReplaceType(typeof(System.Linq.Expressions.DynamicExpression), typeof(Magnet.Safety.DynamicMethod));
-            this.AddReplaceType(typeof(System.Linq.Expressions.Expression), typeof(Magnet.Safety.DynamicMethod));
-            this.AddReplaceType(typeof(System.Runtime.CompilerServices.CallSite), typeof(Magnet.Safety.DynamicMethod));
+            this.DisableNamespace("System.Reflection");
+            this.DisableNamespace("System.Reflection.Emit");
+            this.DisableNamespace("System.Linq.Expressions");
 
             //
-            this.AddReplaceType(typeof(System.Environment), typeof(Magnet.Safety.Environment));
-            this.AddReplaceType(typeof(System.Diagnostics.Process), typeof(Magnet.Safety.Process));
-            this.AddReplaceType(typeof(System.Runtime.InteropServices.Marshal), typeof(Magnet.Safety.Marshal));
+
+            this.DisableNamespace("System.Diagnostics");
+            this.DisableNamespace("System.Runtime.InteropServices");
 
             // IO
-            this.AddReplaceType(typeof(System.IO.File), typeof(Magnet.Safety.File));
-            this.AddReplaceType(typeof(System.IO.Directory), typeof(Magnet.Safety.Directory));
-            this.AddReplaceType(typeof(System.IO.FileStream), typeof(Magnet.Safety.FileStream));
-            this.AddReplaceType(typeof(System.IO.StreamWriter), typeof(Magnet.Safety.StreamWriter));
-            this.AddReplaceType(typeof(System.IO.StreamReader), typeof(Magnet.Safety.StreamReader));
-
-
+            this.DisableNamespace("System.IO");
 
             // NET
-            this.AddReplaceType(typeof(System.Net.Sockets.Socket), typeof(Magnet.Safety.Socket));
-            this.AddReplaceType(typeof(System.Net.WebClient), typeof(Magnet.Safety.WebClient));
-            this.AddReplaceType(typeof(System.Net.Http.HttpClient), typeof(Magnet.Safety.HttpClient));
+            this.DisableType("System.Net.WebClient");
 
-
+            this.DisableNamespace("System.Net.Sockets");
+            this.DisableNamespace("System.Net.Http");
+            this.DisableNamespace("System.Net.Mail");
             //
-            this.AddReplaceType(typeof(System.Runtime.InteropServices.DllImportAttribute), typeof(Magnet.Safety.DllImportAttribute));
-            this.AddReplaceType(typeof(System.Runtime.CompilerServices.ModuleInitializerAttribute), typeof(Magnet.Safety.ModuleInitializerAttribute));
-            this.AddReplaceType(typeof(System.Runtime.InteropServices.LibraryImportAttribute), typeof(Magnet.Safety.LibraryImportAttribute));
-            this.AddReplaceType(typeof(System.Runtime.InteropServices.ComImportAttribute), typeof(Magnet.Safety.ComImportAttribute));
+            this.DisableNamespace("System.Runtime.InteropServices");
+            this.DisableNamespace("System.Runtime.CompilerServices");
 
-
-            this.AddReplaceType(typeof(Magnet.Core.IScriptInstance), typeof(Magnet.Safety.IScriptInstance));
-
-
+            //script internal
+            this.DisableType(typeof(IScriptInstance));
 
             return this;
         }
