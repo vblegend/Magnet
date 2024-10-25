@@ -7,7 +7,7 @@ using App.Core.Timer;
 
 namespace Magnet.Test.Timer
 {
-    public class TimerProvider : ITimerManager, IAssemblyAnalyzer, ITypeAnalyzer, IInstanceAsalyzer
+    public class TimerProvider : ITimerManager, ITypeAnalyzer
     {
         private struct TimerInfo
         {
@@ -82,10 +82,6 @@ namespace Magnet.Test.Timer
 
 
         #region Analyzers
-        void IAssemblyAnalyzer.DefineAssembly(Assembly assembly)
-        {
-
-        }
 
         void ITypeAnalyzer.DefineType(Type type)
         {
@@ -111,10 +107,14 @@ namespace Magnet.Test.Timer
             }
         }
 
-
-        public void DefineInstance(ScriptMetadata metadata, AbstractScript script, IStateContext context)
+        void IAnalyzer.Connect(MagnetScript magnet)
         {
+ 
+        }
 
+        void IAnalyzer.Disconnect(MagnetScript magnet)
+        {
+   
         }
 
 
