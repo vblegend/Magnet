@@ -1,6 +1,7 @@
 ﻿using Magnet.Analysis;
 using Magnet.Core;
 using Magnet.Syntax;
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -22,6 +23,29 @@ namespace Magnet
         public String SlotName;
         public Object Instance;
     }
+
+    /// <summary>
+    /// script compile kind
+    /// </summary>
+    [Flags]
+    public enum CompileKind
+    {
+        /// <summary>
+        /// Compile only scripts and output assembly files
+        /// </summary>
+        Compile = 1,
+        /// <summary>
+        /// Load the script from the assembly file
+        /// </summary>
+        LoadAssembly = 2,
+        /// <summary>
+        /// Compile the script file from the script directory and load it
+        /// </summary>
+        CompileAndLoadAssembly = Compile | LoadAssembly,
+
+    }
+
+
 
     /// <summary>
     /// Script customization options
@@ -55,20 +79,28 @@ namespace Magnet
         internal String Name { get; private set; } = "Magnet.Script";
         internal String OutPutFile { get; private set; }
         internal ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
-        internal String BaseDirectory { get; private set; }
+        internal String ScanDirectory { get; private set; }
         internal String ScriptFilePattern { get; private set; } = "*.cs";
         internal AssemblyLoadDelegate AssemblyLoad { get; private set; }
         internal List<String> Using { get; private set; } = [];
         internal List<Assembly> References { get; private set; } = [];
         internal Boolean UseDebugger { get; private set; }
         internal Boolean AllowAsync { get; private set; } = false;
+
+        internal CompileKind CompileKind { get; private set; } = CompileKind.CompileAndLoadAssembly;
+
+        internal Platform TargetPlatform {  get; private set; } = Platform.AnyCpu;
+
+        internal String AssemblyFileName { get; private set; } = null;
+
+
         internal IOutput Output { get; private set; } = new ConsoleOutput();
         internal readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
 
 
         internal readonly List<String> DisabledNamespace = new List<String>();
 
-        internal String[] PreprocessorSymbols { get; private set; } = [];
+        internal String[] CompileSymbols { get; private set; } = [];
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
         internal List<String> suppressDiagnostics = new List<string>();
@@ -86,6 +118,43 @@ namespace Magnet
             return this;
         }
 
+
+        /// <summary>
+        /// Set the script compilation kind option(Default: CompileAndLoadAssembly)
+        /// <code>
+        /// //#1 仅编译，可输出
+        /// options.WithCompileKind(CompileKind.Compile);
+        /// options.WithOutPutFile("123.dll");
+        /// //#2 从程序集文件加载
+        /// options.WithCompileKind(CompileKind.LoadAssembly);
+        /// options.WithScanDirectory("./");
+        /// options.WithAssemblyFileName("123.dll");
+        /// //#3 从脚本文件编译并加载
+        /// options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+        /// options.WithScanDirectory("../../../../Scripts");
+        /// </code>
+        /// </summary>
+        /// <param name="kind"></param>
+        /// <returns></returns>
+        public ScriptOptions WithCompileKind(CompileKind kind)
+        {
+            this.CompileKind = kind;
+            return this;
+        }
+
+
+        /// <summary>
+        /// Set the target platform for script compilation(Default: AnyCpu)
+        /// </summary>
+        /// <param name="platform"></param>
+        /// <returns></returns>
+        public ScriptOptions WithTargetPlatform(Platform platform)
+        {
+            this.TargetPlatform = platform;
+            return this;
+        }
+
+        
 
 
         /// <summary>
@@ -153,7 +222,8 @@ namespace Magnet
 
 
         /// <summary>
-        /// Add a script type processor
+        /// Add a script type analyzer <br/>
+        /// The analyzer contains events such as assembly loading, script type loading, script object creation, and so on
         /// </summary>
         /// <param name="analyzer"></param>
         /// <returns></returns>
@@ -182,6 +252,22 @@ namespace Magnet
 
         /// <summary>
         /// Register the state global provider(injected object)
+        /// <code>
+        /// //#HOST
+        /// options.RegisterProvider&lt;ObjectKilledContext&gt;(new ObjectKilledContext());
+        /// options.RegisterProvider(GLOBAL);
+        /// options.RegisterProvider&lt;IObjectContext&gt;(new HumContext(), "SELF");
+        /// 
+        /// //#IN SCRIPTS
+        /// [Autowired]
+        /// protected readonly GlobalVariableStore GLOBAL;
+        /// 
+        /// [Autowired("SELF")]
+        /// protected readonly IObjectContext Player;
+        /// 
+        /// [Autowired]
+        /// private readonly ITimerManager timerManager;
+        /// </code>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
@@ -336,24 +422,60 @@ namespace Magnet
         }
 
         /// <summary>
-        /// Set the scan directory for the script
+        /// Set the scan directory of the script or the directory where the input assembly resides
+        /// <code>
+        /// ScriptOptions options = ScriptOptions.Default;
+        /// // #1 从程序集文件加载
+        /// options.WithCompileKind(CompileKind.LoadAssembly);
+        /// options.WithScanDirectory("./");
+        /// options.WithAssemblyFileName("123.dll");
+        /// // #2 从脚本文件编译并加载
+        /// options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+        /// options.WithScanDirectory("../../../../Scripts");
+        /// </code>
         /// </summary>
         /// <param name="baseDirectory"></param>
         /// <returns></returns>
-        public ScriptOptions WithDirectory(String baseDirectory)
+        public ScriptOptions WithScanDirectory(String baseDirectory)
         {
-            this.BaseDirectory = baseDirectory;
+            this.ScanDirectory = baseDirectory;
             return this;
         }
 
         /// <summary>
-        /// A SYMBOL that declares the compiler for [Conditional("SYMBOL")] and the #if macro definition within the script
+        /// input assembly name（Only used in LoadAssembly）
+        /// <code>        
+        /// ScriptOptions options = ScriptOptions.Default;
+        /// options.WithCompileKind(CompileKind.LoadAssembly);
+        /// options.WithScanDirectory("./");
+        /// options.WithAssemblyFileName("123.dll");
+        /// </code>
+        /// </summary>
+        /// <param name="assemblyPath"></param>
+        /// <returns></returns>
+        public ScriptOptions WithAssemblyFileName(String assemblyPath)
+        {
+            this.AssemblyFileName = assemblyPath;
+            return this;
+        }
+
+
+
+        /// <summary>
+        /// SYMBOL that declares the compiler for  and the #if macro definition within the script<br/>
+        /// built-in [DEBUG, USE_DEBUGGER]
+        /// <code>
+        /// [Conditional("SYMBOL")]
+        /// 
+        /// #if SYMBOL
+        /// #endif
+        /// </code>
         /// </summary>
         /// <param name="preprocessorSymbols"></param>
         /// <returns></returns>
-        public ScriptOptions WithPreprocessorSymbols(params string[] preprocessorSymbols)
+        public ScriptOptions WithCompileSymbols(params string[] preprocessorSymbols)
         {
-            this.PreprocessorSymbols = preprocessorSymbols;
+            this.CompileSymbols = preprocessorSymbols;
             return this;
         }
 

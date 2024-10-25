@@ -23,8 +23,8 @@ namespace Magnet.Test
             //options.WithRelease();
             options.WithAllowAsync(false);
             options.AddReferences<GameScript>();
-            options.WithDirectory("../../../../Scripts");
-            options.WithPreprocessorSymbols("USE_FILE");
+            options.WithScanDirectory("../../../../Scripts");
+            options.WithCompileSymbols("USE_FILE");
 
             var timerProvider = new TimerProvider();
             options.AddAnalyzer(timerProvider);

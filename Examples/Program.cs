@@ -25,32 +25,57 @@ public static class Program
     private static ScriptOptions Options(String name)
     {
         ScriptOptions options = ScriptOptions.Default;
+        // 脚本名称
         options.WithName(name);
-        options.WithOutPutFile("123.dll");
+        // 调试模式 不启用脚本内置debugger()函数
         options.WithDebug(false);
-
+        // 发布模式 编译优化
         //options.WithRelease();
-        options.WithAllowAsync(true);
-        options.WithDirectory("../../../../Scripts");
-        options.WithPreprocessorSymbols("USE_FILE");
 
+
+        // #1 仅编译，可输出
+        options.WithCompileKind(CompileKind.Compile);
+        options.WithOutPutFile("123.dll");
+
+        // #2 从程序集文件加载
+        options.WithCompileKind(CompileKind.LoadAssembly);
+        options.WithScanDirectory("./");
+        options.WithAssemblyFileName("123.dll");
+
+        // #3 从脚本文件编译并加载
+        options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+        options.WithScanDirectory("../../../../Scripts");
+
+
+        // 定义自定义的编译宏符号
+        options.WithCompileSymbols("USE_FILE");
+
+
+        // 是否支持异步
+        options.WithAllowAsync(true);
+
+        // 添加程序集引用
         options.AddReferences<GameScript>();
 
-
         var timerProvider = new TimerProvider();
+        // 增加一个分析器
         options.AddAnalyzer(timerProvider);
-        options.RegisterProvider(timerProvider);
+
 
 
         // Insecure
+        // 禁用命名空间
         //options.DisableNamespace(typeof(Thread));
+        //禁用不安全类型
         options.DisableInsecureTypes();
+        // 脚本类型重写器
         options.WithTypeRewriter(new TypeRewriter());
-
-
+        // 使用默认的抑制诊断
         options.UseDefaultSuppressDiagnostics();
-        //
+        // 脚本上下文依赖程序集加载Hook
         options.WithAssemblyLoadCallback(AssemblyLoad);
+        // 注册依赖注入
+        options.RegisterProvider(timerProvider);
         options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
         options.RegisterProvider(GLOBAL);
         options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");

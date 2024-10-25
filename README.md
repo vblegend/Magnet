@@ -1,67 +1,88 @@
 
 <p align="center" > <span>Magnet</span> </p>
-
 <div align=center><img src="icon.png"></div>
-
 
 # What is Magnet?
 --------------
-`MagnetÊÇ»ùÓÚ¡°Microsoft.CodeAnalysis.CSharp.Scripting¡±¿ª·¢Ò»¸ö¸ßĞÔÄÜµÄc#ÓÎÏ·½Å±¾ÒıÇæ`<br/>  
+`Magnetæ˜¯åŸºäºâ€œMicrosoft.CodeAnalysis.CSharp.Scriptingâ€å¼€å‘ä¸€ä¸ªé«˜æ€§èƒ½çš„c#æ¸¸æˆè„šæœ¬å¼•æ“`<br/>  
 Magnet is based on "Microsoft.CodeAnalysis.CSharp.Scripting" to develop a high performance c # game Script engine
 
-`ÔÚc#ÓïÑÔºÍNET¿ò¼ÜÏÂ£¬½Å±¾¾ßÓĞ°²È«¡¢¿É¿Ø¡¢Áé»î¡¢×´Ì¬ºÃµÈÌØµã`<br/>  
+`åœ¨c#è¯­è¨€å’ŒNETæ¡†æ¶ä¸‹ï¼Œè„šæœ¬å…·æœ‰å®‰å…¨ã€å¯æ§ã€çµæ´»ã€çŠ¶æ€å¥½ç­‰ç‰¹ç‚¹`<br/>  
 On the basis of C# language and.NET framework, the script is safe, controllable, flexible and state
 
 
-# Features|¹¦ÄÜ
+# Features|åŠŸèƒ½
 
-- [x] Load from file | ´ÓÎÄ¼ş±àÒë¼ÓÔØ½Å±¾
-- [x] Rewrite Type | Ìá¹©ÀàĞÍÖØĞ´Æ÷ÒÔÌæ»»½Å±¾ÄÚÊ¹ÓÃµÄÀàĞÍ
-- [x] Unload | ½Å±¾³ÌĞò¼¯Ğ¶ÔØ
-- [x] Disable Namespace | ½ûÓÃÃüÃû¿Õ¼ä
-- [x] Script state isolation | ½Å±¾×´Ì¬¸ôÀë
-- [x] Script dependency injection | ½Å±¾ÒÀÀµ×¢Èë
-- [x] Debugger and braek; | µ÷ÊÔºÍ¶Ïµã
-- [x] Output assembly | Êä³ö³ÌĞò¼¯
-- [x] References assembly | Ôö¼ÓÒıÓÃ³ÌĞò¼¯
-- [x] Generation method delegate | Éú³É·½·¨Î¯ÍĞ
-- [x] Illegal API detection | ·Ç·¨API¼ì²â
-- [x] Global variable | È«¾Ö±äÁ¿
-- [x] Expandability | ¿ÉÀ©Õ¹ĞÔ
-- [x] Script inter call | ½Å±¾Ö®¼äµ÷ÓÃ
-- [x] Custom Analysis | ×Ô¶¨Òå·ÖÎöÆ÷À©Õ¹
+- [x] Load from file | ä»æ–‡ä»¶ç¼–è¯‘åŠ è½½è„šæœ¬ã€ä»ç¨‹åºé›†åŠ è½½è„šæœ¬ã€ä»…ç¼–è¯‘è„šæœ¬
+- [x] Rewrite Type | æä¾›ç±»å‹é‡å†™å™¨ä»¥æ›¿æ¢è„šæœ¬å†…ä½¿ç”¨çš„ç±»å‹
+- [x] Unload | è„šæœ¬ç¨‹åºé›†å¸è½½
+- [x] Disable Namespace | ç¦ç”¨å‘½åç©ºé—´
+- [x] Script state isolation | è„šæœ¬çŠ¶æ€éš”ç¦»
+- [x] Script dependency injection | è„šæœ¬ä¾èµ–æ³¨å…¥
+- [x] Debugger and braek; | è°ƒè¯•å’Œæ–­ç‚¹
+- [x] Output assembly | è¾“å‡ºç¨‹åºé›†
+- [x] References assembly | å¢åŠ å¼•ç”¨ç¨‹åºé›†
+- [x] Generation method delegate | ç”Ÿæˆæ–¹æ³•å§”æ‰˜
+- [x] Illegal API detection | éæ³•APIæ£€æµ‹
+- [x] Global variable | å…¨å±€å˜é‡
+- [x] Expandability | å¯æ‰©å±•æ€§
+- [x] Script inter call | è„šæœ¬ä¹‹é—´è°ƒç”¨
+- [x] Custom Analysis | è‡ªå®šä¹‰åˆ†æå™¨æ‰©å±•
 
 
 
-# Examples|Àı×Ó
+# Examples|ä¾‹å­
 
 ``` csharp
     private static ScriptOptions Options(String name)
     {
         ScriptOptions options = ScriptOptions.Default;
+        // è„šæœ¬åç§°
         options.WithName(name);
-        options.WithOutPutFile("123.dll");
+        // è°ƒè¯•æ¨¡å¼ ä¸å¯ç”¨è„šæœ¬å†…ç½®debugger()å‡½æ•°
         options.WithDebug(false);
-
+        // å‘å¸ƒæ¨¡å¼ ç¼–è¯‘ä¼˜åŒ–
         //options.WithRelease();
-        options.WithAllowAsync(true);
-        options.WithDirectory("../../../../Scripts");
-        options.WithPreprocessorSymbols("USE_FILE");
 
+        // #1 ä»…ç¼–è¯‘ï¼Œå¯è¾“å‡º
+        options.WithCompileKind(CompileKind.Compile);
+        options.WithOutPutFile("123.dll");
+
+        // #2 ä»ç¨‹åºé›†æ–‡ä»¶åŠ è½½
+        options.WithCompileKind(CompileKind.LoadAssembly);
+        options.WithScanDirectory("./");
+        options.WithAssemblyFileName("123.dll");
+
+        // #3 ä»è„šæœ¬æ–‡ä»¶ç¼–è¯‘å¹¶åŠ è½½
+        options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+        options.WithScanDirectory("../../../../Scripts");
+
+        // å®šä¹‰è‡ªå®šä¹‰çš„ç¼–è¯‘å®ç¬¦å·
+        options.WithCompileSymbols("USE_FILE");
+
+        // æ˜¯å¦æ”¯æŒå¼‚æ­¥
+        options.WithAllowAsync(true);
+
+        // æ·»åŠ ç¨‹åºé›†å¼•ç”¨
         options.AddReferences<GameScript>();
 
         var timerProvider = new TimerProvider();
+        // å¢åŠ ä¸€ä¸ªåˆ†æå™¨
         options.AddAnalyzer(timerProvider);
-        options.RegisterProvider(timerProvider);
-
-        options.DisableNamespace(typeof(Thread));
 
         // Insecure
-        //options.DisabledInsecureTypes();
-
+        // ç¦ç”¨å‘½åç©ºé—´
+        //options.DisableNamespace(typeof(Thread));
+        //ç¦ç”¨ä¸å®‰å…¨ç±»å‹
+        options.DisableInsecureTypes();
+        // è„šæœ¬ç±»å‹é‡å†™å™¨
         options.WithTypeRewriter(new TypeRewriter());
+        // ä½¿ç”¨é»˜è®¤çš„æŠ‘åˆ¶è¯Šæ–­
         options.UseDefaultSuppressDiagnostics();
+        // è„šæœ¬ä¸Šä¸‹æ–‡ä¾èµ–ç¨‹åºé›†åŠ è½½Hook
         options.WithAssemblyLoadCallback(AssemblyLoad);
+        // æ³¨å†Œä¾èµ–æ³¨å…¥
+        options.RegisterProvider(timerProvider);
         options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
         options.RegisterProvider(GLOBAL);
         options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");
@@ -72,7 +93,7 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
 
 
 
-    private static WeakReference<Action> TestSccriptUnload()
+    private static WeakReference<Action> TestScriptUnload()
     {
         MagnetScript scriptManager = new MagnetScript(Options("Unload.Test"));
         var result = scriptManager.Compile();
@@ -124,7 +145,7 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
             scriptManager.Unload(true);
         }
         // wait gc unloaded assembly
-        while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
+        while (scriptManager.Status == ScriptStatus.Unloading && scriptManager.IsAlive)
         {
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
@@ -133,18 +154,18 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
 
     private static void ScriptManager_Unloaded(MagnetScript obj)
     {
-        Console.WriteLine($"½Å±¾[{obj.Name}:{obj.UniqueId}]Ğ¶ÔØÍê±Ï.");
+        Console.WriteLine($"è„šæœ¬[{obj.Name}:{obj.UniqueId}]å¸è½½å®Œæ¯•.");
     }
 
     private static void ScriptManager_Unloading(MagnetScript obj)
     {
-        Console.WriteLine($"½Å±¾[{obj.Name}:{obj.UniqueId}]Ğ¶ÔØÇëÇó.");
+        Console.WriteLine($"è„šæœ¬[{obj.Name}:{obj.UniqueId}]å¸è½½è¯·æ±‚.");
     }
 
 ```
 
 
-# Script Examples|½Å±¾Àı×Ó
+# Script Examples|è„šæœ¬ä¾‹å­
 
 ``` csharp
     using Magnet.Core;
