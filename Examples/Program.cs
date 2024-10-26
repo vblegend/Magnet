@@ -64,6 +64,19 @@ public static class Program
         // 是否支持不安全代码
         options.WithAllowUnsafe(true);
 
+
+        //// 将SW001诊断提升至Error，没有标记[ScriptAttribute]的脚本对象会导致编译失败
+        //options.AddDiagnosticSuppress("SW001", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+        //// 将SW002诊断提升至Error，没有继承AbstractScript的脚本对象会导致编译失败
+        //options.AddDiagnosticSuppress("SW002", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+        //// 将SW003诊断提升至Error，没有标记[GlobalAttribute]的静态字段会导致编译失败
+        //options.AddDiagnosticSuppress("SW003", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+        //// 将SW004诊断提升至Error，没有标记[GlobalAttribute]的静态属性会导致编译失败
+        //options.AddDiagnosticSuppress("SW004", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+
+
+
         // 替换类型
         // options.AddReplaceType(typeof(Task), typeof(MyTask));
 

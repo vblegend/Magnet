@@ -19,7 +19,12 @@ namespace System.Threading
 public class ScriptA : GameScript
 {
     [Autowired]
-    private IKillContext KilledContext;
+    private readonly IKillContext KilledContext;
+
+    [Autowired]
+    private readonly ScriptExample scriptExample;
+
+
 
     [Function]
     public void Main()
@@ -32,7 +37,7 @@ public class ScriptA : GameScript
         //}
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
-
+        scriptExample.Hello("Wrold");
 
 
         UI.DIALOG(120).TO(Player)

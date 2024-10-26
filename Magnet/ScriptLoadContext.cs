@@ -6,18 +6,18 @@ namespace Magnet
 {
     internal class ScriptLoadContext : AssemblyLoadContext
     {
-        private ScriptOptions Options;
+        private ScriptOptions _options;
         public ScriptLoadContext(ScriptOptions options) : base(isCollectible: true)
         {
-            Options = options;
+            _options = options;
         }
 
         protected override Assembly Load(AssemblyName assemblyName)
         {
             // 如果需要处理程序集加载，可以在此处自定义逻辑
-            if (Options.AssemblyLoad != null)
+            if (_options.AssemblyLoad != null)
             {
-                return Options.AssemblyLoad(this,assemblyName);
+                return _options.AssemblyLoad(this,assemblyName);
             }
             if (assemblyName.Name == "AllowedAssembly")
             {

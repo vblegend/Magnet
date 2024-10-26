@@ -77,22 +77,24 @@ namespace Magnet
     /// </summary>
     public sealed partial class MagnetScript
     {
-        private String[] baseUsing = ["System", "Magnet.Core"];
+        private static GCEventListener _gcEventListener = new GCEventListener();
+        private static readonly Assembly[] _importantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly];
+
+
         internal ScriptOptions Options { get; private set; }
-
         internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
-        private readonly WeakReference<Assembly> scriptAssembly = new WeakReference<Assembly>(null);
-        private CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        private ScriptLoadContext scriptLoadContext;
         internal readonly AnalyzerCollection Analyzers;
-
-        private readonly Dictionary<Int64, MagnetState> SurvivalStates = new();
-        private static GCEventListener gcEventListener = new GCEventListener();
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
-        private static readonly Assembly[] ImportantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly];
 
-        private MemoryStream assemblyStream = null;
-        private MemoryStream pdbStream = null;
+
+
+        private String[] _baseUsing = ["System", "Magnet.Core"];
+        private readonly WeakReference<Assembly> _scriptAssembly = new WeakReference<Assembly>(null);
+        private CSharpCompilationOptions _compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        private ScriptLoadContext _scriptLoadContext;
+        private readonly Dictionary<Int64, MagnetState> _survivalStates = new();
+        private MemoryStream _assemblyStream = null;
+        private MemoryStream _pdbStream = null;
 
         /// <summary>
         /// The unique ID of the assembly compiled by the script
@@ -172,10 +174,10 @@ namespace Magnet
             this.Analyzers?.Disconnect(this);
             if (force)
             {
-                var keys = SurvivalStates.Keys;
+                var keys = _survivalStates.Keys;
                 foreach (var key in keys)
                 {
-                    var state = SurvivalStates[key];
+                    var state = _survivalStates[key];
                     state?.Dispose();
                     state = null;
                 }
@@ -183,7 +185,7 @@ namespace Magnet
             this.Unloading?.Invoke(this);
             this.Unloading = null;
             this.scriptMetaInfos = [];
-            this.scriptLoadContext?.Unload();
+            this._scriptLoadContext?.Unload();
             this.Status = ScrriptStatus.Unloading;
         }
 
@@ -192,9 +194,9 @@ namespace Magnet
             ReferenceTrackers.AliveObjects();
             if (this.Status == ScrriptStatus.Unloading && !this.IsAlive)
             {
-                gcEventListener.OnGCFinalizers -= GcEventListener_OnGCFinalizers;
+                _gcEventListener.OnGCFinalizers -= GcEventListener_OnGCFinalizers;
                 this.Unloaded?.Invoke(this);
-                this.scriptLoadContext = null;
+                this._scriptLoadContext = null;
                 this.Unloaded = null;
                 this.Options = null;
                 this.Status = ScrriptStatus.Unloaded;
@@ -211,30 +213,24 @@ namespace Magnet
             this.Options = options;
             this.Name = options.Name;
             this.Status = ScrriptStatus.NotReady;
-            this.scriptLoadContext = new ScriptLoadContext(options);
-            this.compilationOptions = this.compilationOptions.WithAllowUnsafe(this.Options.AllowUnsafe);
-            this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
+            this._scriptLoadContext = new ScriptLoadContext(options);
+            this._compilationOptions = this._compilationOptions.WithAllowUnsafe(this.Options.AllowUnsafe);
+            this._compilationOptions = this._compilationOptions.WithConcurrentBuild(true);
             //this.compilationOptions = this.compilationOptions.WithDebugPlusMode(true);
-            this.compilationOptions = this.compilationOptions.WithPlatform(this.Options.TargetPlatform);
-            this.compilationOptions = this.compilationOptions.WithOutputKind(OutputKind.DynamicallyLinkedLibrary);
-            this.compilationOptions = this.compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
-            this.compilationOptions = this.compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
-            this.compilationOptions = this.compilationOptions.WithModuleName(this.Name);
+            this._compilationOptions = this._compilationOptions.WithPlatform(this.Options.TargetPlatform);
+            this._compilationOptions = this._compilationOptions.WithOutputKind(OutputKind.DynamicallyLinkedLibrary);
+            this._compilationOptions = this._compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
+            this._compilationOptions = this._compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
+            this._compilationOptions = this._compilationOptions.WithModuleName(this.Name);
 
             //var SetDebugPlusModeDelegate = (Action<CSharpCompilationOptions, bool>)Delegate.CreateDelegate(typeof(Action<CSharpCompilationOptions, bool>), typeof(CSharpCompilationOptions).GetProperty("DebugPlusMode", BindingFlags.Instance | BindingFlags.NonPublic)!.SetMethod!);
             //SetDebugPlusModeDelegate(this.compilationOptions, true);
 
-
-            Dictionary<string, ReportDiagnostic> values = new Dictionary<string, ReportDiagnostic>();
-            foreach (var sd in options.suppressDiagnostics)
-            {
-                values[sd] = ReportDiagnostic.Suppress;
-            }
-            this.compilationOptions = this.compilationOptions.WithSpecificDiagnosticOptions(values);
-            gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
+            this._compilationOptions = this._compilationOptions.WithSpecificDiagnosticOptions(options.diagnosticSeveritys);
+            _gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
             this.Analyzers = new AnalyzerCollection(Options.Analyzers);
-            this.assemblyStream = new MemoryStream();
-            this.pdbStream = (this.Options.Mode == ScriptRunMode.Debug) ? new MemoryStream() : null;
+            this._assemblyStream = new MemoryStream();
+            this._pdbStream = (this.Options.Mode == ScriptRunMode.Debug) ? new MemoryStream() : null;
         }
 
         private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
@@ -321,13 +317,13 @@ namespace Magnet
                 }
                 SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText(assemblyInfo);
                 syntaxTrees.Insert(0, assemblyAttribute);
-                this.assemblyStream = new MemoryStream();
-                this.pdbStream = (this.Options.Mode == ScriptRunMode.Debug) ? new MemoryStream() : null;
+                this._assemblyStream = new MemoryStream();
+                this._pdbStream = (this.Options.Mode == ScriptRunMode.Debug) ? new MemoryStream() : null;
                 result = CompileSyntaxTree(syntaxTrees, canLoadAssembly);
-                if (result.Success && assemblyStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
+                if (result.Success && _assemblyStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
                 {
-                    this.assemblyStream.Seek(0, SeekOrigin.Begin);
-                    File.WriteAllBytes(Options.OutPutFile, assemblyStream.ToArray());
+                    this._assemblyStream.Seek(0, SeekOrigin.Begin);
+                    File.WriteAllBytes(Options.OutPutFile, _assemblyStream.ToArray());
                 }
             }
             if (canLoadAssembly)
@@ -336,9 +332,9 @@ namespace Magnet
                 {
                     if (result.Success)
                     {
-                        this.assemblyStream?.Seek(0, SeekOrigin.Begin);
-                        this.pdbStream?.Seek(0, SeekOrigin.Begin);
-                        var assembly = scriptLoadContext.LoadFromStream(assemblyStream, pdbStream);
+                        this._assemblyStream?.Seek(0, SeekOrigin.Begin);
+                        this._pdbStream?.Seek(0, SeekOrigin.Begin);
+                        var assembly = _scriptLoadContext.LoadFromStream(_assemblyStream, _pdbStream);
                         this.AssemblyLoaded(assembly);
                     }
                 }
@@ -346,13 +342,13 @@ namespace Magnet
                 {
                     var assemblyFullPath = Path.GetFullPath(Path.Combine(this.Options.ScanDirectory, this.Options.AssemblyFileName));
                     if (!File.Exists(assemblyFullPath)) throw new Exception($"Assembly file '{assemblyFullPath}' does not exist!");
-                    var assembly = scriptLoadContext.LoadFromAssemblyPath(assemblyFullPath);
+                    var assembly = _scriptLoadContext.LoadFromAssemblyPath(assemblyFullPath);
                     this.AssemblyLoaded(assembly);
                     result = new CompileResult(true, []);
                 }
             }
-            assemblyStream?.Dispose();
-            pdbStream?.Dispose();
+            _assemblyStream?.Dispose();
+            _pdbStream?.Dispose();
             return result;
         }
 
@@ -372,7 +368,7 @@ namespace Magnet
                                         return scriptConfig;
                                     }).ToImmutableList();
 
-            this.scriptAssembly.SetTarget(assembly);
+            this._scriptAssembly.SetTarget(assembly);
             this.Status = ScrriptStatus.Loaded;
             this.Analyzers.ConnectTo(this);
             this.Analyzers.DefineAssembly(assembly);
@@ -436,7 +432,7 @@ namespace Magnet
         /// <exception cref="Exception"></exception>
         public IMagnetState CreateState(StateOptions options = null)
         {
-            if (this.Status != ScrriptStatus.Loaded || !this.scriptAssembly.TryGetTarget(out _))
+            if (this.Status != ScrriptStatus.Loaded || !this._scriptAssembly.TryGetTarget(out _))
             {
                 throw new Exception("A copy of the script is unavailable, uncompiled, or failed to compile");
             }
@@ -444,14 +440,14 @@ namespace Magnet
             if (options.Identity == -1)
             {
                 Int64 identity = -1;
-                while (identity == -1 || SurvivalStates.ContainsKey(identity))
+                while (identity == -1 || _survivalStates.ContainsKey(identity))
                 {
                     identity = Random.Shared.NextInt64();
                 }
 
                 options.WithIdentity(identity);
             }
-            if (SurvivalStates.ContainsKey(options.Identity))
+            if (_survivalStates.ContainsKey(options.Identity))
             {
                 throw new Exception("The Identity state already exists.");
             }
@@ -459,20 +455,20 @@ namespace Magnet
             state.Unloading += State_Unloading;
             //this.ReferenceTrackers.Add(state);
             // TODO 性能问题
-            SurvivalStates.TryAdd(options.Identity, state);
+            _survivalStates.TryAdd(options.Identity, state);
             return state;
         }
 
         private void State_Unloading(MagnetState state)
         {
-            SurvivalStates.Remove(state.Identity, out var value);
+            _survivalStates.Remove(state.Identity, out var value);
         }
 
         private async Task<SyntaxTree> ParseSyntaxTree(String filePath, CSharpParseOptions parseOptions)
         {
             var code = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
             var syntaxTree = CSharpSyntaxTree.ParseText(text: code, options: parseOptions, path: filePath, encoding: Encoding.UTF8);
-            return GlobalUsings(syntaxTree, baseUsing.Concat(this.Options.Using).ToArray());
+            return GlobalUsings(syntaxTree, _baseUsing.Concat(this.Options.Using).ToArray());
         }
 
 
@@ -480,7 +476,7 @@ namespace Magnet
         // 使用 Roslyn 编译脚本
         private ICompileResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees, Boolean loadAssembly)
         {
-            var libs = ImportantAssemblies.Concat(Options.References);
+            var libs = _importantAssemblies.Concat(Options.References);
             var references = AppDomain.CurrentDomain
             .GetAssemblies()
             .Where(e => !e.IsDynamic && libs.Contains(e))
@@ -491,7 +487,7 @@ namespace Magnet
                 assemblyName: this.Name,
                 syntaxTrees: syntaxTrees,
                 references: references,
-                options: this.compilationOptions
+                options: this._compilationOptions
             );
 
             // 检查是否有不允许的 API 调用
@@ -535,11 +531,11 @@ namespace Magnet
             {
                 emitOptions = emitOptions.WithDebugInformationFormat(DebugInformationFormat.PortablePdb);
             }
-            var result = compilation.Emit(assemblyStream, pdbStream, options: emitOptions);
+            var result = compilation.Emit(_assemblyStream, _pdbStream, options: emitOptions);
             if (result.Success)
             {
                 this.Status = ScrriptStatus.CompileComplete;
-                this.CompileComplete?.Invoke(this, null, assemblyStream, pdbStream);
+                this.CompileComplete?.Invoke(this, null, _assemblyStream, _pdbStream);
             }
             else
             {

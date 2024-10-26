@@ -23,22 +23,44 @@
 脚本对象必须直接或间接继承或派生自AbstractScript，且必须使用[ScriptAttribute]标记Class
 
 ``` csahrp
-
-[Script(nameof(ScriptExample))]
+// ✔️正确案例
+[Script]
 public class ScriptExample : AbstractScript
 {
-    [Function("Hello")]
+    [Function]
     public void Hello(String name)
     {
         this.Output(MessageType.Print, $"Hello {name}!");
     }
 }
 
+
+// ✖️错误案例
+[Script]
+public class ScriptExample
+{
+    public void Hello(String name)
+    {
+        this.Output(MessageType.Print, $"Hello {name}!");
+    }
+}
+
+// ✖️错误案例
+public class ScriptExample : AbstractScript
+{
+    public void Hello(String name)
+    {
+        this.Output(MessageType.Print, $"Hello {name}!");
+    }
+}
+
+
+
 ```
 
 
 ## 💥脚本基础功能
-支持仅编译、仅加载、从脚本编译加载模式。
+脚本编译的基础可选项。
 ``` csahrp
 // 脚本名称
 options.WithName(name);
@@ -194,10 +216,28 @@ stateOptions.Identity = 666;
 stateOptions.RegisterProvider(new TimerService());
 var stateTest = scriptManager.CreateState(stateOptions);
 ```
+3.脚本间依赖注入，脚本实例创建后会自动注册进State级别的依赖注入列表内
+
 
 脚本
 ``` csahrp
-public abstract class GameScript : AbstractScript
+
+[Script]
+public class ScriptA : AbstractScript
+{
+    // 脚本实例依赖注入
+    [Autowired]
+    private readonly ScriptB scriptB;
+
+    protected override void Initialize()
+    {
+        Print(scriptB)
+    }
+
+}
+
+[Script]
+public class ScriptB : AbstractScript
 {
     [Autowired(typeof(GlobalVariableStore))]
     protected readonly GlobalVariableStore GLOBAL;
@@ -207,8 +247,48 @@ public abstract class GameScript : AbstractScript
 
     [Autowired]
     private readonly ITimerManager timerManager;
+
+    // 脚本实例依赖注入
+    [Autowired]
+    private readonly ScriptA scriptA;
+
+    protected override void Initialize()
+    {
+        Print(scriptA)
+    }
+
 }
 
+```
+
+
+## 💥脚本编译诊断抑制
+脚本支持编译诊断抑制的默认等级设置，支持C#编译器的全量诊断代码和以下*Magnet*内置编译诊断
+
+| 诊断ID | 默认级别 | 描述 |
+| :-----------: | :-----------: | ----------- | 
+| SW001 | Warning | 无效的脚本对象，检测到对象继承了AbstractScript 但未被[ScriptAttribute]标记 | 
+| SW002 | Warning | 无效的脚本对象，检测到对象被[ScriptAttribute]标记 但未继承AbstractScript对象 | 
+| SW003 | Warning | 不明确的全局字段，字段被标记为static但未被[GlobalAttribute]标记 | 
+| SW004 | Warning | 不明确的全局属性，属性被标记为static但未被[GlobalAttribute]标记 | 
+| SE001 | Error   | 脚本不允许使用异步操作符号async await | 
+| SE002 | Error   | 被禁止使用的命名空间 | 
+| SE003 | Error   | 被禁止使用的类型 | 
+
+
+
+``` csharp
+// 将SW001诊断提升至Error，没有标记[ScriptAttribute]的脚本对象会导致编译失败
+options.AddDiagnosticSuppress("SW001", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+// 将SW002诊断提升至Error，没有继承AbstractScript的脚本对象会导致编译失败
+options.AddDiagnosticSuppress("SW002", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+// 将SW003诊断提升至Error，没有标记[GlobalAttribute]的静态字段会导致编译失败
+options.AddDiagnosticSuppress("SW003", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+// 将SW004诊断提升至Error，没有标记[GlobalAttribute]的静态属性会导致编译失败
+options.AddDiagnosticSuppress("SW004", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
 ```
 
 
@@ -240,7 +320,12 @@ public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [
 
 
 ## 💥脚本之间相互调用
-由于脚本state是隔离的，脚本之间无法通过变量来进行访问所以提供了调用方法
+由于脚本state是隔离的，脚本之间的调用由以下4种办法<br>
+<br>
+1.脚本之间的依赖注入，参考上方的依赖注入（推荐）<br>
+2.题本提供的Script方法获取脚本实例<br>
+3.脚本提供的Call方法<br>
+4.脚本提供的TryCall方法
 
 ``` csharp
 // 调用ScriptB的Test方法，出现错误会抛出异常
@@ -260,7 +345,7 @@ Script<ScriptB>((script) =>
 ```
 
 ## 💥脚本调试断点
-调用debug模式编译运行脚本时，执行到此处将自动打开调试器并断点暂停。
+使用debug模式编译运行脚本时，执行到此处将自动打开调试器并断点暂停。<br>
 release编译时此代码将被优化掉
 ``` csharp
 debugget();
@@ -278,8 +363,6 @@ debugget();
 protected readonly static GlobalVariableStore Global;
 
 ```
-
-
 
 
 

@@ -106,7 +106,7 @@ namespace Magnet
         internal String[] CompileSymbols { get; private set; } = [];
         internal readonly Dictionary<String, String> ReplaceTypes = new Dictionary<string, string>();
 
-        internal List<String> suppressDiagnostics = new List<string>();
+        internal readonly Dictionary<String, ReportDiagnostic> diagnosticSeveritys = new();
         internal ITypeRewriter typeRewriter;
 
         /// <summary>
@@ -171,13 +171,14 @@ namespace Magnet
 
 
         /// <summary>
-        /// Add compiler suppress diagnostic 
+        /// Add compiler diagnostic Suppress
         /// </summary>
         /// <param name="code"></param>
+        /// <param name="reportDiagnostic"></param>
         /// <returns></returns>
-        public ScriptOptions AddSuppressDiagnostic(String code)
+        public ScriptOptions AddDiagnosticSuppress(String code, ReportDiagnostic reportDiagnostic = ReportDiagnostic.Suppress)
         {
-            suppressDiagnostics.Add(code);
+            diagnosticSeveritys.Add(code, reportDiagnostic);
             return this;
         }
 
@@ -576,24 +577,24 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions UseDefaultSuppressDiagnostics()
         {
-            suppressDiagnostics.Add("CA1050");
-            suppressDiagnostics.Add("CA1822");
-            suppressDiagnostics.Add("CS1701");
-            suppressDiagnostics.Add("CS1702");
-            suppressDiagnostics.Add("CS1705");
-            suppressDiagnostics.Add("CS2008");
-            suppressDiagnostics.Add("CS8019");
+            diagnosticSeveritys.Add("CA1050", ReportDiagnostic.Suppress);
+            diagnosticSeveritys.Add("CA1822", ReportDiagnostic.Suppress);
+            diagnosticSeveritys.Add("CS1701", ReportDiagnostic.Suppress);
+            diagnosticSeveritys.Add("CS1702", ReportDiagnostic.Suppress);
+            diagnosticSeveritys.Add("CS1705", ReportDiagnostic.Suppress);
+            diagnosticSeveritys.Add("CS2008", ReportDiagnostic.Suppress);
+            diagnosticSeveritys.Add("CS8019", ReportDiagnostic.Suppress);
 
 
-            suppressDiagnostics.Add("CS8632");// nullable
-            suppressDiagnostics.Add("CS162"); //- Unreachable code detected.
-            suppressDiagnostics.Add("CS0219");// - The variable 'V' is assigned but its value is never used.
-            suppressDiagnostics.Add("CS0414");// - The private field 'F' is assigned but its value is never used.
-            suppressDiagnostics.Add("CS0616");// - Member is obsolete.
-            suppressDiagnostics.Add("CS0649");// - Field 'F' is never assigned to, and will always have its default value.
-            suppressDiagnostics.Add("CS0693");// - Type parameter 'type parameter' has the same name as the type parameter from outer type 'T'
-            suppressDiagnostics.Add("CS1591");// - Missing XML comment for publicly visible type or member 'Type_or_Member'
-            suppressDiagnostics.Add("CS1998");// - This async method lacks 'await' operators and will run synchronously
+            diagnosticSeveritys.Add("CS8632", ReportDiagnostic.Suppress);// nullable
+            diagnosticSeveritys.Add("CS162", ReportDiagnostic.Suppress); //- Unreachable code detected.
+            diagnosticSeveritys.Add("CS0219", ReportDiagnostic.Suppress);// - The variable 'V' is assigned but its value is never used.
+            diagnosticSeveritys.Add("CS0414", ReportDiagnostic.Suppress);// - The private field 'F' is assigned but its value is never used.
+            diagnosticSeveritys.Add("CS0616", ReportDiagnostic.Suppress);// - Member is obsolete.
+            diagnosticSeveritys.Add("CS0649", ReportDiagnostic.Suppress);// - Field 'F' is never assigned to, and will always have its default value.
+            diagnosticSeveritys.Add("CS0693", ReportDiagnostic.Suppress);// - Type parameter 'type parameter' has the same name as the type parameter from outer type 'T'
+            diagnosticSeveritys.Add("CS1591", ReportDiagnostic.Suppress);// - Missing XML comment for publicly visible type or member 'Type_or_Member'
+            diagnosticSeveritys.Add("CS1998", ReportDiagnostic.Suppress);// - This async method lacks 'await' operators and will run synchronously
             return this;
         }
 

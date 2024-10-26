@@ -12,7 +12,7 @@ namespace Magnet.Core
     {
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private IStateContext stateContext;
+        private IStateContext _stateContext;
 
         /// <summary>
         /// Gets the context of the script state
@@ -20,14 +20,14 @@ namespace Magnet.Core
         /// <returns></returns>
         public IStateContext GetStateContext()
         {
-            return stateContext;
+            return _stateContext;
         }
 
 
         /// <summary>
         /// Whether the current environment is in debug mode
         /// </summary>
-        protected Boolean IsDebuging => stateContext.RunMode == ScriptRunMode.Debug;
+        protected Boolean IsDebuging => _stateContext.RunMode == ScriptRunMode.Debug;
 
         /// <summary>
         /// Enter the debug breakpoint in debug mode
@@ -49,7 +49,7 @@ namespace Magnet.Core
 
         void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
-            this.stateContext = stateContext;
+            this._stateContext = stateContext;
         }
 
 
@@ -90,7 +90,7 @@ namespace Magnet.Core
 #endif
         public void Output(MessageType type, String message)
         {
-            stateContext.Output.Write(type, message);
+            _stateContext.Output.Write(type, message);
         }
 
 
@@ -110,7 +110,7 @@ namespace Magnet.Core
         /// <exception cref="ScriptRunException"></exception>
         public Object Call(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
-            var script = stateContext.InstanceOfName(scriptName);
+            var script = _stateContext.InstanceOfName(scriptName);
             if (script == null)
             {
                 throw new ScriptRunException($"Script {scriptName} was not found when method {methodName} of script {scriptName} was called.", callFilePath, callLineNumber, callMethod);
@@ -142,7 +142,7 @@ namespace Magnet.Core
         /// <returns></returns>
         public Object TryCall(String scriptName, String methodName, Object[] args, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
         {
-            var script = stateContext.InstanceOfName(scriptName);
+            var script = _stateContext.InstanceOfName(scriptName);
             if (script == null)
             {
                 this.Output(MessageType.Warning, $"{callFilePath}({callLineNumber}) [{callMethod}] => TryCall(\"{scriptName}\",\"{methodName}\",??) not found script {scriptName}.");
@@ -178,7 +178,7 @@ namespace Magnet.Core
 #endif
         public T Script<T>() where T : AbstractScript
         {
-            return stateContext.InstanceOfType<T>();
+            return _stateContext.InstanceOfType<T>();
         }
 
 

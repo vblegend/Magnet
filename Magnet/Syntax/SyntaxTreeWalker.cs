@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Magnet.Core;
 using System.Diagnostics;
+using System.Xml.Linq;
+using Microsoft.CodeAnalysis.Scripting;
 
 
 
@@ -21,69 +23,6 @@ namespace Magnet.Syntax
         private ScriptOptions scriptOptions;
         public readonly HashSet<String> ReferencedAssemblies = new HashSet<String>();
 
-
-        private static readonly DiagnosticDescriptor InvalidScriptWarning1 = new DiagnosticDescriptor(
-                id: "SW001",
-                title: "Invalid Script Warning",
-                messageFormat: "Script '{0}' is missing the [ScriptAttribute] attribute",
-                category: "Inheritance",
-                defaultSeverity: DiagnosticSeverity.Warning,
-                isEnabledByDefault: true);
-
-
-
-        private static readonly DiagnosticDescriptor InvalidScriptWarning2 = new DiagnosticDescriptor(
-                id: "SW002",
-                title: "Invalid Script Warning",
-                messageFormat: "The script '{0}' does not inherit an 'AbstractScript'",
-                category: "Inheritance",
-                defaultSeverity: DiagnosticSeverity.Warning,
-                isEnabledByDefault: true);
-
-
-        private static readonly DiagnosticDescriptor ConfusingGlobalFieldDefinitionWarning = new DiagnosticDescriptor(
-                id: "SW003",
-                title: "Confusing Global Field Definition Warning",
-                messageFormat: "If the field '{1} {0};' is a global variable, mark the [GlobalAttribute] attribute",
-                category: "Inheritance",
-                defaultSeverity: DiagnosticSeverity.Warning,
-                isEnabledByDefault: true);
-
-
-        private static readonly DiagnosticDescriptor ConfusingGlobalPropertyDefinitionWarning = new DiagnosticDescriptor(
-                id: "SW004",
-                title: "Confusing Global Property Definition Warning",
-                messageFormat: "If the property '{1} {0};' is a global variable, mark the [GlobalAttribute] attribute",
-                category: "Inheritance",
-                defaultSeverity: DiagnosticSeverity.Warning,
-                isEnabledByDefault: true);
-
-
-        private static readonly DiagnosticDescriptor AsyncUsageNotAllowed = new DiagnosticDescriptor(
-               id: "SE001",
-               title: "Async usage not allowed",
-               messageFormat: "async/await usage is prohibited in this context",
-               category: "Usage",
-               DiagnosticSeverity.Error,
-               isEnabledByDefault: true);
-
-
-        private static readonly DiagnosticDescriptor IllegalNamespaces = new DiagnosticDescriptor(
-               id: "SE002",
-               title: "Illegal Namespaces, usage not allowed",
-               messageFormat: "Namespace '{0}' has been disabled",
-               category: "Usage",
-               DiagnosticSeverity.Error,
-               isEnabledByDefault: true);
-
-        private static readonly DiagnosticDescriptor IllegalTypes = new DiagnosticDescriptor(
-               id: "SE003",
-               title: "Illegal Type, usage not allowed",
-               messageFormat: "Typed '{0}' has been disabled",
-               category: "Usage",
-               DiagnosticSeverity.Error,
-               isEnabledByDefault: true);
-
         public SyntaxTreeWalker(ScriptOptions scriptOptions)
         {
             this.scriptOptions = scriptOptions;
@@ -96,12 +35,29 @@ namespace Magnet.Syntax
         }
 
 
+        private void ReportDiagnosticInternal(DiagnosticDescriptor descriptor, CSharpSyntaxNode node, params Object[] messageArgs)
+        {
+            DiagnosticSeverity diagnosticSeverity = descriptor.DefaultSeverity;
+            if (scriptOptions.diagnosticSeveritys.TryGetValue(descriptor.Id, out var reportDiagnostic))
+            {
+                if (reportDiagnostic == ReportDiagnostic.Suppress) return;
+                if (reportDiagnostic != ReportDiagnostic.Default)
+                {
+                    diagnosticSeverity = InternalDiagnostics.MapReportToSeverity(reportDiagnostic);
+                }
+            };
+            var diagnostic = Diagnostic.Create(descriptor, location: node.GetLocation(), additionalLocations: null, properties: null, effectiveSeverity: diagnosticSeverity, messageArgs: messageArgs);
+            Diagnostics.Add(diagnostic);
+        }
+
+
+
 
         private void CheckNamespace(CSharpSyntaxNode node, String _namespace)
         {
             if (this.scriptOptions.DisabledNamespaces.Contains(_namespace))
             {
-                Diagnostics.Add(Diagnostic.Create(IllegalNamespaces, node.GetLocation(), _namespace));
+                ReportDiagnosticInternal(InternalDiagnostics.IllegalNamespaces, node, _namespace);
             }
         }
 
@@ -182,12 +138,12 @@ namespace Magnet.Syntax
                     var _baseTypeName = _typeFullName.Substring(0, gl);
                     if (this.scriptOptions.DisabledTypes.Contains(_baseTypeName))
                     {
-                        Diagnostics.Add(Diagnostic.Create(IllegalTypes, node.GetLocation(), _baseTypeName));
+                        ReportDiagnosticInternal(InternalDiagnostics.IllegalTypes, node, _baseTypeName);
                     }
                 }
                 if (this.scriptOptions.DisabledTypes.Contains(_typeFullName))
                 {
-                    Diagnostics.Add(Diagnostic.Create(IllegalTypes, node.GetLocation(), _typeFullName));
+                    ReportDiagnosticInternal(InternalDiagnostics.IllegalTypes, node, _typeFullName);
                 }
             }
             if (node is GenericNameSyntax generic)
@@ -273,12 +229,12 @@ namespace Magnet.Syntax
             {
                 if (!hasScriptAttribute)
                 {
-                    Diagnostics.Add(Diagnostic.Create(InvalidScriptWarning1, node.GetLocation(), classSymbol.ToDisplayString()));
+                    ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning1, node, classSymbol.ToDisplayString());
                 }
 
                 if (!hasSubClassOfAbstractScript)
                 {
-                    Diagnostics.Add(Diagnostic.Create(InvalidScriptWarning2, node.GetLocation(), classSymbol.ToDisplayString()));
+                    ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning2, node, classSymbol.ToDisplayString());
                 }
             }
             // 继承关系
@@ -368,7 +324,7 @@ namespace Magnet.Syntax
                     foreach (var variable in variableDeclaration.Variables)
                     {
                         var fieldName = variable.Identifier.Text;
-                        Diagnostics.Add(Diagnostic.Create(ConfusingGlobalFieldDefinitionWarning, node.GetLocation(), fieldName, fieldType));
+                        ReportDiagnosticInternal(InternalDiagnostics.ConfusingGlobalFieldDefinitionWarning, node, fieldName, fieldType);
                     }
                 }
             }
@@ -388,7 +344,7 @@ namespace Magnet.Syntax
                 {
                     var propertyType = node.Type.ToString();
                     var propertyName = node.Identifier.Text;
-                    Diagnostics.Add(Diagnostic.Create(ConfusingGlobalPropertyDefinitionWarning, node.GetLocation(), propertyName, propertyType));
+                    ReportDiagnosticInternal(InternalDiagnostics.ConfusingGlobalPropertyDefinitionWarning, node, propertyName, propertyType);
                 }
             }
             base.VisitPropertyDeclaration(node);
@@ -473,7 +429,7 @@ namespace Magnet.Syntax
         {
             if (!this.scriptOptions.AllowAsync)
             {
-                Diagnostics.Add(Diagnostic.Create(AsyncUsageNotAllowed, node.GetLocation()));
+                ReportDiagnosticInternal(InternalDiagnostics.AsyncUsageNotAllowed, node);
             }
         }
 
@@ -487,7 +443,7 @@ namespace Magnet.Syntax
             var symbol = semanticModel.GetDeclaredSymbol(node);
             if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && !scriptOptions.AllowAsync)
             {
-                Diagnostics.Add(Diagnostic.Create(AsyncUsageNotAllowed, node.GetLocation()));
+                ReportDiagnosticInternal(InternalDiagnostics.AsyncUsageNotAllowed, node);
             }
             // Return Type
             CheckType(node.ReturnType);

@@ -44,14 +44,3 @@ public class ScriptExample : AbstractScript
 
 
 
-[Script(nameof(ScriptExample))]
-public class ScriptExample2
-{
-
-}
-
-
-public class ScriptExample3 : AbstractScript
-{
-
-}

@@ -160,9 +160,9 @@ namespace Magnet
     /// </summary>
     internal class MagnetState : IMagnetState
     {
-        private MagnetScript engine;
-        private MagnetStateContext stateContext;
-        private readonly AnalyzerCollection Analyzers;
+        private MagnetScript _engine;
+        private MagnetStateContext _stateContext;
+        private readonly AnalyzerCollection _analyzers;
         /// <summary>
         /// MagnetState Uninstallation or destruction event
         /// </summary>
@@ -174,30 +174,31 @@ namespace Magnet
 
         internal MagnetState(MagnetScript engine, StateOptions createStateOptions)
         {
-            this.Analyzers = engine.Analyzers;
+            this._analyzers = engine.Analyzers;
             this.Identity = createStateOptions.Identity;
-            this.engine = engine;
-            this.stateContext = new MagnetStateContext(engine, createStateOptions);
+            this._engine = engine;
+            this._stateContext = new MagnetStateContext(engine, createStateOptions);
             this.CreateState();
         }
 
 
         private void CreateState()
         {
-            foreach (var meta in this.engine.scriptMetaInfos)
+            foreach (var meta in this._engine.scriptMetaInfos)
             {
                 var instance = (AbstractScript)Activator.CreateInstance(meta.ScriptType);
-                this.stateContext.AddInstance(meta, instance);
-                this.stateContext.Autowired(meta.ScriptType, instance);
-                Analyzers.DefineInstance(meta, instance, stateContext);
+                this._stateContext.AddInstance(meta, instance);
+                this._stateContext.RegisterProviderInternal(meta.ScriptType, instance);
+                _analyzers.DefineInstance(meta, instance, _stateContext);
             }
             //Injected Data
-            foreach (var instance in this.stateContext.Instances)
+            foreach (var item in this._stateContext.Instances2)
             {
-                instance.InjectedContext(this.stateContext);
+                ((IScriptInstance)item.Instance).InjectedContext(this._stateContext);
+                this._stateContext.Autowired(item.Instance, item.Metadata);
             }
             // Exec Init Function
-            foreach (var instance in this.stateContext.Instances)
+            foreach (var instance in this._stateContext.Instances)
             {
                 instance.Initialize();
             }
@@ -207,27 +208,27 @@ namespace Magnet
 
         public void InjectProvider(IReadOnlyDictionary<Type, Object> objectMap)
         {
-            this.stateContext.Autowired(objectMap);
+            this._stateContext.Autowired(objectMap);
         }
 
 
         public void InjectProvider<TObject>(TObject obj, String slotName = null)
         {
-            this.stateContext.Autowired<TObject>(obj, slotName);
+            this._stateContext.Autowired<TObject>(obj, slotName);
         }
 
 
 
         public WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
-            var _delegate = this.stateContext.GetScriptMethod<T>(scriptName, methodName);
+            var _delegate = this._stateContext.GetScriptMethod<T>(scriptName, methodName);
             return _delegate != null ? new WeakReference<T>(_delegate) : null;
         }
 
 
         public WeakReference<T> ScriptAs<T>(String scriptName) where T : class
         {
-            var _object = this.stateContext.ScriptAs<T>(scriptName);
+            var _object = this._stateContext.ScriptAs<T>(scriptName);
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
@@ -236,28 +237,28 @@ namespace Magnet
 
         public WeakReference<T> ScriptAs<T>() where T : class
         {
-            var _object = this.stateContext.ScriptAs<T>();
+            var _object = this._stateContext.ScriptAs<T>();
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
 
         public WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName)
         {
-            var getter = this.stateContext.GetScriptPropertyGetter<T>(scriptName, propertyName);
+            var getter = this._stateContext.GetScriptPropertyGetter<T>(scriptName, propertyName);
             return getter != null ? new WeakReference<Getter<T>>(getter) : null;
         }
 
 
         public WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName)
         {
-            var setter = this.stateContext.GetScriptPropertySetter<T>(scriptName, propertyName);
+            var setter = this._stateContext.GetScriptPropertySetter<T>(scriptName, propertyName);
             return setter != null ? new WeakReference<Setter<T>>(setter) : null;
         }
 
 
         public object GetFieldValue(string scriptName, string variableName)
         {
-            AbstractScript script = this.stateContext.InstanceOfName(scriptName);
+            AbstractScript script = this._stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -272,7 +273,7 @@ namespace Magnet
 
         public void SetFieldValue(string scriptName, string variableName, object value)
         {
-            AbstractScript script = this.stateContext.InstanceOfName(scriptName);
+            AbstractScript script = this._stateContext.InstanceOfName(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -289,9 +290,9 @@ namespace Magnet
         {
             this.Unloading?.Invoke(this);
             this.Unloading = null;
-            this.stateContext?.Dispose();
-            this.stateContext = null;
-            this.engine = null;
+            this._stateContext?.Dispose();
+            this._stateContext = null;
+            this._engine = null;
         }
 
 
