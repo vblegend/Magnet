@@ -16,72 +16,17 @@ namespace Magnet.Syntax
             typeRewriter = scriptOptions.typeRewriter;
         }
 
-        public String TypeCast(ITypeSymbol type)
-        {
-            return cast(e => e.OnTypeCast, type);
-        }
-
-        public String IsType(ITypeSymbol type)
-        {
-            return cast(e => e.OnIsType, type);
-        }
-
-        public String AsType(ITypeSymbol type)
-        {
-            return cast(e => e.OnAsType, type);
-        }
-
-        public String TypeCreation(ITypeSymbol type)
-        {
-            return cast(e => e.OnTypeCreation, type);
-        }
-
-        public String TypeOf(ITypeSymbol type)
-        {
-            return cast(e => e.OnTypeOf, type);
-        }
-
-        public String TypeStaticMethodCall( ITypeSymbol typeSymbol, IMethodSymbol methodSymbol)
+        public Boolean Resolver(ITypeSymbol typeSymbol, out String newType)
         {
             var typeName = typeSymbol.ToString();
-            if (ReplaceTypes.TryGetValue(typeName, out var value)) return value;
-            if (typeRewriter != null)
+            if (ReplaceTypes.TryGetValue(typeName, out newType)) return true;
+            if (typeRewriter != null && typeRewriter.RewriteType(typeSymbol, out var type))
             {
-                value = typeRewriter.OnTypeStaticMethodCall(typeSymbol, methodSymbol);
+                newType = type.FullName;
+                return true;
             }
-            if (!String.IsNullOrEmpty(value)) return value;
-            return null;
+            newType = null;
+            return false;
         }
-
-        public String TypeStaticMemberAccess(ITypeSymbol typeSymbol, ISymbol memberSymbol)
-        {
-            var typeName = typeSymbol.ToString();
-            if (ReplaceTypes.TryGetValue(typeName, out var value)) return value;
-            if (typeRewriter != null)
-            {
-                value = typeRewriter.OnTypeStaticMemberAccess(typeSymbol, memberSymbol);
-            }
-            if (!String.IsNullOrEmpty(value)) return value;
-            return null;
-        }
-
-        public String MethodAttribute(ITypeSymbol type)
-        {
-            return cast(e => e.OnMethodAttribute, type);
-        }
-
-        private String cast(Func<ITypeRewriter, Func<ITypeSymbol, String>> action, ITypeSymbol type)
-        {
-            var typeName = type.ToString();
-            if (ReplaceTypes.TryGetValue(typeName, out var value)) return value;
-            if (typeRewriter != null)
-            {
-                value = action(typeRewriter)(type);
-            }
-            if (!String.IsNullOrEmpty(value)) return value;
-            return null;
-        }
-
-
     }
 }

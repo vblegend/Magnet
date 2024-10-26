@@ -86,8 +86,24 @@ namespace Magnet.Syntax
                DiagnosticSeverity.Error,
                isEnabledByDefault: true);
 
+        internal static readonly DiagnosticDescriptor IllegalConstructor = new DiagnosticDescriptor(
+               id: "SE004",
+               title: "Illegal Constructor, usage not allowed",
+               messageFormat: "Constructors in scripts '{0}' are prohibited",
+               category: "Usage",
+               DiagnosticSeverity.Error,
+               isEnabledByDefault: true);
+
+        internal static readonly DiagnosticDescriptor IllegalDestructor = new DiagnosticDescriptor(
+               id: "SE005",
+               title: "Illegal Destructor, usage not allowed",
+               messageFormat: "Destructors in scripts '{0}' are prohibited",
+               category: "Usage",
+               DiagnosticSeverity.Error,
+               isEnabledByDefault: true);
 
 
+        
 
     }
 }

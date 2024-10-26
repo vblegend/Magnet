@@ -81,7 +81,7 @@ public static class Program
         // options.AddReplaceType(typeof(Task), typeof(MyTask));
 
         //禁用类型
-        options.DisableType(typeof(Task));
+        options.DisableType(typeof(Thread));
 
         // 禁用泛类型的严格类型
         //options.DisableType("System.Collections.Generic.List<string>");

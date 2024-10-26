@@ -50,9 +50,6 @@ namespace Magnet.Syntax
             Diagnostics.Add(diagnostic);
         }
 
-
-
-
         private void CheckNamespace(CSharpSyntaxNode node, String _namespace)
         {
             if (this.scriptOptions.DisabledNamespaces.Contains(_namespace))
@@ -74,62 +71,76 @@ namespace Magnet.Syntax
                 }
                 return;
             }
-            if (node is TypeSyntax typeSyntax)
+            ITypeSymbol type = null;
+            // 参数
+            if (node is ParameterSyntax parameterSyntax)
+            {
+                var parameterSymbol = semanticModel.GetDeclaredSymbol(node) as IParameterSymbol;
+                if (parameterSymbol != null)
+                {
+                    type = parameterSymbol.Type;
+                }
+            }
+            // 
+            if (type == null && node is TypeSyntax typeSyntax)
             {
                 var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
-                var type = typeInfo.Type;
-                if (type != null)
+                type = typeInfo.Type;
+                if (type == null && node is IdentifierNameSyntax identifierNameSyntax)
                 {
-                    //拆数组类型
-                    while (type.Kind == SymbolKind.ArrayType || type.Kind == SymbolKind.PointerType)
-                    {
-                        if (type is IArrayTypeSymbol arrayTypeSymbol)
-                        {
-                            type = arrayTypeSymbol.ElementType;
-                        }
-                        else if (type is IPointerTypeSymbol pointerTypeSymbol)
-                        {
-                            type = pointerTypeSymbol.PointedAtType;
-                        }
-                    }
-                    // 过滤泛型参数T
-                    if (type.Kind != SymbolKind.TypeParameter)
-                    {
-                        _typeFullName = type.ToDisplayString();
-                        _namespace = type.ContainingNamespace.ToDisplayString();
-                    }
-                }
-                else
-                {
-                    // 一般是方法调用。
-                    var symbol = semanticModel.GetSymbolInfo(typeSyntax);
-                    if (symbol.Symbol.ContainingType != null)
-                    {
-                        _typeFullName = symbol.Symbol.ContainingType.ToDisplayString();
-                        _namespace = symbol.Symbol.ContainingType.ContainingNamespace.ToDisplayString();
-                    }
+                    var symbol = semanticModel.GetSymbolInfo(identifierNameSyntax);
+                    type = symbol.Symbol.ContainingType;
                 }
             }
-            else if (node is ObjectCreationExpressionSyntax creationExpressionSyntax)
+            // new 对象类型
+            if (type == null && node is ObjectCreationExpressionSyntax creationExpressionSyntax)
             {
                 var typeInfo = semanticModel.GetTypeInfo(creationExpressionSyntax);
-                if (typeInfo.Type != null)
-                {
-                    _typeFullName = typeInfo.Type.ToDisplayString();
-                    _namespace = typeInfo.Type.ContainingNamespace.ToDisplayString();
-                    //parse generic type
-                    node = creationExpressionSyntax.Type;
-                }
+                type = typeInfo.Type;
             }
-            else
+
+            if (type == null)
             {
                 Debugger.Break();
                 Console.WriteLine($"{node.Location()} {_typeFullName}");
+                return;
+            }
+            if (type.Kind == SymbolKind.ErrorType)
+            {
+                // Debugger.Break();
+                // 解析类型失败，类型错误，不处理 等后面编译器处理
+                return;
+            }
+
+            // 处理可空类型
+            if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
+            {
+                type = namedTypeSymbol.TypeArguments[0];
+            }
+
+            //拆数组类型
+            while (type.Kind == SymbolKind.ArrayType || type.Kind == SymbolKind.PointerType)
+            {
+                if (type is IArrayTypeSymbol arrayTypeSymbol)
+                {
+                    type = arrayTypeSymbol.ElementType;
+                }
+                else if (type is IPointerTypeSymbol pointerTypeSymbol)
+                {
+                    type = pointerTypeSymbol.PointedAtType;
+                }
+            }
+
+            // 过滤泛型参数T
+            if (type.Kind != SymbolKind.TypeParameter)
+            {
+                _typeFullName = type.ToDisplayString();
+                _namespace = type.ContainingNamespace.ToDisplayString();
             }
 
             if (!String.IsNullOrEmpty(_typeFullName))
             {
-                //Console.WriteLine($"{node.Location()} {_typeFullName}");
+                Console.WriteLine($"{node.Location()} {_typeFullName}");
                 CheckNamespace(node, _namespace);
 
                 var gl = _typeFullName.IndexOf('<');
@@ -166,17 +177,66 @@ namespace Magnet.Syntax
             base.VisitNamespaceDeclaration(node);
         }
 
+
+
+
+
+
+
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="node"></param>
         public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
         {
-            foreach (var parameter in node.ParameterList.Parameters)
+            var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            if (containingClass == null) return;
+            var classSymbol = semanticModel.GetDeclaredSymbol(containingClass);
+            if (classSymbol == null) return;
+            if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
             {
-                CheckType(parameter.Type);
+                if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
+                {
+                    ReportDiagnosticInternal(InternalDiagnostics.IllegalConstructor, node, classSymbol.ToDisplayString());
+                }
             }
             base.VisitConstructorDeclaration(node);
+        }
+
+
+        /// <summary>
+        /// 析构函数
+        /// </summary>
+        /// <param name="node"></param>
+        public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
+        {
+            var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            if (containingClass == null) return;
+            var classSymbol = semanticModel.GetDeclaredSymbol(containingClass);
+            if (classSymbol == null) return;
+            if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
+            {
+                if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
+                {
+                    ReportDiagnosticInternal(InternalDiagnostics.IllegalDestructor, node, classSymbol.ToDisplayString());
+                }
+            }
+            base.VisitDestructorDeclaration(node);
+        }
+
+
+
+        /// <summary>
+        /// 继承类型列表
+        /// </summary>
+        /// <param name="node"></param>
+        public override void VisitBaseList(BaseListSyntax node)
+        {
+            foreach (var baseTypeSyntax in node.Types)
+            {
+                CheckType(baseTypeSyntax.Type);
+            }
+            base.VisitBaseList(node);
         }
 
 
@@ -186,14 +246,6 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitStructDeclaration(StructDeclarationSyntax node)
         {
-            // 继承关系
-            if (node.BaseList != null)
-            {
-                foreach (var baseTypeSyntax in node.BaseList.Types)
-                {
-                    CheckType(baseTypeSyntax.Type);
-                }
-            }
             base.VisitStructDeclaration(node);
         }
 
@@ -203,14 +255,6 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitInterfaceDeclaration(InterfaceDeclarationSyntax node)
         {
-            // 继承关系
-            if (node.BaseList != null)
-            {
-                foreach (var baseTypeSyntax in node.BaseList.Types)
-                {
-                    CheckType(baseTypeSyntax.Type);
-                }
-            }
             base.VisitInterfaceDeclaration(node);
         }
 
@@ -235,14 +279,6 @@ namespace Magnet.Syntax
                 if (!hasSubClassOfAbstractScript)
                 {
                     ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning2, node, classSymbol.ToDisplayString());
-                }
-            }
-            // 继承关系
-            if (node.BaseList != null)
-            {
-                foreach (var baseTypeSyntax in node.BaseList.Types)
-                {
-                    CheckType(baseTypeSyntax.Type);
                 }
             }
             base.VisitClassDeclaration(node);
@@ -402,6 +438,13 @@ namespace Magnet.Syntax
         //{
         //    base.VisitInitializerExpression(node);
         //}
+        public override void VisitParameter(ParameterSyntax node)
+        {
+            CheckType(node);
+            base.VisitParameter(node);
+        }
+
+
 
 
         /// <summary>
@@ -447,11 +490,6 @@ namespace Magnet.Syntax
             }
             // Return Type
             CheckType(node.ReturnType);
-            // Parameters Type
-            foreach (var parameter in node.ParameterList.Parameters)
-            {
-                CheckType(parameter.Type);
-            }
             base.VisitMethodDeclaration(node);
         }
 
@@ -486,17 +524,21 @@ namespace Magnet.Syntax
             base.VisitMemberAccessExpression(node);
         }
 
-
+        public override void VisitMemberBindingExpression(MemberBindingExpressionSyntax node)
+        {
+            CheckType(node.Name);
+            base.VisitMemberBindingExpression(node);
+        }
 
         /// <summary>
-        /// 条件成员访问（有问题）
+        /// 条件成员访问
         /// </summary>
         /// <param name="node"></param>
         public override void VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node)
         {
-            if (node.Expression is MemberAccessExpressionSyntax accessExpressionSyntax)
+            if (node.Expression is IdentifierNameSyntax identifierNameSyntax)
             {
-                VisitMemberAccessExpression(accessExpressionSyntax);
+                CheckType(node.Expression);
             }
             base.VisitConditionalAccessExpression(node);
         }
@@ -593,6 +635,33 @@ namespace Magnet.Syntax
                     return true;
                 }
                 baseType = baseType.BaseType;
+            }
+            return false;
+        }
+
+
+        private Boolean HasAttribute(INamedTypeSymbol typeSymbol, Type attributeType)
+        {
+            foreach (var attribute in typeSymbol.GetAttributes())
+            {
+                if (attribute.AttributeClass?.Name == attributeType.Name && attribute.AttributeClass?.ContainingNamespace.ToString() == attributeType.Namespace)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private Boolean IsSubclassOf(INamedTypeSymbol typeSymbol, Type baseType)
+        {
+            var _baseType = typeSymbol.BaseType;
+            while (_baseType != null)
+            {
+                if (_baseType.Name == baseType.Name && _baseType.ContainingNamespace.ToString() == baseType.Namespace)
+                {
+                    return true;
+                }
+                _baseType = _baseType.BaseType;
             }
             return false;
         }

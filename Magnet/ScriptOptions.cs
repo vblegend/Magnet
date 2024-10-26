@@ -98,7 +98,6 @@ namespace Magnet
         internal IOutput Output { get; private set; } = new ConsoleOutput();
         internal readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
 
-
         internal readonly HashSet<String> DisabledNamespaces = new HashSet<String>();
 
         internal readonly HashSet<String> DisabledTypes = new HashSet<String>();

@@ -7,6 +7,7 @@ using App.Core.Events;
 
 
 using System.Threading;
+using System;
 
 namespace System.Threading
 {
@@ -24,6 +25,20 @@ public class ScriptA : GameScript
     [Autowired]
     private readonly ScriptExample scriptExample;
 
+    public event Action callback;
+
+    [Script(nameof(ClassB))]
+    class ClassB : GameScript
+    {
+        [Autowired]
+        private readonly ScriptExample scriptExample;
+
+        private Thread thread;
+
+
+
+    }
+
 
 
     [Function]
@@ -37,8 +52,10 @@ public class ScriptA : GameScript
         //}
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
-        scriptExample.Hello("Wrold");
 
+        var s = Thread.CurrentThread?.Priority;
+        scriptExample?.Hello("Wrold");
+        UI.DIALOG(120)?.TO(Player);
 
         UI.DIALOG(120).TO(Player)
           .POSITION(11, 22)

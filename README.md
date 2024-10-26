@@ -153,7 +153,32 @@ options.AddReplaceType(typeof(Task), typeof(MyTask));
 
 // 脚本类型重写器（加强版的AddReplaceType）
 options.WithTypeRewriter(new TypeRewriter());
+
+// 类型重写器
+internal class TypeRewriter : ITypeRewriter
+{
+    public bool RewriteType(ITypeSymbol typeSymbolm, out Type newType)
+    {
+        if (typeSymbolm.ToDisplayString() == "System.Threading.Thread")
+        {
+            newType = typeof(NewThread);
+            return true;
+        }
+        newType = null;
+        return false;
+    }
+}
 ```
+
+
+## 💥类型处理顺序
+脚本语法树类型处理逻辑顺序如下：
+1. 尝试替换脚本中使用的类型
+2. 尝试使用类型重写器重写类型
+3. 禁用命名空间检查(包括using和类型的命名空间)
+4. 禁用类型检查
+
+
 
 
 
@@ -274,6 +299,10 @@ public class ScriptB : AbstractScript
 | SE001 | Error   | 脚本不允许使用异步操作符号async await | 
 | SE002 | Error   | 被禁止使用的命名空间 | 
 | SE003 | Error   | 被禁止使用的类型 | 
+| SE004 | Error   | 脚本对象禁止使用构造函数 | 
+| SE005 | Error   | 脚本对象禁止使用析构函数 | 
+
+
 
 
 
