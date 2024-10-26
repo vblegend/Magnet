@@ -10,7 +10,7 @@
 和强大的编译选项搭配上C#的语法和特性完全可以实现一款满足我需求的脚本。<br/>
 之所以取名叫做Magnet就是希望他可以像磁铁一样吸到宿主的Project上可以随时取下来。<br/>
 当然它不仅能用做游戏的服务器逻辑处理，它可以用作任何需要它的地方。<br/>
-当前处于开发阶段，所以部分API可能会有改动。
+当前处于开发阶段，所以部分API可能会有改动, 例子可能导致编译失败，请查看例子源码自行修改。
 
 --------------
 
@@ -205,6 +205,19 @@ protected override void Initialize();
 protected override void Shutdown();
 ```
 
+
+
+## 💥脚本的输出流
+AbstractScript 实现了Output函数以实现输出消息至宿主。
+
+``` csharp
+// App.Core 内的例子 实现输出调试信息至输出流
+[Conditional("DEBUG")]
+public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [CallerLineNumber] Int32 callLineNumber = 0, [CallerMemberName] string callMethod = null)
+{
+    this.Output(MessageType.Debug, $"{callFilePath}({callLineNumber}) [{callMethod}] => {@object}");
+}
+```
 
 
 ## 💥脚本之间相互调用

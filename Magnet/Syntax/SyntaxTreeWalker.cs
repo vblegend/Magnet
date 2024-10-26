@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Magnet.Core;
+using System.Diagnostics;
 
 
 
@@ -166,12 +167,13 @@ namespace Magnet.Syntax
             }
             else
             {
+                Debugger.Break();
                 Console.WriteLine($"{node.Location()} {_typeFullName}");
             }
 
             if (!String.IsNullOrEmpty(_typeFullName))
             {
-                Console.WriteLine($"{node.Location()} {_typeFullName}");
+                //Console.WriteLine($"{node.Location()} {_typeFullName}");
                 CheckNamespace(node, _namespace);
 
                 var gl = _typeFullName.IndexOf('<');
@@ -267,8 +269,6 @@ namespace Magnet.Syntax
             var hasSubClassOfAbstractScript = false;
             if (HasAttribute(node, typeof(ScriptAttribute))) hasScriptAttribute = true;
             if (IsSubclassOf(node, typeof(AbstractScript))) hasSubClassOfAbstractScript = true;
-            Console.WriteLine($"Class: {node.Identifier.Text}");
-
             if (hasScriptAttribute || hasSubClassOfAbstractScript)
             {
                 if (!hasScriptAttribute)

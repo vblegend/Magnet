@@ -71,15 +71,15 @@ public static class Program
         options.DisableType(typeof(Task));
 
         // 禁用泛类型的严格类型
-        options.DisableType("System.Collections.Generic.List<string>");
-        options.DisableType(typeof(List<String>));
+        //options.DisableType("System.Collections.Generic.List<string>");
+        //options.DisableType(typeof(List<String>));
 
         // 禁用范类型的基础类型
-        options.DisableType("System.Collections.Generic.List");
-        options.DisableGenericBaseType(typeof(List<>));
+        //options.DisableType("System.Collections.Generic.List");
+        //options.DisableGenericBaseType(typeof(List<>));
 
         // 禁用命名空间
-        options.DisableNamespace(typeof(Thread));
+        //options.DisableNamespace(typeof(Thread));
 
         //禁用不安全类型与命名空间
         //options.DisableInsecureTypes();

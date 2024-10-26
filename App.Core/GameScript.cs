@@ -104,7 +104,7 @@ namespace App.Core
         {
             if (item is ItemBuilder builder)
             {
-                Console.WriteLine(builder);
+                this.Print(builder);
             }
         }
 
