@@ -11,7 +11,7 @@
     <Version>1.0.5</Version>
     <Authors>Hanks</Authors>
     <Company>None</Company>
-    <PackageDescription>Magnet core package</PackageDescription>
+    <PackageDescription>Magnet脚本引擎基础包.&#xA;Magnet scripting engine base package.</PackageDescription>
     <RepositoryUrl>https://github.com/vblegend/Magnet</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Magnet(Core)</Title>
@@ -20,8 +20,7 @@
     <PackageProjectUrl>https://github.com/vblegend/Magnet</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>C# Script Engine Roslyn </PackageTags>
-    <Description>Magnet 的核心包，提供了脚本中的基础类型和事件等</Description>
+    <PackageTags>C#Script ScriptEngine Roslyn GameScript</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
