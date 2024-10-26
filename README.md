@@ -141,10 +141,10 @@ options.WithTypeRewriter(new TypeRewriter());
 `完整例子查看 Magnet.Examples 的 App.Core.Timer.TimerProvider`
 
 | 分析器 | 描述 | 触发时机 |
-| ----------- | ----------- | ----------- |
-| IAssemblyAnalyzer | 脚本程序集分析器 | 脚本程序集加载完毕后 |
-| ITypeAnalyzer | Script类型分析器 | 脚本程序集加载完毕后 |
-| IInstanceAsalyzer | 和脚本实例分析器 | 脚本State创建时 |
+| ----------- | ----------- | ----------- | 
+| IAssemblyAnalyzer | 脚本程序集分析器 | 脚本程序集加载完毕后 | 
+| ITypeAnalyzer | Script类型分析器 | 脚本程序集加载完毕后 | 
+| IInstanceAsalyzer | 和脚本实例分析器 | 脚本State创建时 | 
 
 
 ``` csahrp
