@@ -102,12 +102,11 @@ namespace Magnet.Syntax
             if (type == null)
             {
                 Debugger.Break();
-                Console.WriteLine($"{node.Location()} {_typeFullName}");
                 return;
             }
             if (type.Kind == SymbolKind.ErrorType)
             {
-                // Debugger.Break();
+                Debugger.Break();
                 // 解析类型失败，类型错误，不处理 等后面编译器处理
                 return;
             }
@@ -140,7 +139,7 @@ namespace Magnet.Syntax
 
             if (!String.IsNullOrEmpty(_typeFullName))
             {
-                Console.WriteLine($"{node.Location()} {_typeFullName}");
+                //Console.WriteLine($"{node.Location()} {_typeFullName}");
                 CheckNamespace(node, _namespace);
 
                 var gl = _typeFullName.IndexOf('<');

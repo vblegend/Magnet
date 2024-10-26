@@ -585,6 +585,11 @@ namespace Magnet
             diagnosticSeveritys.Add("CS8019", ReportDiagnostic.Suppress);
 
 
+            diagnosticSeveritys.Add("CS0067", ReportDiagnostic.Suppress); // 从不使用事件
+            diagnosticSeveritys.Add("CS0169", ReportDiagnostic.Suppress); // 从不使用字段
+
+
+
             diagnosticSeveritys.Add("CS8632", ReportDiagnostic.Suppress);// nullable
             diagnosticSeveritys.Add("CS162", ReportDiagnostic.Suppress); //- Unreachable code detected.
             diagnosticSeveritys.Add("CS0219", ReportDiagnostic.Suppress);// - The variable 'V' is assigned but its value is never used.

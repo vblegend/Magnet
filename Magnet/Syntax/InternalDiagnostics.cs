@@ -72,7 +72,7 @@ namespace Magnet.Syntax
 
         internal static readonly DiagnosticDescriptor IllegalNamespaces = new DiagnosticDescriptor(
                id: "SE002",
-               title: "Illegal Namespaces, usage not allowed",
+               title: "Invalid namespaces of use",
                messageFormat: "Namespace '{0}' has been disabled",
                category: "Usage",
                DiagnosticSeverity.Error,
@@ -80,7 +80,7 @@ namespace Magnet.Syntax
 
         internal static readonly DiagnosticDescriptor IllegalTypes = new DiagnosticDescriptor(
                id: "SE003",
-               title: "Illegal Type, usage not allowed",
+               title: "Invalid type of use",
                messageFormat: "Typed '{0}' has been disabled",
                category: "Usage",
                DiagnosticSeverity.Error,
@@ -88,16 +88,16 @@ namespace Magnet.Syntax
 
         internal static readonly DiagnosticDescriptor IllegalConstructor = new DiagnosticDescriptor(
                id: "SE004",
-               title: "Illegal Constructor, usage not allowed",
-               messageFormat: "Constructors in scripts '{0}' are prohibited",
+               title: "Illegal implementation of constructors",
+               messageFormat: "script '{0}' are not allowed to implement constructors",
                category: "Usage",
                DiagnosticSeverity.Error,
                isEnabledByDefault: true);
 
         internal static readonly DiagnosticDescriptor IllegalDestructor = new DiagnosticDescriptor(
                id: "SE005",
-               title: "Illegal Destructor, usage not allowed",
-               messageFormat: "Destructors in scripts '{0}' are prohibited",
+               title: "Illegal implementation of destructor",
+               messageFormat: "script '{0}' are not allowed to implement destructors",
                category: "Usage",
                DiagnosticSeverity.Error,
                isEnabledByDefault: true);

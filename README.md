@@ -299,8 +299,8 @@ public class ScriptB : AbstractScript
 | SE001 | Error   | 脚本不允许使用异步操作符号async await | 
 | SE002 | Error   | 被禁止使用的命名空间 | 
 | SE003 | Error   | 被禁止使用的类型 | 
-| SE004 | Error   | 脚本对象禁止使用构造函数 | 
-| SE005 | Error   | 脚本对象禁止使用析构函数 | 
+| SE004 | Error   | 脚本对象禁止实现构造函数 | 
+| SE005 | Error   | 脚本对象禁止实现析构函数 | 
 
 
 
