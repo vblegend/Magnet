@@ -7,8 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Magnet.Core;
 using System.Diagnostics;
-using System.Xml.Linq;
-using Microsoft.CodeAnalysis.Scripting;
+
 
 
 
@@ -18,19 +17,20 @@ namespace Magnet.Syntax
     internal class SyntaxTreeWalker : CSharpSyntaxWalker
     {
 
-        private SemanticModel semanticModel;
-        public readonly List<Diagnostic> Diagnostics = new List<Diagnostic>();
-        private ScriptOptions scriptOptions;
-        public readonly HashSet<String> ReferencedAssemblies = new HashSet<String>();
+        private SemanticModel _semanticModel;
+        private ScriptOptions _scriptOptions;
 
+
+        public readonly HashSet<String> ReferencedAssemblies = new HashSet<String>();
+        public readonly List<Diagnostic> Diagnostics = new List<Diagnostic>();
         public SyntaxTreeWalker(ScriptOptions scriptOptions)
         {
-            this.scriptOptions = scriptOptions;
+            this._scriptOptions = scriptOptions;
         }
 
         public void VisitWith(SemanticModel model, SyntaxNode root)
         {
-            semanticModel = model;
+            _semanticModel = model;
             base.Visit(root);
         }
 
@@ -38,7 +38,7 @@ namespace Magnet.Syntax
         private void ReportDiagnosticInternal(DiagnosticDescriptor descriptor, CSharpSyntaxNode node, params Object[] messageArgs)
         {
             DiagnosticSeverity diagnosticSeverity = descriptor.DefaultSeverity;
-            if (scriptOptions.diagnosticSeveritys.TryGetValue(descriptor.Id, out var reportDiagnostic))
+            if (_scriptOptions.diagnosticSeveritys.TryGetValue(descriptor.Id, out var reportDiagnostic))
             {
                 if (reportDiagnostic == ReportDiagnostic.Suppress) return;
                 if (reportDiagnostic != ReportDiagnostic.Default)
@@ -52,7 +52,7 @@ namespace Magnet.Syntax
 
         private void CheckNamespace(CSharpSyntaxNode node, String _namespace)
         {
-            if (this.scriptOptions.DisabledNamespaces.Contains(_namespace))
+            if (this._scriptOptions.DisabledNamespaces.Contains(_namespace))
             {
                 ReportDiagnosticInternal(InternalDiagnostics.IllegalNamespaces, node, _namespace);
             }
@@ -75,7 +75,7 @@ namespace Magnet.Syntax
             // 参数
             if (node is ParameterSyntax parameterSyntax)
             {
-                var parameterSymbol = semanticModel.GetDeclaredSymbol(node) as IParameterSymbol;
+                var parameterSymbol = _semanticModel.GetDeclaredSymbol(node) as IParameterSymbol;
                 if (parameterSymbol != null)
                 {
                     type = parameterSymbol.Type;
@@ -84,18 +84,18 @@ namespace Magnet.Syntax
             // 
             if (type == null && node is TypeSyntax typeSyntax)
             {
-                var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
+                var typeInfo = _semanticModel.GetTypeInfo(typeSyntax);
                 type = typeInfo.Type;
                 if (type == null && node is IdentifierNameSyntax identifierNameSyntax)
                 {
-                    var symbol = semanticModel.GetSymbolInfo(identifierNameSyntax);
+                    var symbol = _semanticModel.GetSymbolInfo(identifierNameSyntax);
                     type = symbol.Symbol.ContainingType;
                 }
             }
             // new 对象类型
             if (type == null && node is ObjectCreationExpressionSyntax creationExpressionSyntax)
             {
-                var typeInfo = semanticModel.GetTypeInfo(creationExpressionSyntax);
+                var typeInfo = _semanticModel.GetTypeInfo(creationExpressionSyntax);
                 type = typeInfo.Type;
             }
 
@@ -146,12 +146,12 @@ namespace Magnet.Syntax
                 if (gl > 0)
                 {
                     var _baseTypeName = _typeFullName.Substring(0, gl);
-                    if (this.scriptOptions.DisabledTypes.Contains(_baseTypeName))
+                    if (this._scriptOptions.DisabledTypes.Contains(_baseTypeName))
                     {
                         ReportDiagnosticInternal(InternalDiagnostics.IllegalTypes, node, _baseTypeName);
                     }
                 }
-                if (this.scriptOptions.DisabledTypes.Contains(_typeFullName))
+                if (this._scriptOptions.DisabledTypes.Contains(_typeFullName))
                 {
                     ReportDiagnosticInternal(InternalDiagnostics.IllegalTypes, node, _typeFullName);
                 }
@@ -190,7 +190,7 @@ namespace Magnet.Syntax
         {
             var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass == null) return;
-            var classSymbol = semanticModel.GetDeclaredSymbol(containingClass);
+            var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
             if (classSymbol == null) return;
             if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
             {
@@ -211,7 +211,7 @@ namespace Magnet.Syntax
         {
             var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass == null) return;
-            var classSymbol = semanticModel.GetDeclaredSymbol(containingClass);
+            var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
             if (classSymbol == null) return;
             if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
             {
@@ -263,7 +263,7 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            var classSymbol = semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
+            var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
             var hasScriptAttribute = false;
             var hasSubClassOfAbstractScript = false;
             if (HasAttribute(node, typeof(ScriptAttribute))) hasScriptAttribute = true;
@@ -469,7 +469,7 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitAwaitExpression(AwaitExpressionSyntax node)
         {
-            if (!this.scriptOptions.AllowAsync)
+            if (!this._scriptOptions.AllowAsync)
             {
                 ReportDiagnosticInternal(InternalDiagnostics.AsyncUsageNotAllowed, node);
             }
@@ -482,8 +482,8 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            var symbol = semanticModel.GetDeclaredSymbol(node);
-            if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && !scriptOptions.AllowAsync)
+            var symbol = _semanticModel.GetDeclaredSymbol(node);
+            if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && !_scriptOptions.AllowAsync)
             {
                 ReportDiagnosticInternal(InternalDiagnostics.AsyncUsageNotAllowed, node);
             }
@@ -596,7 +596,7 @@ namespace Magnet.Syntax
             {
                 foreach (var attribute in attributeList.Attributes)
                 {
-                    var symbolInfo = semanticModel.GetSymbolInfo(attribute);
+                    var symbolInfo = _semanticModel.GetSymbolInfo(attribute);
                     var attributeSymbol = symbolInfo.Symbol as IMethodSymbol;
                     if (attributeSymbol?.ContainingType.ToString() == attrTypeFullName) return true;
                 }
@@ -612,7 +612,7 @@ namespace Magnet.Syntax
             {
                 foreach (var attribute in attributeList.Attributes)
                 {
-                    var symbolInfo = semanticModel.GetSymbolInfo(attribute);
+                    var symbolInfo = _semanticModel.GetSymbolInfo(attribute);
                     var attributeSymbol = symbolInfo.Symbol as IMethodSymbol;
                     if (attributeSymbol?.ContainingType.ToString() == attrTypeFullName) return true;
                 }
@@ -623,7 +623,7 @@ namespace Magnet.Syntax
 
         private bool IsSubclassOf(ClassDeclarationSyntax node, Type type)
         {
-            var classSymbol = semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
+            var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
             var baseType = classSymbol.BaseType;
             var typeFullName = type.FullName;
             while (baseType != null)

@@ -5,12 +5,14 @@
 # What is Magnet?
 --------------
 我原本想做的仅仅是一款游戏的服务器脚本引擎，从一开始想做一个强类型的类TypeScript的脚本引擎<br/>
-后面从词法分析到语法分析，做完之后发现编译器后端的复杂程度过高。 即使编译器后端开发完成性能和扩展性也很难达到我的要求<br/>
+后面从词法分析到语法分析再生成语法树，做完之后发现编译器后端的复杂程度过高。 即使编译器后端开发完成性能和扩展性也很难达到我的要求<br/>
 所以尝试使用Roslyn引擎来定制一款C#脚本引擎，使用Roslyn的好处就是完全不用担心他的性能和扩展性，Roslyn提供了完整的语法树API<br/>
 和强大的编译选项搭配上C#的语法和特性完全可以实现一款满足我需求的脚本。<br/>
 之所以取名叫做Magnet就是希望他可以像磁铁一样吸到宿主的Project上可以随时取下来。<br/>
 当然它不仅能用做游戏的服务器逻辑处理，它可以用作任何需要它的地方。<br/>
-当前处于开发阶段，所以部分API可能会有改动, 例子可能导致编译失败，请查看例子源码自行修改。
+当前处于开发阶段，所以部分API可能会有改动, 例子可能导致编译失败，请查看例子源码自行修改。<br/>
+
+🎉如果您的使用过程中发现Bug或有合理的需求欢迎提Issues 或 创建PullRequests
 
 --------------
 
@@ -20,7 +22,10 @@
 
 
 ## 💥使用说明
-脚本对象必须直接或间接继承或派生自AbstractScript，且必须使用[ScriptAttribute]标记Class
+脚本对象必须直接或间接继承或派生自AbstractScript，且必须使用[ScriptAttribute]标记Class<br/>
+每个脚本State都是一个包含所有独立脚本对象实例的对象集，<br/>
+每个MagnetScript下所有脚本State都处于同一个AssemblyLoadContext下<br/>
+静态变量是所有State都可以访问的,所以在脚本中应慎重使用静态变量。
 
 ``` csahrp
 // ✔️正确案例
@@ -349,12 +354,14 @@ public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [
 
 
 ## 💥脚本之间相互调用
-由于脚本state是隔离的，脚本之间的调用由以下4种办法<br>
+因每个State内的脚本对象是动态创建的，所以脚本对象初始状态下是离散的。<br>
+`State与State之间的脚本对象由对象实例进行隔离，无法互相调用，但是可以通过静态变量或全局变量进行交互。`<br>
+State中脚本对象之间的调用有以下4种办法。<br>
 <br>
 1.脚本之间的依赖注入，参考上方的依赖注入（推荐）<br>
 2.题本提供的Script方法获取脚本实例<br>
-3.脚本提供的Call方法<br>
-4.脚本提供的TryCall方法
+3.脚本提供的Call方法（不推荐、早期API）<br>
+4.脚本提供的TryCall方法（不推荐、早期API）
 
 ``` csharp
 // 调用ScriptB的Test方法，出现错误会抛出异常
@@ -396,27 +403,29 @@ protected readonly static GlobalVariableStore Global;
 
 
 ## 💥宿主调用脚本内方法
-为保障脚本的可卸载性，脚本的方法委托或实例均以WeakReference返回。
-宿主使用MethodDelegate调用方法时，脚本内方法必须被[Function]属性标记
-ScriptAs方式获取接口实例则不需要
+为保障脚本的可卸载性，脚本的方法委托或实例均以WeakReference返回。<br>
+宿主使用MethodDelegate调用方法时，脚本内方法必须被[Function]属性标记<br>
+ScriptAs方式获取接口实例则不需要<br>
+
 
 ``` csharp
-// 创建 stateTest中脚本ScriptA的Main方法委托
-var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
-if (weakMain != null && weakMain.TryGetTarget(out var main))
-{
-    // 调用脚本Main方法
-    main();
-    main = null;
-}
 
-// 尝试获取stateTest内第一个实现了IPlayLifeEvent接口的脚本对象
+// 尝试获取stateTest内第一个实现了IPlayLifeEvent接口的脚本对象(推荐)
 var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
 if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
 {   
     // 调用脚本的OnOnline方法
     lifeEvent.OnOnline(null);
     lifeEvent = null;
+}
+
+// 创建 stateTest中脚本ScriptA的Main方法委托(推荐)
+var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
+if (weakMain != null && weakMain.TryGetTarget(out var main))
+{
+    // 调用脚本Main方法
+    main();
+    main = null;
 }
 
 // 创建脚本ScriptExample中属性Target的Getter委托
