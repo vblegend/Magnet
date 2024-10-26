@@ -18,6 +18,25 @@
 
 --------------
 
+
+## 💥使用说明
+脚本对象必须直接或间接继承或派生自AbstractScript，且必须使用[ScriptAttribute]标记Class
+
+``` csahrp
+
+[Script(nameof(ScriptExample))]
+public class ScriptExample : AbstractScript
+{
+    [Function("Hello")]
+    public void Hello(String name)
+    {
+        this.Output(MessageType.Print, $"Hello {name}!");
+    }
+}
+
+```
+
+
 ## 💥脚本基础功能
 支持仅编译、仅加载、从脚本编译加载模式。
 ``` csahrp
@@ -122,7 +141,7 @@ options.WithTypeRewriter(new TypeRewriter());
 `完整例子查看 Magnet.Examples 的 App.Core.Timer.TimerProvider`
 
 | 分析器 | 描述 | 触发时机 |
-| ----------- | ----------- |
+| ----------- | ----------- | ----------- |
 | IAssemblyAnalyzer | 脚本程序集分析器 | 脚本程序集加载完毕后 |
 | ITypeAnalyzer | Script类型分析器 | 脚本程序集加载完毕后 |
 | IInstanceAsalyzer | 和脚本实例分析器 | 脚本State创建时 |
@@ -241,11 +260,9 @@ Script<ScriptB>((script) =>
 ```
 
 ## 💥脚本调试断点
-由于脚本state是隔离的，脚本之间无法通过变量来进行访问所以提供了调用方法
-
+调用debug模式编译运行脚本时，执行到此处将自动打开调试器并断点暂停。
+release编译时此代码将被优化掉
 ``` csharp
-// 调用debug模式编译运行脚本时，执行到此处将自动打开调试器并断点暂停。
-// release时此代码将被优化掉
 debugget();
 ```
 
@@ -268,6 +285,8 @@ protected readonly static GlobalVariableStore Global;
 
 ## 💥宿主调用脚本内方法
 为保障脚本的可卸载性，脚本的方法委托或实例均以WeakReference返回。
+宿主使用MethodDelegate调用方法时，脚本内方法必须被[Function]属性标记
+ScriptAs方式获取接口实例则不需要
 
 ``` csharp
 // 创建 stateTest中脚本ScriptA的Main方法委托
