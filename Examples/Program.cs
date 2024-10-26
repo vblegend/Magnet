@@ -7,6 +7,7 @@ using App.Core.Timer;
 using Magnet;
 using ScriptRuner;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -60,15 +61,28 @@ public static class Program
         // 增加一个分析器
         options.AddAnalyzer(timerProvider);
 
+        // 是否支持不安全代码
+        options.WithAllowUnsafe(true);
+
         // 替换类型
-        options.AddReplaceType(typeof(Task), typeof(Task));
-        // 禁用类型
+        // options.AddReplaceType(typeof(Task), typeof(MyTask));
+
+        //禁用类型
         options.DisableType(typeof(Task));
+
+        // 禁用泛类型的严格类型
+        options.DisableType("System.Collections.Generic.List<string>");
+        options.DisableType(typeof(List<String>));
+
+        // 禁用范类型的基础类型
+        options.DisableType("System.Collections.Generic.List");
+        options.DisableGenericBaseType(typeof(List<>));
+
         // 禁用命名空间
         options.DisableNamespace(typeof(Thread));
 
         //禁用不安全类型与命名空间
-        options.DisableInsecureTypes();
+        //options.DisableInsecureTypes();
 
         // 脚本类型重写器
         options.WithTypeRewriter(new TypeRewriter());
@@ -168,7 +182,7 @@ public static class Program
 
 
 
-    private static void CallLogin(MagnetState state)
+    private static void CallLogin(IMagnetState state)
     {
         var login = state.MethodDelegate<Action>("ScriptA", "Main");
         if (login.TryGetTarget(out var target))

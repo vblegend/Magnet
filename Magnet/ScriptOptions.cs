@@ -93,6 +93,7 @@ namespace Magnet
 
         internal String AssemblyFileName { get; private set; } = null;
 
+        internal Boolean AllowUnsafe { get; private set; } = false;
 
         internal IOutput Output { get; private set; } = new ConsoleOutput();
         internal readonly List<IAnalyzer> Analyzers = new List<IAnalyzer>();
@@ -156,6 +157,16 @@ namespace Magnet
             return this;
         }
 
+        /// <summary>
+        /// Whether to allow unsafe code(default: false)
+        /// </summary>
+        /// <param name="allowed"></param>
+        /// <returns></returns>
+        public ScriptOptions WithAllowUnsafe(Boolean allowed)
+        {
+            this.AllowUnsafe = allowed;
+            return this;
+        }
 
 
 
@@ -193,7 +204,17 @@ namespace Magnet
             return this;
         }
 
-
+        /// <summary>
+        /// Disable the type where the type resides
+        /// </summary>
+        /// <param name="disabledType"></param>
+        /// <returns></returns>
+        public ScriptOptions DisableGenericBaseType(Type disabledType)
+        {
+            var baseTypes = disabledType.FullName.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries);
+            this.DisabledTypes.Add(baseTypes[0]);
+            return this;
+        }
 
         /// <summary>
         /// Disable the type where the type resides
@@ -562,6 +583,9 @@ namespace Magnet
             suppressDiagnostics.Add("CS1705");
             suppressDiagnostics.Add("CS2008");
             suppressDiagnostics.Add("CS8019");
+
+
+            suppressDiagnostics.Add("CS8632");// nullable
             suppressDiagnostics.Add("CS162"); //- Unreachable code detected.
             suppressDiagnostics.Add("CS0219");// - The variable 'V' is assigned but its value is never used.
             suppressDiagnostics.Add("CS0414");// - The private field 'F' is assigned but its value is never used.

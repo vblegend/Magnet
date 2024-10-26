@@ -6,7 +6,12 @@ using App.Core.Events;
 
 
 
+using System.Threading;
 
+namespace System.Threading
+{
+
+}
 
 
 
@@ -15,17 +20,6 @@ public class ScriptA : GameScript
 {
     [Autowired]
     private IKillContext KilledContext;
-
-
-
-    private IKillContext ddd
-    {
-        get;
-        set;
-    }
-
-
-
 
     [Function]
     public void Main()

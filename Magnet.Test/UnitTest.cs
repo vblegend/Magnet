@@ -51,7 +51,7 @@ namespace Magnet.Test
 
 
         private MagnetScript? scriptManager = null;
-        private MagnetState? state = null;
+        private IMagnetState? state = null;
 
 
         [TearDown]
@@ -97,7 +97,7 @@ namespace Magnet.Test
         {
 
 
-            List<MagnetState> states = new List<MagnetState>();
+            List<IMagnetState> states = new List<IMagnetState>();
             using (new WatchTimer("Create State 100000"))
             {
                 for (int i = 0; i < 100000; i++)
@@ -154,7 +154,7 @@ namespace Magnet.Test
                 }
                 Assert.Fail();
             }
-            List<MagnetState> states = new List<MagnetState>();
+            List<IMagnetState> states = new List<IMagnetState>();
             var state = scriptManager.CreateState();
             var weak = state.MethodDelegate<Action>("ScriptA", "Login");
             state.Dispose();

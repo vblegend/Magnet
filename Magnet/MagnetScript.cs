@@ -212,7 +212,7 @@ namespace Magnet
             this.Name = options.Name;
             this.Status = ScrriptStatus.NotReady;
             this.scriptLoadContext = new ScriptLoadContext(options);
-            this.compilationOptions = this.compilationOptions.WithAllowUnsafe(false);
+            this.compilationOptions = this.compilationOptions.WithAllowUnsafe(this.Options.AllowUnsafe);
             this.compilationOptions = this.compilationOptions.WithConcurrentBuild(true);
             //this.compilationOptions = this.compilationOptions.WithDebugPlusMode(true);
             this.compilationOptions = this.compilationOptions.WithPlatform(this.Options.TargetPlatform);
@@ -434,7 +434,7 @@ namespace Magnet
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public MagnetState CreateState(StateOptions options = null)
+        public IMagnetState CreateState(StateOptions options = null)
         {
             if (this.Status != ScrriptStatus.Loaded || !this.scriptAssembly.TryGetTarget(out _))
             {

@@ -1,5 +1,6 @@
 ﻿using Magnet.Analysis;
 using Magnet.Core;
+using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
 
@@ -60,11 +61,104 @@ namespace Magnet
 
     }
 
+    /// <summary>
+    /// Script state
+    /// </summary>
+    public interface IMagnetState : IDisposable
+    {
+        /// <summary>
+        /// Batch inject objects into all script instances
+        /// </summary>
+        /// <param name="objectMap"></param>
+        void InjectProvider(IReadOnlyDictionary<Type, Object> objectMap);
+
+        /// <summary>
+        /// Inject objects into all script instances
+        /// </summary>
+        /// <typeparam name="TObject"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="slotName">[Autowired] Specifies the slot name</param>
+        void InjectProvider<TObject>(TObject obj, String slotName = null);
+
+
+        /// <summary>
+        /// Gets a delegated weak reference to a script method
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <param name="methodName"></param>
+        /// <returns></returns>
+        WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate;
+
+
+
+        /// <summary>
+        /// Gets a weak reference to the tripartite interface implemented by the script
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <returns></returns>
+        WeakReference<T> ScriptAs<T>(String scriptName) where T : class;
+
+
+        /// <summary>
+        /// Gets a weak reference to the tripartite interface implemented by any script
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        WeakReference<T> ScriptAs<T>() where T : class;
+
+
+
+        /// <summary>
+        /// Gets a weak reference to the script's property Getter delegate
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
+        WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName);
+
+        /// <summary>
+        /// Gets the script's property Setter delegate weak reference
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="scriptName"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
+        WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName);
+
+
+        /// <summary>
+        /// Get the value of the field in the script (not recommended)
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="variableName"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        object GetFieldValue(string scriptName, string variableName);
+
+
+        /// <summary>
+        /// Set the value of the field in the script (not recommended)
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="variableName"></param>
+        /// <param name="value"></param>
+        void SetFieldValue(string scriptName, string variableName, object value);
+    }
+
+
 
     /// <summary>
     /// Script state
     /// </summary>
-    public class MagnetState : IDisposable
+    internal class MagnetState : IMagnetState
     {
         private MagnetScript engine;
         private MagnetStateContext stateContext;
@@ -110,35 +204,20 @@ namespace Magnet
         }
 
 
-        /// <summary>
-        /// Batch inject objects into all script instances
-        /// </summary>
-        /// <param name="objectMap"></param>
+
         public void InjectProvider(IReadOnlyDictionary<Type, Object> objectMap)
         {
             this.stateContext.Autowired(objectMap);
         }
 
-        /// <summary>
-        /// Inject objects into all script instances
-        /// </summary>
-        /// <typeparam name="TObject"></typeparam>
-        /// <param name="obj"></param>
-        /// <param name="slotName">[Autowired] Specifies the slot name</param>
+
         public void InjectProvider<TObject>(TObject obj, String slotName = null)
         {
             this.stateContext.Autowired<TObject>(obj, slotName);
         }
 
 
-        /// <summary>
-        /// Gets a delegated weak reference to a script method
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="scriptName"></param>
-        /// <param name="methodName"></param>
-        /// <returns></returns>
+
         public WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
             var _delegate = this.stateContext.GetScriptMethod<T>(scriptName, methodName);
@@ -146,13 +225,6 @@ namespace Magnet
         }
 
 
-        /// <summary>
-        /// Gets a weak reference to the tripartite interface implemented by the script
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="scriptName"></param>
-        /// <returns></returns>
         public WeakReference<T> ScriptAs<T>(String scriptName) where T : class
         {
             var _object = this.stateContext.ScriptAs<T>(scriptName);
@@ -161,53 +233,28 @@ namespace Magnet
 
 
 
-        /// <summary>
-        /// Gets a weak reference to the tripartite interface implemented by any script
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+
         public WeakReference<T> ScriptAs<T>() where T : class
         {
             var _object = this.stateContext.ScriptAs<T>();
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
-        /// <summary>
-        /// Gets a weak reference to the script's property Getter delegate
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="scriptName"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
+
         public WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName)
         {
             var getter = this.stateContext.GetScriptPropertyGetter<T>(scriptName, propertyName);
             return getter != null ? new WeakReference<Getter<T>>(getter) : null;
         }
 
-        /// <summary>
-        /// Gets the script's property Setter delegate weak reference
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="scriptName"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
+
         public WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName)
         {
             var setter = this.stateContext.GetScriptPropertySetter<T>(scriptName, propertyName);
             return setter != null ? new WeakReference<Setter<T>>(setter) : null;
         }
 
-        /// <summary>
-        /// Get the value of the field in the script (not recommended)
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
-        /// </summary>
-        /// <param name="scriptName"></param>
-        /// <param name="variableName"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+
         public object GetFieldValue(string scriptName, string variableName)
         {
             AbstractScript script = this.stateContext.InstanceOfName(scriptName);
@@ -222,12 +269,7 @@ namespace Magnet
         }
 
 
-        /// <summary>
-        /// Set the value of the field in the script (not recommended)
-        /// </summary>
-        /// <param name="scriptName"></param>
-        /// <param name="variableName"></param>
-        /// <param name="value"></param>
+
         public void SetFieldValue(string scriptName, string variableName, object value)
         {
             AbstractScript script = this.stateContext.InstanceOfName(scriptName);
@@ -242,9 +284,7 @@ namespace Magnet
         }
 
 
-        /// <summary>
-        /// Destroy and uninstall MagnetState
-        /// </summary>
+
         public void Dispose()
         {
             this.Unloading?.Invoke(this);

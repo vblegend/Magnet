@@ -105,13 +105,13 @@ namespace App.Core.Timer
         }
 
 
-        public void Connect(MagnetScript magnet)
+        void IAnalyzer.Connect(MagnetScript magnet)
         {
 
         }
 
 
-        public void Disconnect(MagnetScript magnet)
+        void IAnalyzer.Disconnect(MagnetScript magnet)
         {
             timersDefine.Clear();
         }

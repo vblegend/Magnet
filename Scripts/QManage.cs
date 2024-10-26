@@ -11,7 +11,7 @@ public class QManage : GameScript, IPlayLifeEvent
 
 
     [Function(null, "玩家上线")]
-    public void OnOnline(IOnlineContext ctx)
+    void IPlayLifeEvent.OnOnline(IOnlineContext ctx)
     {
         Print("上线了。。。");
         Give(Make("木剑").Quality(5).Count(8).Alias("xxl").Upgrade());
@@ -20,7 +20,7 @@ public class QManage : GameScript, IPlayLifeEvent
 
 
     [Function(null, "玩家下线")]
-    public void OnOffline(IOfflineContext ctx)
+    void IPlayLifeEvent.OnOffline(IOfflineContext ctx)
     {
 
     }

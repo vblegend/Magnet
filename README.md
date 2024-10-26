@@ -4,35 +4,333 @@
 
 # What is Magnet?
 --------------
-`Magnet是基于“Microsoft.CodeAnalysis.CSharp.Scripting”开发一个高性能的c#游戏脚本引擎`<br/>  
-Magnet is based on "Microsoft.CodeAnalysis.CSharp.Scripting" to develop a high performance c # game Script engine
+我原本想做的仅仅是一款游戏的服务器脚本引擎，从一开始想做一个强类型的类TypeScript的脚本引擎<br/>
+后面从词法分析到语法分析，做完之后发现编译器后端的复杂程度过高。 即使编译器后端开发完成性能和扩展性也很难达到我的要求<br/>
+所以尝试使用Roslyn引擎来定制一款C#脚本引擎，使用Roslyn的好处就是完全不用担心他的性能和扩展性，Roslyn提供了完整的语法树API<br/>
+和强大的编译选项搭配上C#的语法和特性完全可以实现一款满足我需求的脚本。<br/>
+之所以取名叫做Magnet就是希望他可以像磁铁一样吸到宿主的Project上可以随时取下来。<br/>
+当然它不仅能用做游戏的服务器逻辑处理，它可以用作任何需要它的地方。<br/>
+当前处于开发阶段，所以部分API可能会有改动。
 
-`在c#语言和NET框架下，脚本具有安全、可控、灵活、状态好等特点`<br/>  
-On the basis of C# language and.NET framework, the script is safe, controllable, flexible and state
+--------------
+
+`C#语法` `高性能` `可扩展` `可调试` `可卸载` `多State` `安全性`
+
+--------------
+
+## 💥脚本基础功能
+支持仅编译、仅加载、从脚本编译加载模式。
+``` csahrp
+// 脚本名称
+options.WithName(name);
+
+// 脚本是否支持异步
+options.WithAllowAsync(false);
+
+// 脚本是否支持不安全代码
+options.WithAllowUnsafe(true);
+
+// 使用默认的编译抑制诊断
+options.UseDefaultSuppressDiagnostics();
+
+// 脚本程序集上下文依赖程序集加载Hook
+options.WithAssemblyLoadCallback(AssemblyLoad);
+
+```
 
 
-# Features|功能
 
-- [x] Load from file | 从文件编译加载脚本、从程序集加载脚本、仅编译脚本
-- [x] Rewrite Type | 提供类型重写器以替换脚本内使用的类型
-- [x] Unload | 脚本程序集卸载
-- [x] Disable Namespace | 禁用命名空间
-- [x] Script state isolation | 脚本状态隔离
-- [x] Script dependency injection | 脚本依赖注入
-- [x] Debugger and braek; | 调试和断点
-- [x] Output assembly | 输出程序集
-- [x] References assembly | 增加引用程序集
-- [x] Generation method delegate | 生成方法委托
-- [x] Illegal API detection | 非法API检测
-- [x] Global variable | 全局变量
-- [x] Expandability | 可扩展性
-- [x] Script inter call | 脚本之间调用
-- [x] Custom Analysis | 自定义分析器扩展
+## 💥脚本编译输入与输出
+支持仅编译、仅加载、从脚本编译加载模式。
+``` csahrp
+// #1 仅编译，可输出
+options.WithCompileKind(CompileKind.Compile);
+options.WithOutPutFile("sample.dll");
+
+// #2 从程序集文件加载
+options.WithCompileKind(CompileKind.LoadAssembly);
+options.WithScanDirectory("./");
+options.WithAssemblyFileName("sample.dll");
+
+// #3 从脚本文件编译并加载
+options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+options.WithScanDirectory("../../../../Scripts");
+```
+
+## 💥脚本编译优化与设置
+
+``` csahrp
+
+// 调试模式 启用脚本内置debugger()函数
+options.WithDebug(true);
+
+// 调试模式 不启用脚本内置debugger()函数
+options.WithDebug(false);
+
+// 发布模式 编译优化
+//options.WithRelease();
+```
+
+## 💥添加脚本的程序集引用
+
+``` csahrp
+// 添加 System.Threading 程序集的引用
+options.AddReferences<Thread>();
+
+// 添加 System.Threading 程序集的引用
+options.AddReferences(typeof(Thread));
+
+// 添加 System.Threading 程序集的引用
+options.AddReferences("System.Threading.dll");
+```
+
+
+## 💥带有编译检查的类型与命名空间禁用
+如果脚本中使用了被禁用的类型或命名空间后，将会触发编译失败。 <br>
+ICompileResult.Diagnostics 内会包含诊断错误 同时 ICompileResult.Success = false
+``` csahrp
+//禁用类型
+options.DisableType(typeof(Task));
+
+// 禁用泛类型的严格类型
+options.DisableType("System.Collections.Generic.List<string>");
+options.DisableType(typeof(List<String>));
+
+// 禁用范类型的基础类型
+options.DisableType("System.Collections.Generic.List");
+options.DisableGenericBaseType(typeof(List<>));
+```
 
 
 
-# Examples|例子
+## 💥对象类型替换器
+在编译脚本阶段，将语法树上的类型替换为新的类型。<br>
+如果新类型的成员对象签名与原类型的不一致可能会抛出异常。
+``` csahrp
+// 替换类型 将脚本内使用的Task 替换为MyTask
+options.AddReplaceType(typeof(Task), typeof(MyTask));
 
+// 脚本类型重写器（加强版的AddReplaceType）
+options.WithTypeRewriter(new TypeRewriter());
+```
+
+
+
+## 💥功能扩展分析器
+分析器实现了以下三个分析器接口，宿主可以通过分析器实现定制功能开发
+
+`完整例子查看 Magnet.Examples 的 App.Core.Timer.TimerProvider`
+
+| 分析器 | 描述 | 触发时机 |
+| ----------- | ----------- |
+| IAssemblyAnalyzer | 脚本程序集分析器 | 脚本程序集加载完毕后 |
+| ITypeAnalyzer | Script类型分析器 | 脚本程序集加载完毕后 |
+| IInstanceAsalyzer | 和脚本实例分析器 | 脚本State创建时 |
+
+
+``` csahrp
+var timerProvider = new TimerProvider();
+
+// 增加一个分析器
+options.AddAnalyzer(timerProvider);
+
+
+public class TimerProvider : ITypeAnalyzer
+{
+
+    void ITypeAnalyzer.DefineType(Type type)
+    {
+    }
+
+    void IAnalyzer.Connect(MagnetScript magnet)
+    {
+
+    }
+
+    void IAnalyzer.Disconnect(MagnetScript magnet)
+    {
+    }
+}
+
+```
+
+
+
+## 💥脚本依赖注入
+Magnet实现了简单的依赖注入功能，支持依赖的Type和Name匹配。
+
+1.全局依赖注入
+``` csahrp
+// 注册依赖注入
+options.RegisterProvider(timerProvider);
+options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
+options.RegisterProvider(GLOBAL);
+options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");
+```
+
+2.State级别依赖注入，继承了全局依赖
+```csharp
+var stateOptions = StateOptions.Default;
+stateOptions.Identity = 666;
+stateOptions.RegisterProvider(new TimerService());
+var stateTest = scriptManager.CreateState(stateOptions);
+```
+
+脚本
+``` csahrp
+public abstract class GameScript : AbstractScript
+{
+    [Autowired(typeof(GlobalVariableStore))]
+    protected readonly GlobalVariableStore GLOBAL;
+
+    [Autowired("SELF")]
+    protected readonly IObjectContext Player;
+
+    [Autowired]
+    private readonly ITimerManager timerManager;
+}
+
+```
+
+
+## 💥脚本的生命周期
+脚本需要继承 AbstractScript
+
+``` csharp
+// 脚本初始化，在所有脚本实例创建完成之后且依赖注入完毕之后执行。
+protected override void Initialize();
+
+// 脚本停止工作，脚本被Dispose()时或MagnetScript实例调用 Unload(true) 时触发
+// 触发该方法后脚本将不可用
+protected override void Shutdown();
+```
+
+
+
+## 💥脚本之间相互调用
+由于脚本state是隔离的，脚本之间无法通过变量来进行访问所以提供了调用方法
+
+``` csharp
+// 调用ScriptB的Test方法，出现错误会抛出异常
+Call("ScriptB", "Test", []);
+
+// 尝试调用ScriptB的PrintMessage方法，出现任何错误均不会抛出异常
+TryCall("ScriptB", "PrintMessage", ["Help"]);
+
+// 调用ScriptB的PrintMessage方法（支持强类型签名）出现错误会抛出异常
+Script<ScriptB>().PrintMessage("AAA");
+
+// 当脚本ScriptB存在时调用ScriptB的PrintMessage方法（支持强类型签名）出现错误会抛出异常
+Script<ScriptB>((script) =>
+{
+    script.PrintMessage("BBB");
+});
+```
+
+## 💥脚本调试断点
+由于脚本state是隔离的，脚本之间无法通过变量来进行访问所以提供了调用方法
+
+``` csharp
+// 调用debug模式编译运行脚本时，执行到此处将自动打开调试器并断点暂停。
+// release时此代码将被优化掉
+debugget();
+```
+
+
+## 💥全局变量定义
+由于C#的特性通过 static 定义的方法、属性、字段 均可被所有State内使用<br>
+所以为了不混淆全局变量与静态变量，增加了`GlobalAttribute` 属性标签<br>
+当字段或属性声明为static时，如果未标记[Global]属性，则编译时会产生编译警告但不影响正常运行。
+
+``` csharp
+[Global]
+[Autowired(typeof(GlobalVariableStore))]
+protected readonly static GlobalVariableStore Global;
+
+```
+
+
+
+
+
+## 💥宿主调用脚本内方法
+为保障脚本的可卸载性，脚本的方法委托或实例均以WeakReference返回。
+
+``` csharp
+// 创建 stateTest中脚本ScriptA的Main方法委托
+var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
+if (weakMain != null && weakMain.TryGetTarget(out var main))
+{
+    // 调用脚本Main方法
+    main();
+    main = null;
+}
+
+// 尝试获取stateTest内第一个实现了IPlayLifeEvent接口的脚本对象
+var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
+if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
+{   
+    // 调用脚本的OnOnline方法
+    lifeEvent.OnOnline(null);
+    lifeEvent = null;
+}
+
+// 创建脚本ScriptExample中属性Target的Getter委托
+var weakGetter = state?.PropertyGetterDelegate<Double>("ScriptExample", "Target");
+if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
+{
+    // 获取脚本ScriptExample中属性Target值
+    Console.WriteLine(getter());
+    getter = null;
+}
+
+
+// 创建脚本ScriptExample中属性Target的Setter委托
+var weakSetter = state?.PropertySetterDelegate<Double>("ScriptExample", "Target");
+if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
+{
+    // 对脚本ScriptExample中属性Target赋值
+    setter(123.45);
+    setter = null;
+}
+```
+
+
+
+
+## 💥脚本卸载
+脚本卸载是不可控的，因为dotnet中的程序集卸载是由GC来决定的。<br>
+宿主程序中保留脚本内类型的强引用时将会导致卸载失败。
+
+``` csharp
+// 卸载脚本，不会销毁所有state，由用户自己选择时机Dispose()
+scriptManager.Unload();
+
+// 强制卸载脚本，会销毁所有state
+scriptManager.Unload(true);
+
+// 申请内存 触发GC 卸载脚本
+while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
+{
+    //GC
+    var obj = new byte[1024 * 1024];
+    Thread.Sleep(10);
+}
+```
+
+
+
+
+
+
+
+--------------
+
+
+
+# 💥Examples
+
+完整例子请查看 Magnet.Examples 或 Magnet.Test
 ``` csharp
     private static ScriptOptions Options(String name)
     {
@@ -71,14 +369,28 @@ On the basis of C# language and.NET framework, the script is safe, controllable,
         // 增加一个分析器
         options.AddAnalyzer(timerProvider);
 
+        // 是否支持不安全代码
+        options.WithAllowUnsafe(true);
+
         // 替换类型
-        options.AddReplaceType(typeof(Task), typeof(Task));
-        // 禁用类型
+        // options.AddReplaceType(typeof(Task), typeof(MyTask));
+
+        //禁用类型
         options.DisableType(typeof(Task));
+
+        // 禁用泛类型的严格类型
+        options.DisableType("System.Collections.Generic.List<string>");
+        options.DisableType(typeof(List<String>));
+
+        // 禁用范类型的基础类型
+        options.DisableType("System.Collections.Generic.List");
+        options.DisableGenericBaseType(typeof(List<>));
+
         // 禁用命名空间
         options.DisableNamespace(typeof(Thread));
+
         //禁用不安全类型与命名空间
-        options.DisableInsecureTypes();
+        //options.DisableInsecureTypes();
 
         // 脚本类型重写器
         options.WithTypeRewriter(new TypeRewriter());

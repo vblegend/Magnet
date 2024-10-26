@@ -14,7 +14,7 @@ namespace App.Core
     public abstract class GameScript : AbstractScript
     {
 
-        [Autowired]
+        [Autowired(typeof(GlobalVariableStore))]
         protected readonly GlobalVariableStore GLOBAL;
 
         [Autowired("SELF")]
