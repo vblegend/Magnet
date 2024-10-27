@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
 namespace Magnet.Syntax
@@ -163,6 +164,7 @@ namespace Magnet.Syntax
             var typed2 = base.Visit(node.Type) as TypeSyntax;
             var node2 = node.WithType(typed2);
 
+
             if (typed2 is IdentifierNameSyntax identifierName)
             {
                 typeInfo = semanticModel.GetTypeInfo(node2);
@@ -170,38 +172,14 @@ namespace Magnet.Syntax
             else
             {
                 return node2;
-                typeInfo = semanticModel.GetTypeInfo(node2);
             }
-   
+
             if (typeInfo.Type != null && TryGetReplaceType(node2.Type, typeInfo.Type, out var replacementType))
             {
-                var newTypeNode = replacementType.WithTriviaFrom(node.Type);
-                node = node.WithType(newTypeNode);
-                return node;
+                replacementType = replacementType.WithTriviaFrom(node.Type);
+                return node.WithType(replacementType);
             }
             return base.VisitObjectCreationExpression(node);
-
-
-            //if (node.Type is GenericNameSyntax generic)
-            //{
-            //    Console.WriteLine(generic.Identifier);
-            //    var typed = VisitGenericName(generic);
-            //    node = node.WithType(typed as TypeSyntax);
-            //    return node;
-            //}
-            //else
-            //{
-            //    var typeInfo = semanticModel.GetTypeInfo(node);
-            //    if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
-            //    {
-            //        var newTypeNode = replacementType.WithTriviaFrom(node.Type);
-            //        node = node.WithType(newTypeNode);
-            //        return node;
-            //    }
-            //}
-
-            node = base.VisitObjectCreationExpression(node) as ObjectCreationExpressionSyntax;
-            return node;
         }
 
 
@@ -213,15 +191,11 @@ namespace Magnet.Syntax
             var typeInfo = semanticModel.GetTypeInfo(node.Type);
             if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
             {
-                var newTypeNode = replacementType.WithTriviaFrom(node.Type);
-                if (node.Type is GenericNameSyntax generic)
-                {
-                    var genericNode = generic.WithIdentifier(SyntaxFactory.Identifier(replacementType.ToFullString()));
-                    newTypeNode = genericNode.WithTypeArgumentList(generic.TypeArgumentList);
-                }
+                var type = Visit(node.Type) as TypeSyntax;
                 var vars = node.Variables.Select(e => VisitVariableDeclarator(e) as VariableDeclaratorSyntax);
                 var newNode = node.WithVariables(SyntaxFactory.SeparatedList<VariableDeclaratorSyntax>(vars));
-                newNode = newNode.WithType(newTypeNode);
+                newNode = newNode.WithType(type);
+                newNode = newNode.WithTriviaFrom(node);
                 return newNode;
             }
             var node2 = base.VisitVariableDeclaration(node) as VariableDeclarationSyntax;
@@ -278,33 +252,96 @@ namespace Magnet.Syntax
 
         public override SyntaxNode VisitQualifiedName(QualifiedNameSyntax node)
         {
-            if ( !(node.Parent is TypeSyntax))
+            if (node.Parent is QualifiedNameSyntax)
             {
-
+                return base.VisitQualifiedName(node);
+            }
+            if (node.Parent is NamespaceDeclarationSyntax)
+            {
+                return base.VisitQualifiedName(node);
+            }
+            if (node.Parent is UsingDirectiveSyntax)
+            {
+                return base.VisitQualifiedName(node);
             }
 
 
+            var typed = base.VisitQualifiedName(node) as QualifiedNameSyntax;
+            var symbolInfo = semanticModel.GetSymbolInfo(typed);
+            if (symbolInfo.Symbol is ITypeSymbol typeSymbol && TryGetReplaceType(typed, typeSymbol, out var replacementType))
+            {
 
+                return replacementType;
+            }
             return base.VisitQualifiedName(node);
         }
 
 
-        public override SyntaxNode VisitGenericName(GenericNameSyntax node)
+
+        public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
         {
+            if (node.Parent is QualifiedNameSyntax)
+            {
+                return base.VisitIdentifierName(node);
+            }
+
 
             var symbolInfo = semanticModel.GetSymbolInfo(node);
+            if (symbolInfo.Symbol is ITypeSymbol type)
+            {
+                if (TryGetReplaceType(node, type, out var replacementType))
+                {
+                    //ParseNameSyntax(replacementType, out var _typeToken, out var _namespaceNameSyntax);
+                    Console.WriteLine(node.Location());
+                    replacementType = replacementType.WithTriviaFrom(node);
+                    return replacementType;
+                }
+            }
+            return base.VisitIdentifierName(node);
+        }
 
-            var typeInfo = semanticModel.GetTypeInfo(node);
-            //Console.WriteLine(symbolInfo.Symbol.GetType().FullName);
+
+
+
+
+        public override SyntaxNode VisitGenericName(GenericNameSyntax node)
+        {
+            var symbolInfo = semanticModel.GetSymbolInfo(node);
             if (symbolInfo.Symbol is ITypeSymbol typeSymbol && TryGetReplaceType(node, typeSymbol, out var replacementType))
             {
+                ParseNameSyntax(replacementType, out var typeName, out var _namespace);
                 var typeArgumentList = VisitTypeArgumentList(node.TypeArgumentList) as TypeArgumentListSyntax;
-                node = node.WithIdentifier(SyntaxFactory.Identifier(replacementType.ToFullString()));
-                node = node.WithTypeArgumentList(typeArgumentList);
-                return node;
+                var newGenericName = SyntaxFactory.GenericName(typeName).WithTypeArgumentList(typeArgumentList);
+                if (_namespace != null)
+                {   // 命名空间 必须要
+                    SyntaxFactory.QualifiedName(_namespace, newGenericName);
+                }
+                // 复制原节点的语法标记
+                newGenericName = newGenericName.WithTriviaFrom(node);
+                return newGenericName;
             }
             return base.VisitGenericName(node);
         }
+
+
+        public void ParseNameSyntax(in NameSyntax nameSyntax, out SyntaxToken _typeToken, out NameSyntax _namespaceNameSyntax)
+        {
+            var nodes = nameSyntax.ToFullString().Split('.', StringSplitOptions.RemoveEmptyEntries);
+            _typeToken = SyntaxFactory.Identifier(nodes.Last());
+            var _namespace = String.Join('.', nodes[..^1]);
+
+            if (String.IsNullOrEmpty(_namespace))
+            {
+                _namespaceNameSyntax = null;
+            }
+            else
+            {
+                _namespaceNameSyntax = SyntaxFactory.ParseName(_namespace);
+            }
+        }
+
+
+
 
         public override SyntaxNode VisitOmittedTypeArgument(OmittedTypeArgumentSyntax node)
         {
@@ -317,14 +354,6 @@ namespace Magnet.Syntax
             return base.VisitArgument(node);
         }
 
-
-
-        public override SyntaxToken VisitToken(SyntaxToken token)
-        {
-
-            return base.VisitToken(token);
-
-        }
 
 
 
@@ -353,9 +382,9 @@ namespace Magnet.Syntax
                     }
                 }
 
- 
+
             }
-           return node.WithTypes(SyntaxFactory.SeparatedList(args));
+            return node.WithTypes(SyntaxFactory.SeparatedList(args));
 
             return base.VisitBaseList(node);
         }
@@ -374,7 +403,7 @@ namespace Magnet.Syntax
             // AttributeSyntax AttributeArgumentSyntax ParameterSyntax VariableDeclaratorSyntax CollectionElementSyntax TypeParameterSyntax
             //Console.WriteLine(list.GetType().FullName);
             // 
-            if (list is  SeparatedSyntaxList<BaseTypeSyntax> baseTypeList)
+            if (list is SeparatedSyntaxList<BaseTypeSyntax> baseTypeList)
             {
                 List<TNode> args = new List<TNode>();
                 foreach (var arg in baseTypeList)
@@ -413,6 +442,8 @@ namespace Magnet.Syntax
                 }
                 return SyntaxFactory.SeparatedList(args);
             }
+
+            //Console.WriteLine(list.GetType().FullName);
 
             return base.VisitList(list);
         }
@@ -547,6 +578,21 @@ namespace Magnet.Syntax
                     return node.WithExpression(newTypeSyntax);
                 }
             }
+
+            if (memberSymbol != null && memberSymbol.Kind == SymbolKind.NamedType)
+            {
+                // TODO nameof 带有命名空间时有问题啊
+                var typeInfo = semanticModel.GetTypeInfo(node);
+                if (TryGetReplaceType(node, typeInfo.Type, out var newTypeSyntax))
+                {
+                    var fullName = newTypeSyntax.ToFullString();
+                    var res = SyntaxFactory.ParseExpression(fullName).WithTriviaFrom(node);
+                    return res;
+                }
+            }
+
+
+
             return base.VisitMemberAccessExpression(node);
         }
 
@@ -595,16 +641,13 @@ namespace Magnet.Syntax
         }
 
 
+
         private NameSyntax MakeNameSyntax(string fullName)
         {
-            var names = fullName.Split('.');
+            var names = fullName.Split('.', StringSplitOptions.RemoveEmptyEntries);
             NameSyntax nameSyntax = SyntaxFactory.IdentifierName(names[0]);
-
             for (var i = 1; i < names.Length; i++)
             {
-                if (string.IsNullOrEmpty(names[i]))
-                    continue;
-
                 nameSyntax = SyntaxFactory.QualifiedName(nameSyntax, SyntaxFactory.IdentifierName(names[i]));
             }
             return nameSyntax;
@@ -613,10 +656,14 @@ namespace Magnet.Syntax
 
         public SyntaxNode VisitWith(SemanticModel model, SyntaxNode root)
         {
+            var sss = MakeNameSyntax("AAA.BBB.CCC.ClassA");
+
+            Console.WriteLine(sss.ToFullString());
+
             semanticModel = model;
             var ROOT = base.Visit(root);
 
-            //Console.WriteLine(ROOT.NormalizeWhitespace());
+            Console.WriteLine(ROOT.NormalizeWhitespace());
 
             return ROOT;
         }

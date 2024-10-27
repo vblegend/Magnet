@@ -56,6 +56,7 @@ public static class Program
 
         // 添加程序集引用
         options.AddReferences<GameScript>();
+        options.AddReferences("System.Collections");
 
         var timerProvider = new TimerProvider();
         // 增加一个分析器

@@ -70,6 +70,7 @@ namespace Magnet.Syntax
             if (node is TupleTypeSyntax) return;
 
             ITypeSymbol type = null;
+            // new 对象类型
             if (type == null && node is ObjectCreationExpressionSyntax creationExpressionSyntax)
             {
                 var typeInfo = _semanticModel.GetTypeInfo(creationExpressionSyntax);
@@ -82,23 +83,27 @@ namespace Magnet.Syntax
                 if (type == null && node is IdentifierNameSyntax identifierNameSyntax)
                 {
                     var symbol = _semanticModel.GetSymbolInfo(identifierNameSyntax);
-                    type = symbol.Symbol.ContainingType;
+                    if (symbol.Symbol != null)
+                    {
+                        type = symbol.Symbol.ContainingType;
+                    }
                 }
             }
             else
             {
                 return;
             }
-            // new 对象类型
 
             if (type == null || type.Kind == SymbolKind.ErrorType)
             {
                 // 类型解析失败 如果ErrorType 则编译器不通过
+                Console.WriteLine(node.Location());
                 Debugger.Break();
                 return;
             }
             // 过滤泛型类型参数T
             if (type.Kind == SymbolKind.TypeParameter) return;
+
 
 
             // 处理可空类型?
@@ -525,7 +530,11 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
-            CheckType(node.Name);
+            // 屏蔽 nameof 参数前缀
+            if (!(node.Parent is MemberAccessExpressionSyntax))
+            {
+                CheckType(node.Name);
+            }
             base.VisitMemberAccessExpression(node);
         }
 

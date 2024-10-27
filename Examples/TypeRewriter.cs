@@ -14,6 +14,8 @@ namespace ScriptRuner
 
 
 
+
+
     internal class TypeRewriter : ITypeRewriter
     {
         private String ClearGenericParameters(ITypeSymbol typeFullName)
@@ -24,20 +26,20 @@ namespace ScriptRuner
         public bool RewriteType(CSharpSyntaxNode syntaxNode, ITypeSymbol typeSymbol, out Type newType)
         {
             //Console.WriteLine(typeSymbolm.ToDisplayString());
-            //Console.WriteLine(syntaxNode.Location() + " " + typeSymbol.ToDisplayString());
-            //var typeFullName = ClearGenericParameters(typeSymbol);
+            Console.WriteLine(syntaxNode.Location() + " " + typeSymbol.ToDisplayString());
+            var typeFullName = ClearGenericParameters(typeSymbol);
 
-            //if (typeFullName == "ScriptA.ABCD")
-            //{
-            //    newType = typeof(List<>);
-            //    return true;
-            //}
+            if (typeFullName == "ScriptA.ABCD")
+            {
+                newType = typeof(NewList<>);
+                return true;
+            }
 
-            //if (typeFullName == "System.Threading.Thread")
-            //{
-            //    newType = typeof(NewThread);
-            //    return true;
-            //}
+            if (typeFullName == "System.Threading.Thread")
+            {
+                newType = typeof(NewThread);
+                return true;
+            }
 
             newType = null;
             return false;

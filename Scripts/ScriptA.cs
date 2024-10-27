@@ -3,7 +3,7 @@ using Magnet.Core;
 using System.Collections.Generic;
 using App.Core.UserInterface;
 using App.Core.Events;
-
+using System.Collections;
 
 
 using System.Threading;
@@ -29,7 +29,7 @@ public class ScriptA : GameScript
     public event Action ?callback;
 
 
-    public Thread saaaa { get; set; } = new Thread(() => { });
+    public System.Threading.Thread saaaa { get; set; } = new System.Threading.Thread(() => { });
 
     class ClassA<t>
     {
@@ -42,10 +42,11 @@ public class ScriptA : GameScript
         private readonly ScriptExample scriptExample;
 
         private Thread thread;
-
-
-
     }
+
+    public delegate void NewThreadDelegate(Thread a  , Thread b);
+
+
 
     struct ABCD<T>
     {
@@ -71,8 +72,22 @@ public class ScriptA : GameScript
         Thread saaaa = new Thread(() => { Print("123"); });
         Thread[] ffff = new Thread[0];
 
-        ScriptA.ABCD<Thread> esd =  new ScriptA.ABCD<Thread>();
-        var s = Thread.CurrentThread?.Priority;
+        System.Threading.Tasks.Task task = new System.Threading.Tasks.Task(() => { });
+
+
+        ABCD<Thread> esd1 = new ABCD<Thread>();
+        NewList<App.Core.Types.NewThread> esd2 = new NewList<App.Core.Types.NewThread>();
+        esd2.Add(new App.Core.Types.NewThread(null));
+
+        var s = System.Threading.Thread.CurrentThread?.Priority;
+
+        var t = typeof(System.Threading.Thread);
+        var n = nameof(System.Threading.Thread);
+
+
+        var ssss = esd1.GetType();
+        Print(ssss);
+
         Print(saaaa);
         scriptExample?.Hello("Wrold");
         UI.DIALOG(120)?.TO(Player);
