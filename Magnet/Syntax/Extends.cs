@@ -4,7 +4,7 @@ using System;
 
 namespace Magnet
 {
-    internal static class Extends
+    public static class Extends
     {
         public static String Location(this CSharpSyntaxNode node)
         {

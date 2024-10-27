@@ -12,12 +12,15 @@ namespace App.Core.Types
 
         public Int32 Priority = 123;
 
-
+        public NewThread(Action action)
+        {
+            
+        }
         public static NewThread CurrentThread
         {
             get
             {
-                return new NewThread();
+                return new NewThread(null);
             }
         }
     }

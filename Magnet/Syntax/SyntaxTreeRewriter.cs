@@ -3,8 +3,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-
+using System.Xml.Linq;
 
 namespace Magnet.Syntax
 {
@@ -20,11 +21,12 @@ namespace Magnet.Syntax
 
 
 
-        public Boolean TryGetReplaceType(ITypeSymbol typeSymbol,out NameSyntax? nameSyntax)
+        public Boolean TryGetReplaceType(CSharpSyntaxNode syntaxNode, ITypeSymbol typeSymbol, out NameSyntax? nameSyntax)
         {
-            if (this.typeResolver.Resolver(typeSymbol, out var newType))
+            if (this.typeResolver.Resolver(syntaxNode, typeSymbol, out var newType))
             {
-                nameSyntax = this.MakeNameSyntax(newType);
+                var noParametersType = newType.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
+                nameSyntax = this.MakeNameSyntax(noParametersType);
                 return true;
             }
             nameSyntax = null;
@@ -33,50 +35,93 @@ namespace Magnet.Syntax
 
 
 
+        // 替换元类型
+        public override SyntaxNode VisitTupleType(TupleTypeSyntax node)
+        {
+            SeparatedSyntaxList<TupleElementSyntax> eles = new SeparatedSyntaxList<TupleElementSyntax>();
+            Boolean changed = false;
+            for (int i = 0; i < node.Elements.Count; i++)
+            {
+                var element = node.Elements[i];
+                var typeInfo = semanticModel.GetTypeInfo(element.Type);
+                if (typeInfo.Type != null && TryGetReplaceType(element, typeInfo.Type, out var replacementType))
+                {
+                    var newTypeNode = replacementType.WithTriviaFrom(element.Type);
+                    eles.Add(element.WithType(newTypeNode));
+                    changed = true;
+                }
+                else
+                {
+                    eles.Add(element);
+                }
+            }
+            if (changed) return node.WithElements(eles);
+            return base.VisitTupleType(node);
+        }
 
-        // 处理变量声明中的类型替换
-        public override SyntaxNode VisitVariableDeclaration(VariableDeclarationSyntax node)
+
+
+        // 替换指针类型
+        public override SyntaxNode VisitPointerType(PointerTypeSyntax node)
         {
             // 获取当前类型的符号
-            var typeInfo = semanticModel.GetTypeInfo(node.Type);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            var typeInfo = semanticModel.GetTypeInfo(node.ElementType);
+            if (typeInfo.Type != null && TryGetReplaceType(node.ElementType, typeInfo.Type, out var replacementType))
             {
                 // 使用替换类型
-                var newTypeNode = replacementType.WithTriviaFrom(node.Type);
-                return node.WithType(newTypeNode);
+                var newTypeNode = replacementType.WithTriviaFrom(node.ElementType);
+                return node.WithElementType(newTypeNode);
             }
-            return base.VisitVariableDeclaration(node);
+            return base.VisitPointerType(node);
         }
+
+        // 替换数组类型
+        public override SyntaxNode VisitArrayType(ArrayTypeSyntax node)
+        {
+            // 获取当前类型的符号
+            var typeInfo = semanticModel.GetTypeInfo(node.ElementType);
+            if (typeInfo.Type != null && TryGetReplaceType(node.ElementType, typeInfo.Type, out var replacementType))
+            {
+                // 使用替换类型
+                var newTypeNode = replacementType.WithTriviaFrom(node.ElementType);
+                return node.WithElementType(newTypeNode);
+            }
+            return base.VisitArrayType(node);
+        }
+
+
 
         // 处理字段声明中的类型替换
         public override SyntaxNode VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
-            var typeInfo = semanticModel.GetTypeInfo(node.Declaration.Type);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
-            {
-                var newTypeNode = replacementType.WithTriviaFrom(node.Declaration.Type);
-                return node.WithDeclaration(node.Declaration.WithType(newTypeNode));
-            }
+            //var newNode = base.VisitFieldDeclaration(node) as FieldDeclarationSyntax;
+            //var typeInfo = semanticModel.GetTypeInfo(node.Declaration.Type);
+            //if (typeInfo.Type != null && TryGetReplaceType(node.Declaration.Type, typeInfo.Type, out var replacementType))
+            //{
+            //    var newTypeNode = replacementType.WithTriviaFrom(node.Declaration.Type);
+            //    return newNode.WithDeclaration(node.Declaration.WithType(newTypeNode));
+            //}
             return base.VisitFieldDeclaration(node);
         }
 
         // 处理属性声明中的类型替换
         public override SyntaxNode VisitPropertyDeclaration(PropertyDeclarationSyntax node)
         {
+            var newNode = base.VisitPropertyDeclaration(node) as PropertyDeclarationSyntax;
             var typeInfo = semanticModel.GetTypeInfo(node.Type);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
             {
                 var newTypeNode = replacementType.WithTriviaFrom(node.Type);
-                return node.WithType(newTypeNode);
+                return newNode.WithType(newTypeNode);
             }
-            return base.VisitPropertyDeclaration(node);
+            return newNode;
         }
 
         // 处理方法声明中的返回类型替换
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node.ReturnType);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            if (typeInfo.Type != null && TryGetReplaceType(node.ReturnType, typeInfo.Type, out var replacementType))
             {
                 var newReturnType = replacementType.WithTriviaFrom(node.ReturnType);
                 return node.WithReturnType(newReturnType);
@@ -88,7 +133,7 @@ namespace Magnet.Syntax
         public override SyntaxNode VisitDelegateDeclaration(DelegateDeclarationSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node.ReturnType);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            if (typeInfo.Type != null && TryGetReplaceType(node.ReturnType, typeInfo.Type, out var replacementType))
             {
                 var newReturnType = replacementType.WithTriviaFrom(node.ReturnType);
                 return node.WithReturnType(newReturnType);
@@ -102,7 +147,7 @@ namespace Magnet.Syntax
             if (node.Type != null)
             {
                 var typeInfo = semanticModel.GetTypeInfo(node.Type);
-                if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+                if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
                 {
                     var newTypeNode = replacementType.WithTriviaFrom(node.Type);
                     return node.WithType(newTypeNode);
@@ -114,20 +159,88 @@ namespace Magnet.Syntax
         // 处理对象创建表达式中的类型替换
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
-            var typeInfo = semanticModel.GetTypeInfo(node.Type);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            Microsoft.CodeAnalysis.TypeInfo typeInfo = default;
+            var typed2 = base.Visit(node.Type) as TypeSyntax;
+            var node2 = node.WithType(typed2);
+
+            if (typed2 is IdentifierNameSyntax identifierName)
+            {
+                typeInfo = semanticModel.GetTypeInfo(node2);
+            }
+            else
+            {
+                return node2;
+                typeInfo = semanticModel.GetTypeInfo(node2);
+            }
+   
+            if (typeInfo.Type != null && TryGetReplaceType(node2.Type, typeInfo.Type, out var replacementType))
             {
                 var newTypeNode = replacementType.WithTriviaFrom(node.Type);
-                return node.WithType(newTypeNode);
+                node = node.WithType(newTypeNode);
+                return node;
             }
             return base.VisitObjectCreationExpression(node);
+
+
+            //if (node.Type is GenericNameSyntax generic)
+            //{
+            //    Console.WriteLine(generic.Identifier);
+            //    var typed = VisitGenericName(generic);
+            //    node = node.WithType(typed as TypeSyntax);
+            //    return node;
+            //}
+            //else
+            //{
+            //    var typeInfo = semanticModel.GetTypeInfo(node);
+            //    if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
+            //    {
+            //        var newTypeNode = replacementType.WithTriviaFrom(node.Type);
+            //        node = node.WithType(newTypeNode);
+            //        return node;
+            //    }
+            //}
+
+            node = base.VisitObjectCreationExpression(node) as ObjectCreationExpressionSyntax;
+            return node;
         }
+
+
+
+
+        //处理变量声明中的类型替换
+        public override SyntaxNode VisitVariableDeclaration(VariableDeclarationSyntax node)
+        {
+            var typeInfo = semanticModel.GetTypeInfo(node.Type);
+            if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
+            {
+                var newTypeNode = replacementType.WithTriviaFrom(node.Type);
+                if (node.Type is GenericNameSyntax generic)
+                {
+                    var genericNode = generic.WithIdentifier(SyntaxFactory.Identifier(replacementType.ToFullString()));
+                    newTypeNode = genericNode.WithTypeArgumentList(generic.TypeArgumentList);
+                }
+                var vars = node.Variables.Select(e => VisitVariableDeclarator(e) as VariableDeclaratorSyntax);
+                var newNode = node.WithVariables(SyntaxFactory.SeparatedList<VariableDeclaratorSyntax>(vars));
+                newNode = newNode.WithType(newTypeNode);
+                return newNode;
+            }
+            var node2 = base.VisitVariableDeclaration(node) as VariableDeclarationSyntax;
+            return node2;
+        }
+
+        public override SyntaxNode VisitVariableDeclarator(VariableDeclaratorSyntax node)
+        {
+
+            return base.VisitVariableDeclarator(node);
+        }
+
+
 
         // 处理类型转换表达式中的类型替换
         public override SyntaxNode VisitCastExpression(CastExpressionSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node.Type);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
             {
                 var newTypeNode = replacementType.WithTriviaFrom(node.Type);
                 return node.WithType(newTypeNode);
@@ -141,7 +254,7 @@ namespace Magnet.Syntax
             if (node.IsKind(SyntaxKind.IsExpression) || node.IsKind(SyntaxKind.AsExpression))
             {
                 var rightTypeInfo = semanticModel.GetTypeInfo(node.Right);
-                if (rightTypeInfo.Type != null && TryGetReplaceType(rightTypeInfo.Type, out var replacementType))
+                if (rightTypeInfo.Type != null && TryGetReplaceType(node.Right, rightTypeInfo.Type, out var replacementType))
                 {
                     var newRightType = replacementType.WithTriviaFrom(node.Right);
                     return node.WithRight(newRightType);
@@ -150,11 +263,12 @@ namespace Magnet.Syntax
             return base.VisitBinaryExpression(node);
         }
 
+
         // 处理 typeof 表达式中的类型替换
         public override SyntaxNode VisitTypeOfExpression(TypeOfExpressionSyntax node)
         {
             var typeInfo = semanticModel.GetTypeInfo(node.Type);
-            if (typeInfo.Type != null && TryGetReplaceType(typeInfo.Type, out var replacementType))
+            if (typeInfo.Type != null && TryGetReplaceType(node.Type, typeInfo.Type, out var replacementType))
             {
                 var newTypeNode = replacementType.WithTriviaFrom(node.Type);
                 return node.WithType(newTypeNode);
@@ -162,12 +276,171 @@ namespace Magnet.Syntax
             return base.VisitTypeOfExpression(node);
         }
 
+        public override SyntaxNode VisitQualifiedName(QualifiedNameSyntax node)
+        {
+            if ( !(node.Parent is TypeSyntax))
+            {
+
+            }
+
+
+
+            return base.VisitQualifiedName(node);
+        }
+
+
+        public override SyntaxNode VisitGenericName(GenericNameSyntax node)
+        {
+
+            var symbolInfo = semanticModel.GetSymbolInfo(node);
+
+            var typeInfo = semanticModel.GetTypeInfo(node);
+            //Console.WriteLine(symbolInfo.Symbol.GetType().FullName);
+            if (symbolInfo.Symbol is ITypeSymbol typeSymbol && TryGetReplaceType(node, typeSymbol, out var replacementType))
+            {
+                var typeArgumentList = VisitTypeArgumentList(node.TypeArgumentList) as TypeArgumentListSyntax;
+                node = node.WithIdentifier(SyntaxFactory.Identifier(replacementType.ToFullString()));
+                node = node.WithTypeArgumentList(typeArgumentList);
+                return node;
+            }
+            return base.VisitGenericName(node);
+        }
+
+        public override SyntaxNode VisitOmittedTypeArgument(OmittedTypeArgumentSyntax node)
+        {
+            return base.VisitOmittedTypeArgument(node);
+        }
+
+
+        public override SyntaxNode VisitArgument(ArgumentSyntax node)
+        {
+            return base.VisitArgument(node);
+        }
+
+
+
+        public override SyntaxToken VisitToken(SyntaxToken token)
+        {
+
+            return base.VisitToken(token);
+
+        }
+
+
+
+        public override SyntaxNode VisitBaseList(BaseListSyntax node)
+        {
+            List<BaseTypeSyntax> args = new List<BaseTypeSyntax>();
+            foreach (var arg in node.Types)
+            {
+                if (arg.Type is GenericNameSyntax baseType)
+                {
+                    var type = VisitGenericName(baseType) as GenericNameSyntax;
+                    args.Add(arg.WithType(type));
+                }
+                else
+                {
+                    var typeInfo = semanticModel.GetTypeInfo(arg.Type);
+                    if (typeInfo.Type != null && TryGetReplaceType(arg.Type, typeInfo.Type, out var replacementType))
+                    {
+                        var arg2 = replacementType.WithTriviaFrom(arg.Type);
+                        var v2 = arg.WithType(arg2);
+                        args.Add(v2);
+                    }
+                    else
+                    {
+                        args.Add(arg);
+                    }
+                }
+
+ 
+            }
+           return node.WithTypes(SyntaxFactory.SeparatedList(args));
+
+            return base.VisitBaseList(node);
+        }
+
+
+
+
+        /// <summary>
+        /// 列表，包括 泛型参数类型列表、方法参数列表、属性参数列表，BaseType列表
+        /// </summary>
+        /// <typeparam name="TNode"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public override SeparatedSyntaxList<TNode> VisitList<TNode>(SeparatedSyntaxList<TNode> list)
+        {
+            // AttributeSyntax AttributeArgumentSyntax ParameterSyntax VariableDeclaratorSyntax CollectionElementSyntax TypeParameterSyntax
+            //Console.WriteLine(list.GetType().FullName);
+            // 
+            if (list is  SeparatedSyntaxList<BaseTypeSyntax> baseTypeList)
+            {
+                List<TNode> args = new List<TNode>();
+                foreach (var arg in baseTypeList)
+                {
+                    var typeInfo = semanticModel.GetTypeInfo(arg.Type);
+                    if (typeInfo.Type != null && TryGetReplaceType(arg.Type, typeInfo.Type, out var replacementType))
+                    {
+                        var arg2 = replacementType.WithTriviaFrom(arg.Type);
+                        var v2 = arg.WithType(arg2);
+                        args.Add(v2 as TNode);
+                    }
+                    else
+                    {
+                        args.Add(arg as TNode);
+                    }
+                }
+                return SyntaxFactory.SeparatedList(args);
+            }
+
+            if (list is SeparatedSyntaxList<TypeSyntax> typeList)
+            {
+                List<TNode> args = new List<TNode>();
+                foreach (var arg in typeList)
+                {
+                    var typeInfo = semanticModel.GetTypeInfo(arg);
+                    if (typeInfo.Type != null && TryGetReplaceType(arg, typeInfo.Type, out var replacementType))
+                    {
+
+                        var arg2 = replacementType.WithTriviaFrom(arg);
+                        args.Add(arg2 as TNode);
+                    }
+                    else
+                    {
+                        args.Add(arg as TNode);
+                    }
+                }
+                return SyntaxFactory.SeparatedList(args);
+            }
+
+            return base.VisitList(list);
+        }
 
 
 
 
 
-
+        //public override SyntaxNode VisitTypeArgumentList(TypeArgumentListSyntax node)
+        //{
+        //    node = base.VisitTypeArgumentList(node) as TypeArgumentListSyntax;
+        //    List<TypeSyntax> args = new List<TypeSyntax>();
+        //    foreach (var arg in node.Arguments)
+        //    {
+        //        var typeInfo = semanticModel.GetTypeInfo(arg);
+        //        if (typeInfo.Type != null && TryGetReplaceType(arg, typeInfo.Type, out var replacementType))
+        //        {
+        //            var arg2 = replacementType.WithTriviaFrom(arg);
+        //            args.Add(arg2);
+        //        }
+        //        else
+        //        {
+        //            args.Add((arg ));
+        //        }
+        //    }
+        //    node = node.WithArguments(SyntaxFactory.SeparatedList(args));
+        //    return node;
+        //}
 
 
         /// <summary>
@@ -249,8 +522,8 @@ namespace Magnet.Syntax
             // 判断是否是 Thread.Sleep 方法
             if (methodSymbol != null && methodSymbol.IsStatic)
             {
-    
-                if (TryGetReplaceType(methodSymbol.ContainingType, out var newTypeSyntax))
+
+                if (TryGetReplaceType(node, methodSymbol.ContainingType, out var newTypeSyntax))
                 {
                     //构建新的 ThreadProxy.Sleep 调用
                     var newExpression = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, newTypeSyntax, SyntaxFactory.IdentifierName(methodSymbol.Name));
@@ -269,7 +542,7 @@ namespace Magnet.Syntax
             var memberSymbol = symbolInfo.Symbol as ISymbol;
             if (memberSymbol != null && memberSymbol.IsStatic && (memberSymbol.Kind == SymbolKind.Property || memberSymbol.Kind == SymbolKind.Field))
             {
-                if (TryGetReplaceType(memberSymbol.ContainingType, out var newTypeSyntax))
+                if (TryGetReplaceType(node, memberSymbol.ContainingType, out var newTypeSyntax))
                 {
                     return node.WithExpression(newTypeSyntax);
                 }
@@ -308,7 +581,7 @@ namespace Magnet.Syntax
                 {
                     var symbol = semanticModel.GetSymbolInfo(attribute).Symbol as IMethodSymbol;
                     var attr = attribute;
-                    if (TryGetReplaceType(symbol.ContainingType, out var newTypeSyntax))
+                    if (TryGetReplaceType(attribute, symbol.ContainingType, out var newTypeSyntax))
                     {
                         count++;
                         attr = attribute.WithName(newTypeSyntax);
@@ -341,7 +614,11 @@ namespace Magnet.Syntax
         public SyntaxNode VisitWith(SemanticModel model, SyntaxNode root)
         {
             semanticModel = model;
-            return base.Visit(root);
+            var ROOT = base.Visit(root);
+
+            //Console.WriteLine(ROOT.NormalizeWhitespace());
+
+            return ROOT;
         }
 
 

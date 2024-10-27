@@ -530,6 +530,11 @@ namespace Magnet
             if (this.Options.Mode == ScriptRunMode.Debug)
             {
                 emitOptions = emitOptions.WithDebugInformationFormat(DebugInformationFormat.PortablePdb);
+                //emitOptions = emitOptions.WithIncludePrivateMembers(true);
+                //emitOptions = emitOptions.WithRuntimeMetadataVersion("1.2.3");
+                //emitOptions = emitOptions.WithSubsystemVersion(SubsystemVersion.Create(11, 11));
+                //emitOptions = emitOptions.WithTolerateErrors(true);
+                
             }
             var result = compilation.Emit(_assemblyStream, _pdbStream, options: emitOptions);
             if (result.Success)

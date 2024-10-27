@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Security.AccessControl;
 
 namespace Magnet
 {
@@ -366,9 +367,22 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions AddReplaceType(String sourceType, String newType)
         {
-            ReplaceTypes.Add(sourceType, newType);
+            ReplaceTypes.Add(ClearGenericParameters(sourceType), ClearGenericParameters(newType));
             return this;
         }
+
+        /// <summary>
+        /// To replace the specified type in the script as the new type, you must use the full type name with namespace
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <param name="newType"></param>
+        /// <returns></returns>
+        public ScriptOptions AddReplaceType(String sourceType, Type newType)
+        {
+            ReplaceTypes.Add(ClearGenericParameters(sourceType), ClearGenericParameters(newType));
+            return this;
+        }
+
 
 
         /// <summary>
@@ -379,9 +393,19 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions AddReplaceType(Type sourceType, Type newType)
         {
-            ReplaceTypes.Add(sourceType.FullName, newType.FullName);
+            ReplaceTypes.Add(ClearGenericParameters(sourceType), ClearGenericParameters(newType));
             return this;
         }
+
+        private String ClearGenericParameters(String typeFullName)
+        {
+            return typeFullName.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
+        }
+        private String ClearGenericParameters(Type type)
+        {
+            return type.FullName.Split(['[', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
+        }
+
 
         /// <summary>
         /// Adds a reference to the assembly in which the generic type resides to the script

@@ -63,26 +63,19 @@ namespace Magnet.Syntax
         {
             var _typeFullName = "";
             var _namespace = "";
-            if (node is TupleTypeSyntax tuple)
-            {
-                foreach (var item in tuple.Elements)
-                {
-                    CheckType(item.Type);
-                }
-                return;
-            }
+
+            if (node is ArrayTypeSyntax) return;
+            if (node is PointerTypeSyntax) return;
+            if (node is NullableTypeSyntax) return;
+            if (node is TupleTypeSyntax) return;
+
             ITypeSymbol type = null;
-            // 参数
-            if (node is ParameterSyntax parameterSyntax)
+            if (type == null && node is ObjectCreationExpressionSyntax creationExpressionSyntax)
             {
-                var parameterSymbol = _semanticModel.GetDeclaredSymbol(node) as IParameterSymbol;
-                if (parameterSymbol != null)
-                {
-                    type = parameterSymbol.Type;
-                }
+                var typeInfo = _semanticModel.GetTypeInfo(creationExpressionSyntax);
+                type = typeInfo.Type;
             }
-            // 
-            if (type == null && node is TypeSyntax typeSyntax)
+            else if (type == null && node is TypeSyntax typeSyntax)
             {
                 var typeInfo = _semanticModel.GetTypeInfo(typeSyntax);
                 type = typeInfo.Type;
@@ -92,54 +85,34 @@ namespace Magnet.Syntax
                     type = symbol.Symbol.ContainingType;
                 }
             }
+            else
+            {
+                return;
+            }
             // new 对象类型
-            if (type == null && node is ObjectCreationExpressionSyntax creationExpressionSyntax)
-            {
-                var typeInfo = _semanticModel.GetTypeInfo(creationExpressionSyntax);
-                type = typeInfo.Type;
-            }
 
-            if (type == null)
+            if (type == null || type.Kind == SymbolKind.ErrorType)
             {
+                // 类型解析失败 如果ErrorType 则编译器不通过
                 Debugger.Break();
                 return;
             }
-            if (type.Kind == SymbolKind.ErrorType)
-            {
-                Debugger.Break();
-                // 解析类型失败，类型错误，不处理 等后面编译器处理
-                return;
-            }
+            // 过滤泛型类型参数T
+            if (type.Kind == SymbolKind.TypeParameter) return;
 
-            // 处理可空类型
+
+            // 处理可空类型?
             if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && type is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
             {
                 type = namedTypeSymbol.TypeArguments[0];
             }
 
-            //拆数组类型
-            while (type.Kind == SymbolKind.ArrayType || type.Kind == SymbolKind.PointerType)
-            {
-                if (type is IArrayTypeSymbol arrayTypeSymbol)
-                {
-                    type = arrayTypeSymbol.ElementType;
-                }
-                else if (type is IPointerTypeSymbol pointerTypeSymbol)
-                {
-                    type = pointerTypeSymbol.PointedAtType;
-                }
-            }
-
-            // 过滤泛型参数T
-            if (type.Kind != SymbolKind.TypeParameter)
-            {
-                _typeFullName = type.ToDisplayString();
-                _namespace = type.ContainingNamespace.ToDisplayString();
-            }
+            _typeFullName = type.ToDisplayString();
+            _namespace = type.ContainingNamespace?.ToDisplayString();
 
             if (!String.IsNullOrEmpty(_typeFullName))
             {
-                //Console.WriteLine($"{node.Location()} {_typeFullName}");
+                Console.WriteLine($"{node.Location()} {_typeFullName}");
                 CheckNamespace(node, _namespace);
 
                 var gl = _typeFullName.IndexOf('<');
@@ -156,13 +129,6 @@ namespace Magnet.Syntax
                     ReportDiagnosticInternal(InternalDiagnostics.IllegalTypes, node, _typeFullName);
                 }
             }
-            if (node is GenericNameSyntax generic)
-            {
-                foreach (var typeArg in generic.TypeArgumentList.Arguments)
-                {
-                    CheckType(typeArg);
-                }
-            }
         }
 
         /// <summary>
@@ -176,9 +142,45 @@ namespace Magnet.Syntax
             base.VisitNamespaceDeclaration(node);
         }
 
+        public override void VisitTupleElement(TupleElementSyntax node)
+        {
+            CheckType(node.Type);
 
+            base.VisitTupleElement(node);
+        }
 
+        public override void VisitNullableType(NullableTypeSyntax node)
+        {
+            CheckType(node.ElementType);
+            base.VisitNullableType(node);
+        }
 
+        public override void VisitTypeArgumentList(TypeArgumentListSyntax node)
+        {
+            foreach (var typeArg in node.Arguments)
+            {
+                CheckType(typeArg);
+            }
+            base.VisitTypeArgumentList(node);
+        }
+
+        public override void VisitArrayType(ArrayTypeSyntax node)
+        {
+            CheckType(node.ElementType);
+            base.VisitArrayType(node);
+        }
+
+        public override void VisitPointerType(PointerTypeSyntax node)
+        {
+            CheckType(node.ElementType);
+            base.VisitPointerType(node);
+        }
+
+        public override void VisitArgument(ArgumentSyntax node)
+        {
+            CheckType(node.Expression);
+            base.VisitArgument(node);
+        }
 
 
 
@@ -439,7 +441,11 @@ namespace Magnet.Syntax
         //}
         public override void VisitParameter(ParameterSyntax node)
         {
-            CheckType(node);
+            if (node.Type is TypeSyntax type)
+            {
+                CheckType(type);
+            }
+
             base.VisitParameter(node);
         }
 

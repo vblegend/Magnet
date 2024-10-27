@@ -16,6 +16,7 @@ namespace System.Threading
 
 
 
+
 [Script(nameof(ScriptA))]
 public class ScriptA : GameScript
 {
@@ -25,10 +26,17 @@ public class ScriptA : GameScript
     [Autowired]
     private readonly ScriptExample scriptExample;
 
-    public event Action callback;
+    public event Action ?callback;
 
-    [Script(nameof(ClassB))]
-    class ClassB : GameScript
+
+    public Thread saaaa { get; set; } = new Thread(() => { });
+
+    class ClassA<t>
+    {
+
+    }
+ 
+    class ClassB : ClassA<Thread>
     {
         [Autowired]
         private readonly ScriptExample scriptExample;
@@ -39,10 +47,13 @@ public class ScriptA : GameScript
 
     }
 
-
+    struct ABCD<T>
+    {
+       public T Value;
+    }
 
     [Function]
-    public void Main()
+    public unsafe void Main()
     {
         this.Print(KilledContext.Target);
 
@@ -53,7 +64,16 @@ public class ScriptA : GameScript
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
 
+        (Int32, Boolean) ddd = (123,true);
+
+        var s33 = new List<String>();
+
+        Thread saaaa = new Thread(() => { Print("123"); });
+        Thread[] ffff = new Thread[0];
+
+        ScriptA.ABCD<Thread> esd =  new ScriptA.ABCD<Thread>();
         var s = Thread.CurrentThread?.Priority;
+        Print(saaaa);
         scriptExample?.Hello("Wrold");
         UI.DIALOG(120)?.TO(Player);
 

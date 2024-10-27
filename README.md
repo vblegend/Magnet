@@ -381,10 +381,10 @@ Script<ScriptB>((script) =>
 ```
 
 ## 💥脚本调试断点
-使用debug模式编译运行脚本时，执行到此处将自动打开调试器并断点暂停。<br>
-release编译时此代码将被优化掉
+使用Debug模式编译运行脚本时，执行到`debugger()`将自动打开调试器并断点暂停。<br>
+Release模式编译时此函数将被编译器优化掉
 ``` csharp
-debugget();
+debugger();
 ```
 
 
