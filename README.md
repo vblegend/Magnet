@@ -131,7 +131,7 @@ options.AddReferences("System.Threading.dll");
 ```
 
 
-## 💥带有编译检查的类型与命名空间禁用
+## 💥带有编译检查的类型与命名空间禁用（开发中）
 如果脚本中使用了被禁用的类型或命名空间后，将会触发编译失败。 <br>
 ICompileResult.Diagnostics 内会包含诊断错误 同时 ICompileResult.Success = false
 ``` csahrp
