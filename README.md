@@ -118,7 +118,7 @@ options.WithDebug(false);
 ```
 
 ## 💥添加脚本的程序集引用
-
+你可以通过对象类型或程序集名称来将程序集添加到脚本的引用。
 ``` csharp
 // 添加 System.Threading 程序集的引用
 options.AddReferences<Thread>();
@@ -132,8 +132,13 @@ options.AddReferences("System.Threading.dll");
 
 
 ## 💥带有编译检查的类型与命名空间禁用
-如果脚本中使用了被禁用的类型或命名空间后，将会触发编译失败。 <br>
-ICompileResult.Diagnostics 内会包含诊断错误 同时 ICompileResult.Success = false
+Magnet提供了灵活的非法API检查定制<br>
+在这里你可以通过禁用某个命名空间下的对象类型或某个命名空间来阻止脚本对类型访问<br>
+如果脚本中使用了被禁用的类型或命名空间后，语法树检查其会触发编译失败。 <br>
+ICompileResult.Diagnostics 内会包含诊断错误 同时 ICompileResult.Success = false<br>
+
+`接下开会开发类型检查分析接口和语法分析接口，使Magnet完成更高度的定制化`<br>
+`如用户可以通过语法分析接口禁用元数据类型，如果脚本中使用了元数据类型从而导致编译失败。`
 ``` csharp
 //禁用类型
 options.DisableType(typeof(Task));
@@ -144,14 +149,21 @@ options.DisableType(typeof(List<String>));
 
 // 禁用范类型的基础类型
 options.DisableType("System.Collections.Generic.List");
-options.DisableGenericBaseType(typeof(List<>));
+options.DisableType(typeof(List<>));
+
+// 禁用命名空间
+//options.DisableNamespace(typeof(Thread));
+
+
 ```
 
 
 
 ## 💥对象类型替换器（开发中）
-在编译脚本阶段，将语法树上的类型替换为新的类型。<br>
-如果新类型的成员对象签名与原类型的不一致可能会抛出异常。
+Magnet提供了灵活的类型替换定制<br>
+你可以将.net自带的类型替换为你自己实现的类型<br>
+脚本在编译阶段，将脚本语法树中使用的指定类型替换为新的类型，如果可以你可以定制一个脚本使用的基础库。<br>
+需要注意的是 如果新类型的对象成员签名与原类型的不一致可能会导致编译失败。
 ``` csharp
 // 替换类型 将脚本内使用的Task 替换为MyTask
 options.AddReplaceType(typeof(Task), typeof(MyTask));
@@ -188,7 +200,9 @@ internal class TypeRewriter : ITypeRewriter
 
 
 ## 💥功能扩展分析器
-分析器实现了以下三个分析器接口，宿主可以通过分析器实现定制功能开发
+Magnet提供了分析器接口，<br>
+在这里你可以对脚本程序集内的所有对象类型进行分析从而实现自己的脚本定制功能<br>
+目前分析器实现了以下三个分析器接口，宿主可以通过分析器实现定制功能开发
 
 `完整例子查看 Magnet.Examples 的 App.Core.Timer.TimerProvider`
 
