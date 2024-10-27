@@ -27,7 +27,7 @@
 每个MagnetScript下所有脚本State都处于同一个AssemblyLoadContext下<br/>
 静态变量是所有State都可以访问的,所以在脚本中应慎重使用静态变量。
 
-``` csahrp
+``` csharp
 // ✔️正确案例
 [Script]
 public class ScriptExample : AbstractScript
@@ -66,7 +66,7 @@ public class ScriptExample : AbstractScript
 
 ## 💥脚本基础功能
 脚本编译的基础可选项。
-``` csahrp
+``` csharp
 // 脚本名称
 options.WithName(name);
 
@@ -88,7 +88,7 @@ options.WithAssemblyLoadCallback(AssemblyLoad);
 
 ## 💥脚本编译输入与输出
 支持仅编译、仅加载、从脚本编译加载模式。
-``` csahrp
+``` csharp
 // #1 仅编译，可输出
 options.WithCompileKind(CompileKind.Compile);
 options.WithOutPutFile("sample.dll");
@@ -105,7 +105,7 @@ options.WithScanDirectory("../../../../Scripts");
 
 ## 💥脚本编译优化与设置
 
-``` csahrp
+``` csharp
 
 // 调试模式 启用脚本内置debugger()函数
 options.WithDebug(true);
@@ -119,7 +119,7 @@ options.WithDebug(false);
 
 ## 💥添加脚本的程序集引用
 
-``` csahrp
+``` csharp
 // 添加 System.Threading 程序集的引用
 options.AddReferences<Thread>();
 
@@ -134,7 +134,7 @@ options.AddReferences("System.Threading.dll");
 ## 💥带有编译检查的类型与命名空间禁用
 如果脚本中使用了被禁用的类型或命名空间后，将会触发编译失败。 <br>
 ICompileResult.Diagnostics 内会包含诊断错误 同时 ICompileResult.Success = false
-``` csahrp
+``` csharp
 //禁用类型
 options.DisableType(typeof(Task));
 
@@ -152,7 +152,7 @@ options.DisableGenericBaseType(typeof(List<>));
 ## 💥对象类型替换器（开发中）
 在编译脚本阶段，将语法树上的类型替换为新的类型。<br>
 如果新类型的成员对象签名与原类型的不一致可能会抛出异常。
-``` csahrp
+``` csharp
 // 替换类型 将脚本内使用的Task 替换为MyTask
 options.AddReplaceType(typeof(Task), typeof(MyTask));
 
@@ -199,7 +199,7 @@ internal class TypeRewriter : ITypeRewriter
 | IInstanceAsalyzer | 和脚本实例分析器 | 脚本State创建时 | 
 
 
-``` csahrp
+``` csharp
 var timerProvider = new TimerProvider();
 
 // 增加一个分析器
@@ -231,7 +231,7 @@ public class TimerProvider : ITypeAnalyzer
 Magnet实现了简单的依赖注入功能，支持依赖的Type和Name匹配。
 
 1.全局依赖注入
-``` csahrp
+``` csharp
 // 注册依赖注入
 options.RegisterProvider(timerProvider);
 options.RegisterProvider<ObjectKilledContext>(new ObjectKilledContext());
@@ -250,7 +250,7 @@ var stateTest = scriptManager.CreateState(stateOptions);
 
 
 脚本
-``` csahrp
+``` csharp
 
 [Script]
 public class ScriptA : AbstractScript
