@@ -162,9 +162,9 @@ options.WithTypeRewriter(new TypeRewriter());
 // 类型重写器
 internal class TypeRewriter : ITypeRewriter
 {
-    public bool RewriteType(ITypeSymbol typeSymbolm, out Type newType)
+    public Boolean RewriteType(CSharpSyntaxNode syntaxNode, ITypeSymbol typeSymbol , out Type newType)
     {
-        if (typeSymbolm.ToDisplayString() == "System.Threading.Thread")
+        if (typeSymbol.ToDisplayString() == "System.Threading.Thread")
         {
             newType = typeof(NewThread);
             return true;
