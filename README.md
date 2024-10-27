@@ -131,7 +131,7 @@ options.AddReferences("System.Threading.dll");
 ```
 
 
-## 💥带有编译检查的类型与命名空间禁用（开发中）
+## 💥带有编译检查的类型与命名空间禁用
 如果脚本中使用了被禁用的类型或命名空间后，将会触发编译失败。 <br>
 ICompileResult.Diagnostics 内会包含诊断错误 同时 ICompileResult.Success = false
 ``` csahrp
@@ -149,7 +149,7 @@ options.DisableGenericBaseType(typeof(List<>));
 
 
 
-## 💥对象类型替换器
+## 💥对象类型替换器（开发中）
 在编译脚本阶段，将语法树上的类型替换为新的类型。<br>
 如果新类型的成员对象签名与原类型的不一致可能会抛出异常。
 ``` csahrp
