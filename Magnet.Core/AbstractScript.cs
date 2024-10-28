@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Magnet.Core
@@ -11,23 +12,21 @@ namespace Magnet.Core
     public abstract class AbstractScript : IScriptInstance
     {
 
+#if RELEASE
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
+        [NotNull]
         private IStateContext _stateContext;
 
         /// <summary>
         /// Gets the context of the script state
         /// </summary>
         /// <returns></returns>
+        [return: NotNull]
         public IStateContext GetStateContext()
         {
             return _stateContext;
         }
-
-
-        /// <summary>
-        /// Whether the current environment is in debug mode
-        /// </summary>
-        protected Boolean IsDebuging => _stateContext.RunMode == ScriptRunMode.Debug;
 
         /// <summary>
         /// Enter the debug breakpoint in debug mode
@@ -45,8 +44,7 @@ namespace Magnet.Core
             Debugger.Break();
         }
 
-
-
+        #region IScriptInstance
         void IScriptInstance.InjectedContext(IStateContext stateContext)
         {
             this._stateContext = stateContext;
@@ -62,6 +60,9 @@ namespace Magnet.Core
         {
             this.Shutdown();
         }
+        #endregion
+
+
 
         /// <summary>
         /// Script initialization 

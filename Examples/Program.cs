@@ -44,12 +44,13 @@ public static class Program
         options.WithScanDirectory("./");
         options.WithAssemblyFileName("123.dll");
 
-        // #3 从脚本文件编译并加载
+        // #3 从脚本文件编译并加载, 仅扫描顶层目录
         options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+        options.WithRecursiveScanning(false);
         options.WithScanDirectory("../../../../Scripts");
 
         // 定义自定义的编译宏符号
-        options.WithCompileSymbols("USE_FILE");
+        options.WithCompileSymbols("USE_FILE", "USE_PRINT");
 
         // 是否支持异步
         options.WithAllowAsync(false);
@@ -80,7 +81,7 @@ public static class Program
 
         // 替换类型
         // options.AddReplaceType(typeof(Task), typeof(MyTask));
-        options.AddReplaceType("ScriptA.ABCD", typeof(HashSet<String>));
+
         //禁用类型
         //options.DisableType(typeof(Thread));
 
@@ -100,6 +101,8 @@ public static class Program
 
         // 脚本类型重写器
         options.WithTypeRewriter(new TypeRewriter());
+        options.AddReplaceType("ScriptA.ABCD", typeof(HashSet<String>));
+
         // 使用默认的抑制诊断
         options.UseDefaultSuppressDiagnostics();
         // 脚本上下文依赖程序集加载Hook
@@ -124,15 +127,17 @@ public static class Program
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
-        RemoveDir("../../../../Scripts/obj");
-        RemoveDir("../../../../Scripts/bin");
-
 
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         scriptManager.Unloading += ScriptManager_Unloading;
         scriptManager.Unloaded += ScriptManager_Unloaded;
+        ICompileResult result = null;
 
-        var result = scriptManager.Compile();
+        using (new WatchTimer("Script Compile"))
+        {
+            result = scriptManager.Compile();
+        }
+
         foreach (var diagnostic in result.Diagnostics)
         {
             if (diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
@@ -150,6 +155,7 @@ public static class Program
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
                 using (new WatchTimer("With Call Main()")) main();
+                using (new WatchTimer("With Call Main()")) main();
                 main = null;
             }
 
@@ -157,10 +163,18 @@ public static class Program
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
+                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
+                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
+                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
                 lifeEvent = null;
             }
             stateTest = null;
             scriptManager.Unload(true);
+
+            using (new WatchTimer("time()"))
+            {
+                Console.WriteLine();
+            }
         }
 
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
@@ -176,24 +190,13 @@ public static class Program
 
     private static void ScriptManager_Unloaded(MagnetScript obj)
     {
-        Console.WriteLine($"脚本[{obj.Name}:{obj.UniqueId}]卸载完毕.");
+        Console.WriteLine($"脚本{obj}卸载完毕.");
     }
 
     private static void ScriptManager_Unloading(MagnetScript obj)
     {
-        Console.WriteLine($"脚本[{obj.Name}:{obj.UniqueId}]卸载请求.");
+        Console.WriteLine($"脚本{obj}卸载请求.");
     }
-
-
-    private static void RemoveDir(String dirPath)
-    {
-        var rootDir = Path.GetFullPath(dirPath);
-        if (Directory.Exists(rootDir))
-        {
-            Directory.Delete(rootDir, true);
-        }
-    }
-
 
 
     private static void CallLogin(IMagnetState state)

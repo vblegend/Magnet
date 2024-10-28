@@ -22,7 +22,7 @@ public class ScriptExample : AbstractScript
     [Function("Hello")]
     public void Hello(String name)
     {
-        this.Output(MessageType.Print, $"Hello {name}!");
+        //this.Output(MessageType.Print, $"Hello {name}!");
     }
 
 

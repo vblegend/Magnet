@@ -148,25 +148,31 @@ namespace App.Core
         #endregion
 
         #region PRINT
+
+        [Conditional("USE_PRINT")]
         public void Print(string message)
         {
             this.Output(MessageType.Print, message);
         }
 
+
+        [Conditional("USE_PRINT")]
         public void Print(Object message)
         {
             this.Output(MessageType.Print, $"{message}");
         }
 
+
+        [Conditional("USE_PRINT")]
         public void Print(string format, params object[] args)
         {
-            this.Print(message: String.Format(format, args));
+            this.Output(MessageType.Print, String.Format(format, args));
         }
         #endregion
 
 
 
-       
+
         #region Assert
         [Conditional("DEBUG")]
         [DebuggerHidden]

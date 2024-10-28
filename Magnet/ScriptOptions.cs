@@ -75,12 +75,13 @@ namespace Magnet
             }
         }
 
-
+        internal Boolean JustInTimePrewarming { get; private set; } = true;
 
         internal String Name { get; private set; } = "Magnet.Script";
         internal String OutPutFile { get; private set; }
-        internal ScriptRunMode Mode { get; private set; } = ScriptRunMode.Release;
+        internal OptimizationLevel Optimization { get; private set; } = OptimizationLevel.Release;
         internal String ScanDirectory { get; private set; }
+        internal Boolean RecursiveScanning { get; private set; }
         internal String ScriptFilePattern { get; private set; } = "*.cs";
         internal AssemblyLoadDelegate AssemblyLoad { get; private set; }
         internal List<String> Using { get; private set; } = [];
@@ -367,7 +368,7 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions AddReplaceType(String sourceType, String newType)
         {
-            ReplaceTypes.Add(ClearGenericParameters(sourceType), ClearGenericParameters(newType));
+            ReplaceTypes.Add(TypeUtils.CleanTypeName(sourceType), TypeUtils.CleanTypeName(newType));
             return this;
         }
 
@@ -379,10 +380,21 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions AddReplaceType(String sourceType, Type newType)
         {
-            ReplaceTypes.Add(ClearGenericParameters(sourceType), ClearGenericParameters(newType));
+            ReplaceTypes.Add(TypeUtils.CleanTypeName(sourceType), TypeUtils.CleanTypeName(newType));
             return this;
         }
 
+        /// <summary>
+        /// To replace the specified type in the script as the new type, you must use the full type name with namespace
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <param name="newType"></param>
+        /// <returns></returns>
+        public ScriptOptions AddReplaceType(Type sourceType, String newType)
+        {
+            ReplaceTypes.Add(TypeUtils.CleanTypeName(sourceType), TypeUtils.CleanTypeName(newType));
+            return this;
+        }
 
 
         /// <summary>
@@ -393,18 +405,10 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions AddReplaceType(Type sourceType, Type newType)
         {
-            ReplaceTypes.Add(ClearGenericParameters(sourceType), ClearGenericParameters(newType));
+            ReplaceTypes.Add(TypeUtils.CleanTypeName(sourceType), TypeUtils.CleanTypeName(newType));
             return this;
         }
 
-        private String ClearGenericParameters(String typeFullName)
-        {
-            return typeFullName.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
-        }
-        private String ClearGenericParameters(Type type)
-        {
-            return type.FullName.Split(['[', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
-        }
 
 
         /// <summary>
@@ -521,12 +525,26 @@ namespace Magnet
         /// </code>
         /// </summary>
         /// <param name="baseDirectory"></param>
+        /// <param name="isRecursiveScanning">是否递归扫描子目录</param>
         /// <returns></returns>
-        public ScriptOptions WithScanDirectory(String baseDirectory)
+        public ScriptOptions WithScanDirectory(String baseDirectory, Boolean isRecursiveScanning = false)
         {
             this.ScanDirectory = baseDirectory;
+            this.RecursiveScanning = isRecursiveScanning;
             return this;
         }
+
+        /// <summary>
+        /// Whether to recursively scan all self-directories in the “ScanDirectory” directory when compiling the script
+        /// </summary>
+        /// <param name="isRecursiveScanning">是否递归扫描子目录</param>
+        /// <returns></returns>
+        public ScriptOptions WithRecursiveScanning(Boolean isRecursiveScanning = false)
+        {
+            this.RecursiveScanning = isRecursiveScanning;
+            return this;
+        }
+
 
         /// <summary>
         /// input assembly name（Only used in LoadAssembly）
@@ -573,7 +591,7 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions WithDebug(Boolean useDebuggerBreak = true)
         {
-            this.Mode = ScriptRunMode.Debug;
+            this.Optimization = OptimizationLevel.Debug;
             this.UseDebugger = useDebuggerBreak;
             return this;
         }
@@ -585,7 +603,7 @@ namespace Magnet
         /// <returns></returns>
         public ScriptOptions WithRelease(Boolean useDebuggerBreak = false)
         {
-            this.Mode = ScriptRunMode.Release;
+            this.Optimization = OptimizationLevel.Release;
             this.UseDebugger = useDebuggerBreak;
             return this;
         }
@@ -672,6 +690,13 @@ namespace Magnet
 
             //script internal
             this.DisableType(typeof(IScriptInstance));
+            this.DisableType(typeof(ScriptMetadata));
+            this.DisableType(typeof(AutowriredField));
+            this.DisableType(typeof(ScriptExportMethod));
+
+
+
+
 
             return this;
         }

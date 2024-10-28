@@ -33,11 +33,6 @@ namespace Magnet.Core
         public AbstractScript InstanceOfName(String scriptName);
 
         /// <summary>
-        /// Script run mode
-        /// </summary>
-        public ScriptRunMode RunMode { get; }
-
-        /// <summary>
         /// Script information output stream
         /// </summary>
         public IOutput Output { get; }

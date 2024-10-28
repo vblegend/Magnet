@@ -1,5 +1,7 @@
 ﻿
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Magnet.Core
 {
     /// <summary>
@@ -27,6 +29,7 @@ namespace Magnet.Core
         /// get script state
         /// </summary>
         /// <returns></returns>
+        [return: NotNull]
         IStateContext GetStateContext();
     }
 }

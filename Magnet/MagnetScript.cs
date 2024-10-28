@@ -55,6 +55,8 @@ namespace Magnet
         Unloaded
     }
 
+
+
     /// <summary>
     /// Compile errors callback delegate
     /// </summary>
@@ -70,7 +72,7 @@ namespace Magnet
     /// <param name="assembly"></param>
     /// <param name="assemblyStream"></param>
     /// <param name="pdbStream"></param>
-    public delegate void CompileCompleteHandler(MagnetScript magnetScript, Assembly assembly, Stream assemblyStream, Stream pdbStream = null);
+    public delegate void CompileCompleteHandler(MagnetScript magnetScript, Assembly assembly, Stream assemblyStream);
 
     /// <summary>
     /// Magnet script compiler
@@ -93,8 +95,6 @@ namespace Magnet
         private CSharpCompilationOptions _compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         private ScriptLoadContext _scriptLoadContext;
         private readonly Dictionary<Int64, MagnetState> _survivalStates = new();
-        private MemoryStream _assemblyStream = null;
-        private MemoryStream _pdbStream = null;
 
         /// <summary>
         /// The unique ID of the assembly compiled by the script
@@ -219,7 +219,7 @@ namespace Magnet
             //this.compilationOptions = this.compilationOptions.WithDebugPlusMode(true);
             this._compilationOptions = this._compilationOptions.WithPlatform(this.Options.TargetPlatform);
             this._compilationOptions = this._compilationOptions.WithOutputKind(OutputKind.DynamicallyLinkedLibrary);
-            this._compilationOptions = this._compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Mode);
+            this._compilationOptions = this._compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Optimization);
             this._compilationOptions = this._compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             this._compilationOptions = this._compilationOptions.WithModuleName(this.Name);
 
@@ -229,8 +229,7 @@ namespace Magnet
             this._compilationOptions = this._compilationOptions.WithSpecificDiagnosticOptions(options.diagnosticSeveritys);
             _gcEventListener.OnGCFinalizers += GcEventListener_OnGCFinalizers;
             this.Analyzers = new AnalyzerCollection(Options.Analyzers);
-            this._assemblyStream = new MemoryStream();
-            this._pdbStream = (this.Options.Mode == ScriptRunMode.Debug) ? new MemoryStream() : null;
+
         }
 
         private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
@@ -290,67 +289,71 @@ namespace Magnet
                 throw new Exception("Wrong state");
             }
 
-            bool canCompile = (this.Options.CompileKind & CompileKind.Compile) == CompileKind.Compile;
-            bool canLoadAssembly = (this.Options.CompileKind & CompileKind.LoadAssembly) == CompileKind.LoadAssembly;
-            ICompileResult result = null;
-            if (canCompile)
-            {
+            bool needCompile = (this.Options.CompileKind & CompileKind.Compile) == CompileKind.Compile;
+            bool needLoadAssembly = (this.Options.CompileKind & CompileKind.LoadAssembly) == CompileKind.LoadAssembly;
 
-                var parseOptions = CSharpParseOptions.Default;
-                var symbols = new List<String>();
-                if (this.Options.Mode == ScriptRunMode.Debug) symbols.Add("DEBUG");
-                if (this.Options.UseDebugger) symbols.Add("USE_DEBUGGER");
-                if (this.Options.CompileSymbols != null && this.Options.CompileSymbols.Length > 0) symbols.AddRange(this.Options.CompileSymbols);
-                if (symbols.Count > 0)
-                {
-                    parseOptions = parseOptions.WithPreprocessorSymbols(symbols);
-                }
-                var rootDir = Path.GetFullPath(this.Options.ScanDirectory);
-                var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, SearchOption.AllDirectories);
-                var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file), parseOptions)).ToArray();
-                var syntaxTrees = new List<SyntaxTree>(Task.WhenAll(parseTasks).Result);
-                var assemblyInfo = $"[assembly: System.Reflection.AssemblyTitle(\"{this.Name}\")]\n[assembly: Magnet.Core.ScriptAssembly({this.UniqueId})]\n[assembly: System.Reflection.AssemblyVersion(\"1.0.0.0\")]\n[assembly: System.Reflection.AssemblyFileVersion(\"1.0.0.0\")]";
-                var targetFrameworkAttribute = (TargetFrameworkAttribute)typeof(Assembly).Assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute));
-                if (targetFrameworkAttribute != null)
-                {
-                    assemblyInfo += $"\n[assembly: System.Runtime.Versioning.TargetFramework(\"{targetFrameworkAttribute.FrameworkName}\", FrameworkDisplayName = \"{targetFrameworkAttribute.FrameworkDisplayName}\")]";
-                }
-                SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText(assemblyInfo);
-                syntaxTrees.Insert(0, assemblyAttribute);
-                this._assemblyStream = new MemoryStream();
-                this._pdbStream = (this.Options.Mode == ScriptRunMode.Debug) ? new MemoryStream() : null;
-                result = CompileSyntaxTree(syntaxTrees, canLoadAssembly);
-                if (result.Success && _assemblyStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
-                {
-                    this._assemblyStream.Seek(0, SeekOrigin.Begin);
-                    File.WriteAllBytes(Options.OutPutFile, _assemblyStream.ToArray());
-                }
-            }
-            if (canLoadAssembly)
+            ICompileResult result = null;
+
+            using (MemoryStream _assemblyStream = new MemoryStream())
             {
-                if (canCompile)
+                if (needCompile)
                 {
-                    if (result.Success)
+                    var parseOptions = CSharpParseOptions.Default;
+                    var symbols = new List<String>();
+                    if (this.Options.Optimization == OptimizationLevel.Debug) symbols.Add("DEBUG");
+                    if (this.Options.UseDebugger) symbols.Add("USE_DEBUGGER");
+                    if (this.Options.CompileSymbols != null && this.Options.CompileSymbols.Length > 0) symbols.AddRange(this.Options.CompileSymbols);
+                    if (symbols.Count > 0)
                     {
-                        this._assemblyStream?.Seek(0, SeekOrigin.Begin);
-                        this._pdbStream?.Seek(0, SeekOrigin.Begin);
-                        var assembly = _scriptLoadContext.LoadFromStream(_assemblyStream, _pdbStream);
-                        this.AssemblyLoaded(assembly);
+                        parseOptions = parseOptions.WithPreprocessorSymbols(symbols);
+                    }
+                    var rootDir = Path.GetFullPath(this.Options.ScanDirectory);
+                    var ScanOptions = this.Options.RecursiveScanning ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                    var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, ScanOptions);
+                    var parseTasks = scriptFiles.Select(file => ParseSyntaxTree(Path.GetFullPath(file), parseOptions)).ToArray();
+                    var syntaxTrees = new List<SyntaxTree>(Task.WhenAll(parseTasks).Result);
+                    var assemblyInfo = $"[assembly: System.Reflection.AssemblyTitle(\"{this.Name}\")]\n[assembly: Magnet.Core.ScriptAssembly({this.UniqueId})]\n[assembly: System.Reflection.AssemblyVersion(\"1.0.0.0\")]\n[assembly: System.Reflection.AssemblyFileVersion(\"1.0.0.0\")]";
+                    var targetFrameworkAttribute = (TargetFrameworkAttribute)typeof(Assembly).Assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute));
+                    if (targetFrameworkAttribute != null)
+                    {
+                        assemblyInfo += $"\n[assembly: System.Runtime.Versioning.TargetFramework(\"{targetFrameworkAttribute.FrameworkName}\", FrameworkDisplayName = \"{targetFrameworkAttribute.FrameworkDisplayName}\")]";
+                    }
+                    SyntaxTree assemblyAttribute = CSharpSyntaxTree.ParseText(assemblyInfo);
+                    syntaxTrees.Insert(0, assemblyAttribute);
+                    result = CompileSyntaxTree(syntaxTrees, _assemblyStream, needLoadAssembly);
+                    if (result.Success && _assemblyStream != null && !String.IsNullOrEmpty(Options.OutPutFile))
+                    {
+                        _assemblyStream.Seek(0, SeekOrigin.Begin);
+                        File.WriteAllBytes(Options.OutPutFile, _assemblyStream.ToArray());
                     }
                 }
-                else
+                if (needLoadAssembly)
                 {
-                    var assemblyFullPath = Path.GetFullPath(Path.Combine(this.Options.ScanDirectory, this.Options.AssemblyFileName));
-                    if (!File.Exists(assemblyFullPath)) throw new Exception($"Assembly file '{assemblyFullPath}' does not exist!");
-                    var assembly = _scriptLoadContext.LoadFromAssemblyPath(assemblyFullPath);
-                    this.AssemblyLoaded(assembly);
-                    result = new CompileResult(true, []);
+                    if (needCompile)
+                    {
+                        if (result.Success)
+                        {
+                            _assemblyStream?.Seek(0, SeekOrigin.Begin);
+                            var assembly = _scriptLoadContext.LoadFromStream(_assemblyStream);
+                            this.AssemblyLoaded(assembly);
+                        }
+                    }
+                    else
+                    {
+                        // load assembly from file
+                        var assemblyFullPath = Path.GetFullPath(Path.Combine(this.Options.ScanDirectory, this.Options.AssemblyFileName));
+                        if (!File.Exists(assemblyFullPath)) throw new Exception($"Assembly file '{assemblyFullPath}' does not exist!");
+                        var assembly = _scriptLoadContext.LoadFromAssemblyPath(assemblyFullPath);
+                        this.AssemblyLoaded(assembly);
+                        result = new CompileResult(true, []);
+                    }
                 }
             }
-            _assemblyStream?.Dispose();
-            _pdbStream?.Dispose();
             return result;
         }
+
+
+
 
         private void AssemblyLoaded(Assembly assembly)
         {
@@ -374,11 +377,6 @@ namespace Magnet
             this.Analyzers.DefineAssembly(assembly);
         }
 
-
-
-
-
-
         private void ParseScriptAutowriredFields(ScriptMetadata metaInfo)
         {
             var fieldList = new List<FieldInfo>();
@@ -400,8 +398,6 @@ namespace Magnet
             }
         }
 
-
-
         private void ParseScriptMethods(ScriptMetadata metaInfo)
         {
             var fieldList = new List<MethodInfo>();
@@ -417,13 +413,22 @@ namespace Magnet
                         var exportMethod = new ScriptExportMethod(methodInfo, String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias);
                         metaInfo.AddExportMethod(exportMethod.Alias, exportMethod);
                     }
+
+                    if (this.Options.JustInTimePrewarming)
+                    {
+                        if (!methodInfo.IsGenericMethod)
+                        {
+                            RuntimeHelpers.PrepareMethod(methodInfo.MethodHandle);
+                            //RuntimeHelpers.PrepareDelegate
+                        }
+
+                    }
+
+
                 }
                 type = type.BaseType;
             }
         }
-
-
-
 
         /// <summary>
         /// Create a script state machine
@@ -473,8 +478,31 @@ namespace Magnet
 
 
 
+        private Task<SyntaxTree> SyntaxTreeTypeRewrite(CSharpCompilation compilation, SyntaxTree syntaxTree, TypeResolver typeResolver)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                SyntaxTreeRewriter rewriter = new SyntaxTreeRewriter(typeResolver);
+                var semanticModel = compilation.GetSemanticModel(syntaxTree);
+                var newRoot = rewriter.VisitWith(semanticModel, syntaxTree.GetRoot());
+                return CSharpSyntaxTree.Create((CSharpSyntaxNode)newRoot, (CSharpParseOptions)syntaxTree.Options, syntaxTree.FilePath, Encoding.UTF8);
+            });
+        }
+
+        private Task<List<Diagnostic>> SyntaxTreeTypeCheck(CSharpCompilation compilation, SyntaxTree syntaxTree)
+        {
+            return Task.Factory.StartNew(() =>
+             {
+                 SyntaxTreeWalker walker = new SyntaxTreeWalker(this.Options);
+                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
+                 walker.VisitWith(semanticModel, syntaxTree.GetRoot());
+                 return walker.Diagnostics;
+             });
+        }
+
+
         // 使用 Roslyn 编译脚本
-        private ICompileResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees, Boolean loadAssembly)
+        private ICompileResult CompileSyntaxTree(List<SyntaxTree> syntaxTrees, Stream _assemblyStream, Boolean loadAssembly)
         {
             var libs = _importantAssemblies.Concat(Options.References);
             var references = AppDomain.CurrentDomain
@@ -490,32 +518,24 @@ namespace Magnet
                 options: this._compilationOptions
             );
 
-            // 检查是否有不允许的 API 调用
-            var diagnostics = new List<Diagnostic>();
             var typeResolver = new TypeResolver(this.Options);
-            var walker = new SyntaxTreeWalker(this.Options);
-            var rewriter = new SyntaxTreeRewriter(typeResolver);
-            // 从1开始 跳过程序集属性定义脚本树
-            for (int i = 1; i < syntaxTrees.Count; i++)
+            if (typeResolver.IsCanRewrite)
             {
-                var syntaxTree = syntaxTrees[i];
-                var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                // rewriter
-                var newRoot = rewriter.VisitWith(semanticModel, syntaxTree.GetRoot());
-                var newSyntaxTree = newRoot.SyntaxTree;
-                if (String.IsNullOrEmpty(newSyntaxTree.FilePath))
+                // 类型替换
+                var newTrees = syntaxTrees.Select(syntaxTree => SyntaxTreeTypeRewrite(compilation, syntaxTree, typeResolver)).ToArray();
+                var reWriteTrees = new List<SyntaxTree>(Task.WhenAll(newTrees).Result);
+                //替换语法树
+                for (int i = 1; i < syntaxTrees.Count; i++)
                 {
-                    newSyntaxTree = CSharpSyntaxTree.Create((CSharpSyntaxNode)newRoot, (CSharpParseOptions)syntaxTree.Options, syntaxTree.FilePath, Encoding.UTF8);
+                    compilation = compilation.ReplaceSyntaxTree(syntaxTrees[i], reWriteTrees[i]);
+                    syntaxTrees[i] = reWriteTrees[i];
                 }
-                compilation = compilation.ReplaceSyntaxTree(syntaxTree, newSyntaxTree);
-                semanticModel = compilation.GetSemanticModel(newSyntaxTree);
-                // walker
-                walker.VisitWith(semanticModel, newSyntaxTree.GetRoot());
             }
-            if (walker.Diagnostics.Count > 0)
-            {
-                diagnostics.AddRange(walker.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden));
-            }
+            // 类型检查，跳过第一个语法树（程序集属性定义）
+            var diagnosticsTasks = syntaxTrees.Skip(1).Select(syntaxTree =>  SyntaxTreeTypeCheck(compilation, syntaxTree)).ToArray();
+            var diagnostics = new List<Diagnostic>(Task.WhenAll(diagnosticsTasks).Result.SelectMany(e=>e));
+
+            // 如果有错误诊断定为编译失败。
             if (diagnostics.Any(e => e.Severity == DiagnosticSeverity.Error))
             {
                 return new CompileResult(false, diagnostics);
@@ -527,20 +547,19 @@ namespace Magnet
             //var result = emitStream(compilation, assemblyStream, pdbStream);
 
             var emitOptions = new EmitOptions();
-            if (this.Options.Mode == ScriptRunMode.Debug)
+            if (this.Options.Optimization == OptimizationLevel.Debug)
             {
-                emitOptions = emitOptions.WithDebugInformationFormat(DebugInformationFormat.PortablePdb);
-                //emitOptions = emitOptions.WithIncludePrivateMembers(true);
+                emitOptions = emitOptions.WithDebugInformationFormat(DebugInformationFormat.Embedded);
+                emitOptions = emitOptions.WithIncludePrivateMembers(true);
                 //emitOptions = emitOptions.WithRuntimeMetadataVersion("1.2.3");
                 //emitOptions = emitOptions.WithSubsystemVersion(SubsystemVersion.Create(11, 11));
                 //emitOptions = emitOptions.WithTolerateErrors(true);
-                
             }
-            var result = compilation.Emit(_assemblyStream, _pdbStream, options: emitOptions);
+            var result = compilation.Emit(_assemblyStream, options: emitOptions);
             if (result.Success)
             {
                 this.Status = ScrriptStatus.CompileComplete;
-                this.CompileComplete?.Invoke(this, null, _assemblyStream, _pdbStream);
+                this.CompileComplete?.Invoke(this, null, _assemblyStream);
             }
             else
             {
@@ -551,6 +570,13 @@ namespace Magnet
             return new CompileResult(result.Success, diagnostics);
         }
 
+
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return $"[{this.Name}:{this.UniqueId}]";
+        }
 
     }
 }

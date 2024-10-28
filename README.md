@@ -98,8 +98,9 @@ options.WithCompileKind(CompileKind.LoadAssembly);
 options.WithScanDirectory("./");
 options.WithAssemblyFileName("sample.dll");
 
-// #3 从脚本文件编译并加载
+// #3 从脚本文件编译并加载, 仅扫描顶层目录
 options.WithCompileKind(CompileKind.CompileAndLoadAssembly);
+options.WithRecursiveScanning(false);
 options.WithScanDirectory("../../../../Scripts");
 ```
 

@@ -12,8 +12,9 @@ public interface IVariableStore<T>
 
 internal class ClassVariables<TObject> : IVariableStore<TObject>
 {
-
+#if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
     private TObject[] Variables;
 
     public ClassVariables(Int32 capacity = 1024)
@@ -47,7 +48,7 @@ internal class ClassVariables<TObject> : IVariableStore<TObject>
 
 
 
-public class GlobalVariableStore 
+public class GlobalVariableStore
 {
     public readonly IVariableStore<String> S = new ClassVariables<String>();
     public readonly IVariableStore<Int64> I = new ClassVariables<Int64>();

@@ -2,6 +2,7 @@
 using Magnet.Core;
 using System;
 
+
 [Script(nameof(Systems))]
 public class Systems : GameScript
 {
@@ -22,7 +23,7 @@ public class Systems : GameScript
         }
         set
         {
-
+            
         }
     }
 

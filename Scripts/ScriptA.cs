@@ -26,7 +26,7 @@ public class ScriptA : GameScript
     [Autowired]
     private readonly ScriptExample scriptExample;
 
-    public event Action ?callback;
+    public event Action? callback;
 
 
     public System.Threading.Thread saaaa { get; set; } = new System.Threading.Thread(() => { });
@@ -35,7 +35,17 @@ public class ScriptA : GameScript
     {
 
     }
- 
+
+
+    protected override void Initialize()
+    {
+        var context = base.GetStateContext();
+        saaaa = context.GetProvider<System.Threading.Thread>();
+        base.Initialize();
+    }
+
+
+
     class ClassB : ClassA<Thread>
     {
         [Autowired]
@@ -44,13 +54,13 @@ public class ScriptA : GameScript
         private Thread thread;
     }
 
-    public delegate void NewThreadDelegate(Thread a  , Thread b);
+    public delegate void NewThreadDelegate(Thread a, Thread b);
 
 
 
     struct ABCD<T>
     {
-       public T Value;
+        public T Value;
     }
 
     [Function]
@@ -65,7 +75,7 @@ public class ScriptA : GameScript
         //var s = this as IScriptInstance;
         //this.PRINT(s.GetState());
 
-        (Int32, Boolean) ddd = (123,true);
+        (Int32, Boolean) ddd = (123, true);
 
         var s33 = new List<String>();
 
@@ -88,7 +98,7 @@ public class ScriptA : GameScript
         var ssss = esd1.GetType();
         Print(ssss);
 
-        Print(saaaa);
+        Print("typeof:{0} nameof:{1}", [t, n]);
         scriptExample?.Hello("Wrold");
         UI.DIALOG(120)?.TO(Player);
 

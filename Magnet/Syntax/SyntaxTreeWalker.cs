@@ -97,7 +97,7 @@ namespace Magnet.Syntax
             if (type == null || type.Kind == SymbolKind.ErrorType)
             {
                 // 类型解析失败 如果ErrorType 则编译器不通过
-                Console.WriteLine(node.Location());
+                //Console.WriteLine(node.Location());
                 Debugger.Break();
                 return;
             }
@@ -117,7 +117,7 @@ namespace Magnet.Syntax
 
             if (!String.IsNullOrEmpty(_typeFullName))
             {
-                Console.WriteLine($"{node.Location()} {_typeFullName}");
+                //Console.WriteLine($"{node.Location()} {_typeFullName}");
                 CheckNamespace(node, _namespace);
 
                 var gl = _typeFullName.IndexOf('<');
@@ -270,7 +270,6 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
             var hasScriptAttribute = false;
             var hasSubClassOfAbstractScript = false;
             if (HasAttribute(node, typeof(ScriptAttribute))) hasScriptAttribute = true;
@@ -279,11 +278,13 @@ namespace Magnet.Syntax
             {
                 if (!hasScriptAttribute)
                 {
+                    var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
                     ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning1, node, classSymbol.ToDisplayString());
                 }
 
                 if (!hasSubClassOfAbstractScript)
                 {
+                    var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
                     ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning2, node, classSymbol.ToDisplayString());
                 }
             }
@@ -493,7 +494,7 @@ namespace Magnet.Syntax
         /// <param name="node"></param>
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            var symbol = _semanticModel.GetDeclaredSymbol(node);
+            //var symbol = _semanticModel.GetDeclaredSymbol(node);
             if (node.Modifiers.Any(SyntaxKind.AsyncKeyword) && !_scriptOptions.AllowAsync)
             {
                 ReportDiagnosticInternal(InternalDiagnostics.AsyncUsageNotAllowed, node);
@@ -531,7 +532,7 @@ namespace Magnet.Syntax
         public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
             // 屏蔽 nameof 参数前缀
-            if (!(node.Parent is MemberAccessExpressionSyntax))
+            if (!(node.Parent is MemberAccessExpressionSyntax) && !(node.Parent is InvocationExpressionSyntax) && !(node.Parent is IncompleteMemberSyntax))
             {
                 CheckType(node.Name);
             }

@@ -2,6 +2,7 @@
 using Magnet.Tracker;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 
 
@@ -10,14 +11,41 @@ namespace Magnet
 {
     internal class MagnetStateContext : IStateContext, IDisposable
     {
-
+#if RELEASE
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         private MagnetScript _engine;
 
+#if RELEASE
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         private TrackerColllection _referenceTrackers;
 
+#if RELEASE
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         public Dictionary<String, Delegate> _delegateCache;
 
+#if RELEASE
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         private List<ObjectProvider> _providers;
+
+#if RELEASE
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
+        private List<IScriptInstance> _cache = new List<IScriptInstance>();
+
+#if RELEASE
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
+        private Dictionary<Type, ScriptCachedItem> _cacheByType = new Dictionary<Type, ScriptCachedItem>();
+
+#if RELEASE
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
+        private Dictionary<String, ScriptCachedItem> _cacheByString = new Dictionary<String, ScriptCachedItem>();
+
 
 
         internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
@@ -38,7 +66,6 @@ namespace Magnet
 
         public IOutput Output => _engine?.Options?.Output;
 
-        public ScriptRunMode RunMode => _engine.Options.Mode;
 
         public void Dispose()
         {
@@ -316,12 +343,6 @@ namespace Magnet
             public readonly ScriptMetadata Metadata;
         }
 
-
-
-        private List<IScriptInstance> _cache = new List<IScriptInstance>();
-        private Dictionary<Type, ScriptCachedItem> _cacheByType = new Dictionary<Type, ScriptCachedItem>();
-        private Dictionary<String, ScriptCachedItem> _cacheByString = new Dictionary<String, ScriptCachedItem>();
-
         internal void AddInstance(ScriptMetadata meta, AbstractScript script)
         {
             var metadata = new ScriptCachedItem(script, meta);
@@ -348,9 +369,14 @@ namespace Magnet
             return instance.Instance;
         }
 
-
+#if RELEASE
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         internal IReadOnlyList<IScriptInstance> Instances => _cache;
 
+#if RELEASE
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         internal IEnumerable<ScriptCachedItem> Instances2 => _cacheByString.Values;
 
 

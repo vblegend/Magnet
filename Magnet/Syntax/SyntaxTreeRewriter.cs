@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -284,15 +285,14 @@ namespace Magnet.Syntax
             {
                 return base.VisitIdentifierName(node);
             }
-
-
             var symbolInfo = semanticModel.GetSymbolInfo(node);
             if (symbolInfo.Symbol is ITypeSymbol type)
             {
                 if (TryGetReplaceType(node, type, out var replacementType))
                 {
                     //ParseNameSyntax(replacementType, out var _typeToken, out var _namespaceNameSyntax);
-                    Console.WriteLine(node.Location());
+                    //Console.WriteLine(node.Location());
+
                     replacementType = replacementType.WithTriviaFrom(node);
                     return replacementType;
                 }
@@ -656,15 +656,11 @@ namespace Magnet.Syntax
 
         public SyntaxNode VisitWith(SemanticModel model, SyntaxNode root)
         {
-            var sss = MakeNameSyntax("AAA.BBB.CCC.ClassA");
-
-            Console.WriteLine(sss.ToFullString());
-
+            //var sss = MakeNameSyntax("AAA.BBB.CCC.ClassA");
+            //Console.WriteLine(sss.ToFullString());
             semanticModel = model;
             var ROOT = base.Visit(root);
-
-            Console.WriteLine(ROOT.NormalizeWhitespace());
-
+            //Console.WriteLine(ROOT.NormalizeWhitespace());
             return ROOT;
         }
 
