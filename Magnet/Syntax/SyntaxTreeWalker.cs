@@ -280,9 +280,7 @@ namespace Magnet.Syntax
                 {
                     var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
                     ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning1, node, classSymbol.ToDisplayString());
-                }
-
-                if (!hasSubClassOfAbstractScript)
+                }else if (!hasSubClassOfAbstractScript)
                 {
                     var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
                     ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning2, node, classSymbol.ToDisplayString());

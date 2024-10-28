@@ -102,8 +102,5 @@ namespace Magnet.Syntax
                DiagnosticSeverity.Error,
                isEnabledByDefault: true);
 
-
-        
-
     }
 }

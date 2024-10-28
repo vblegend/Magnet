@@ -202,7 +202,7 @@ namespace Magnet
         {
             foreach (var meta in this._engine.scriptMetaInfos)
             {
-                var instance = (AbstractScript)Activator.CreateInstance(meta.ScriptType);
+                var instance = meta.Generater();  // (AbstractScript)Activator.CreateInstance(meta.ScriptType);
                 this._stateContext.AddInstance(meta, instance);
                 this._stateContext.RegisterProviderInternal(meta.ScriptType, instance);
                 _analyzers.DefineInstance(meta, instance, _stateContext);

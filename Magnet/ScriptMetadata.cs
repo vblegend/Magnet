@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Magnet.Core;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
 namespace Magnet
 {
+    public delegate AbstractScript ScriptGenerater();
+
 
     /// <summary>
     /// 
@@ -59,11 +62,19 @@ namespace Magnet
     /// </summary>
     public readonly struct ScriptMetadata
     {
-        internal ScriptMetadata(Type scriptType, String scriptAlias)
+        internal ScriptMetadata(Type scriptType, String scriptAlias, ScriptGenerater generater)
         {
             this.ScriptType = scriptType;
             this.ScriptAlias = scriptAlias;
+            this.Generater = generater;
         }
+
+
+        /// <summary>
+        /// 实例生成方法
+        /// </summary>
+        public readonly ScriptGenerater Generater;
+
         /// <summary>
         /// Type of the script object
         /// </summary>
