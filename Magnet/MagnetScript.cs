@@ -354,9 +354,35 @@ namespace Magnet
 
 
 
+        private void PrepareJIT(Assembly assembly)
+        {
+            var flags = BindingFlags.DeclaredOnly | BindingFlags.NonPublic |
+              BindingFlags.Public | BindingFlags.Instance |
+              BindingFlags.Static;
+            foreach (var type in assembly.GetTypes())
+            {
+                foreach (var method in type.GetMethods(flags))
+                {
+                    if (method.ContainsGenericParameters ||
+                        method.IsGenericMethod ||
+                        method.IsGenericMethodDefinition)
+                        continue;
+
+                    if ((method.Attributes & MethodAttributes.PinvokeImpl) > 0)
+                        continue;
+                    if (method.GetMethodBody() == null) continue;
+                    //Console.WriteLine(method.Name);
+                    RuntimeHelpers.PrepareMethod(method.MethodHandle);
+                }
+            }
+
+        }
+
+
 
         private void AssemblyLoaded(Assembly assembly)
         {
+            //this.PrepareJIT(assembly);
             var types = assembly.GetTypes();
             var baseType = typeof(AbstractScript);
             this.scriptMetaInfos = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
@@ -413,18 +439,6 @@ namespace Magnet
                         var exportMethod = new ScriptExportMethod(methodInfo, String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias);
                         metaInfo.AddExportMethod(exportMethod.Alias, exportMethod);
                     }
-
-                    if (this.Options.JustInTimePrewarming)
-                    {
-                        if (!methodInfo.IsGenericMethod)
-                        {
-                            RuntimeHelpers.PrepareMethod(methodInfo.MethodHandle);
-                            //RuntimeHelpers.PrepareDelegate
-                        }
-
-                    }
-
-
                 }
                 type = type.BaseType;
             }
@@ -532,8 +546,8 @@ namespace Magnet
                 }
             }
             // 类型检查，跳过第一个语法树（程序集属性定义）
-            var diagnosticsTasks = syntaxTrees.Skip(1).Select(syntaxTree =>  SyntaxTreeTypeCheck(compilation, syntaxTree)).ToArray();
-            var diagnostics = new List<Diagnostic>(Task.WhenAll(diagnosticsTasks).Result.SelectMany(e=>e));
+            var diagnosticsTasks = syntaxTrees.Skip(1).Select(syntaxTree => SyntaxTreeTypeCheck(compilation, syntaxTree)).ToArray();
+            var diagnostics = new List<Diagnostic>(Task.WhenAll(diagnosticsTasks).Result.SelectMany(e => e));
 
             // 如果有错误诊断定为编译失败。
             if (diagnostics.Any(e => e.Severity == DiagnosticSeverity.Error))

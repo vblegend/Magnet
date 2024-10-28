@@ -32,7 +32,7 @@ public static class Program
         // 调试模式 不启用脚本内置debugger()函数
         options.WithDebug(false);
         // 发布模式 编译优化
-        //options.WithRelease();
+        options.WithRelease();
 
 
         // #1 仅编译，可输出
@@ -162,8 +162,6 @@ public static class Program
             var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
-                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
-                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
                 lifeEvent = null;
