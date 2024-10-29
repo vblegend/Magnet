@@ -2,7 +2,9 @@
 using Magnet.Tracker;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 
 
@@ -29,22 +31,22 @@ namespace Magnet
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private List<ObjectProvider> _providers;
+        internal readonly List<IObjectProvider> _providers;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private List<IScriptInstance> _cache = new List<IScriptInstance>();
+        private readonly List<IScriptInstance> _cache;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private Dictionary<Type, ScriptCachedItem> _cacheByType = new Dictionary<Type, ScriptCachedItem>();
+        private readonly Dictionary<Type, ScriptCachedItem> _cacheByType;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private Dictionary<String, ScriptCachedItem> _cacheByString = new Dictionary<String, ScriptCachedItem>();
+        private readonly Dictionary<String, ScriptCachedItem> _cacheByString;
 
 
 
@@ -53,12 +55,18 @@ namespace Magnet
             this._engine = engine;
             this._providers = engine.Options.Providers;
 
+            var count = engine.scriptMetaTable.Count;
+            _cache = new List<IScriptInstance>(count);
+            _cacheByType = new Dictionary<Type, ScriptCachedItem>(count);
+            _cacheByString = new Dictionary<String, ScriptCachedItem>(count);
+
+
             if (stateOptions.Providers.Count > 0)
             {
-                this._providers = new List<ObjectProvider>(engine.Options.Providers);
+                this._providers = new List<IObjectProvider>(engine.Options.Providers);
                 foreach (var item in stateOptions.Providers)
                 {
-                    this.RegisterProviderInternal(item.Type, item.Instance, item.SlotName);
+                    this.RegisterProviderInternal(item.Type, item.Value, item.SlotName);
                 }
             }
             this._referenceTrackers = engine.ReferenceTrackers;
@@ -91,7 +99,7 @@ namespace Magnet
         /// <exception cref="InvalidOperationException"></exception>
         internal void RegisterProviderInternal(Type objectType, Object value, String slotName = null)
         {
-            var _object = new ObjectProvider() { Type = objectType, Instance = value, SlotName = slotName };
+            var _object = new ObjectProvider(objectType, value, slotName);
             if (String.IsNullOrWhiteSpace(slotName))
             {
                 _providers.Add(_object);
@@ -102,31 +110,14 @@ namespace Magnet
             }
         }
 
-        internal void Autowired<TObject>(AbstractScript instance, TObject @object, String slotName = null)
-        {
-            var instanceType = instance.GetType();
-            if (_cacheByType.TryGetValue(instanceType, out var scriptInstance))
-            {
-                var valType = typeof(TObject);
-                foreach (var field in scriptInstance.Metadata.AutowriredFields)
-                {
-                    if (valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
-                    {
-                        if (slotName == null || slotName == field.SlotName)
-                        {
-                            field.FieldInfo.SetValue(instance, @object);
-                        }
-                    }
-                }
-            }
-        }
+
 
         internal void Autowired(IReadOnlyDictionary<Type, Object> objectMap)
         {
             foreach (var pair in _cacheByType)
             {
                 var instance = pair.Value;
-                foreach (var field in instance.Metadata.AutowriredFields)
+                foreach (var field in instance.Metadata.AutowriredTable)
                 {
                     foreach (var obj in objectMap)
                     {
@@ -145,14 +136,14 @@ namespace Magnet
             var valType = typeof(TObject);
             foreach (var pair in _cacheByType)
             {
-                var instance = pair.Value;
-                foreach (var field in instance.Metadata.AutowriredFields)
+                var script = pair.Value;
+                foreach (var field in script.Metadata.AutowriredTable)
                 {
-                    if (valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
+                    if (!field.FieldInfo.IsStatic && valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
                     {
                         if (slotName == null || slotName == field.SlotName)
                         {
-                            field.FieldInfo.SetValue(instance, @object);
+                            field.FieldInfo.SetValue(script, @object);
                         }
                     }
                 }
@@ -161,25 +152,28 @@ namespace Magnet
 
 
 
-        internal void Autowired( AbstractScript instance, ScriptMetadata metadata)
+        internal void Autowired(AbstractScript instance, ScriptMeta metadata)
         {
-            foreach (var item in this._providers)
+            for (int i = 0; i < metadata.AutowriredTable.Count; i++)
             {
-                foreach (var field in metadata.AutowriredFields)
+                var field = metadata.AutowriredTable[i];
+                if (field.FieldInfo.IsStatic && field.IsFilled) continue;
+                for (int j = 0; j < this._providers.Count; j++)
                 {
+                    var item = this._providers[j];
                     if (item.Type == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(item.Type))
                     {
                         if (field.SlotName == null || field.SlotName == item.SlotName)
                         {
                             if (field.FieldInfo.IsStatic)
                             {
-                                field.FieldInfo.SetValue(null, item.Instance);
+                                field.FieldInfo.SetValue(null, item.Value);
+                                field.IsFilled = true;
                             }
                             else
                             {
-                                field.FieldInfo.SetValue(instance, item.Instance);
+                                field.FieldInfo.SetValue(instance, item.Value);
                             }
-
                             break;
                         }
                     }
@@ -205,7 +199,7 @@ namespace Magnet
 
             if (_cacheByString.TryGetValue(scriptName, out ScriptCachedItem instance))
             {
-                if (instance.Metadata.ExportMethods.TryGetValue(methodName, out var result))
+                if (instance.Metadata.ExportMethodTable.TryGetValue(methodName, out var result))
                 {
                     _delegate = Delegate.CreateDelegate(typeof(T), instance.Instance, result.MethodInfo);
                     this._delegateCache.TryAdd(key, _delegate);
@@ -318,7 +312,7 @@ namespace Magnet
                 {
                     if (String.IsNullOrEmpty(providerName) || provider.SlotName == providerName)
                     {
-                        return provider.Instance as T;
+                        return provider.Value as T;
                     }
                 }
             }
@@ -334,16 +328,16 @@ namespace Magnet
 
         internal readonly struct ScriptCachedItem
         {
-            public ScriptCachedItem(AbstractScript instance, ScriptMetadata metadata)
+            public ScriptCachedItem(AbstractScript instance, ScriptMeta metadata)
             {
                 this.Instance = instance;
                 this.Metadata = metadata;
             }
             public readonly AbstractScript Instance;
-            public readonly ScriptMetadata Metadata;
+            public readonly ScriptMeta Metadata;
         }
 
-        internal void AddInstance(ScriptMetadata meta, AbstractScript script)
+        internal void AddInstance(ScriptMeta meta, AbstractScript script)
         {
             var metadata = new ScriptCachedItem(script, meta);
             _cache.Add(script);

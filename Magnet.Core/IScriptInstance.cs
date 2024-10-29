@@ -1,5 +1,6 @@
 ﻿
 
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Magnet.Core
@@ -14,6 +15,14 @@ namespace Magnet.Core
         /// </summary>
         /// <param name="stateContext"></param>
         void InjectedContext(IStateContext stateContext);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="providers"></param>
+        void ProviderInject(List<IObjectProvider> providers);
+
+
 
         /// <summary>
         /// all script loaded , initialize

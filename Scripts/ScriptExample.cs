@@ -26,7 +26,7 @@ public class ScriptExample : AbstractScript
     }
 
 
-
+ 
     public Double Target
     {
         get

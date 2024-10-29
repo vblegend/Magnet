@@ -5,8 +5,32 @@ using System.Reflection;
 
 namespace Magnet
 {
-    public delegate AbstractScript ScriptGenerater();
 
+
+
+    internal class ObjectProvider : IObjectProvider
+    {
+        internal ObjectProvider(Type type, Object value, String slotName)
+        {
+            this.Type = type;
+            this.Value = value;
+            this.SlotName = slotName;
+        }
+        public readonly Type Type;
+        public readonly String SlotName;
+        public readonly Object Value;
+
+        Type IObjectProvider.Type => Type;
+
+        string IObjectProvider.SlotName => SlotName;
+
+        object IObjectProvider.Value => Value;
+
+        public bool TypeIs<T>(string slotName = null)
+        {
+            return typeof(T) == this.Type && (String.IsNullOrEmpty(slotName) || slotName == SlotName);
+        }
+    }
 
     /// <summary>
     /// 
@@ -32,7 +56,7 @@ namespace Magnet
     /// <summary>
     /// 
     /// </summary>
-    public readonly struct AutowriredField
+    public struct AutowriredField
     {
 
         internal AutowriredField(FieldInfo fieldInfo, Type requiredType, String slotName)
@@ -55,14 +79,21 @@ namespace Magnet
         /// Inject field information at a point
         /// </summary>
         public readonly FieldInfo FieldInfo;
+
+        internal Boolean IsStatic => this.FieldInfo.IsStatic;
+
+        internal Boolean IsFilled;
+
+
+
     }
 
     /// <summary>
     /// Meta information of the script
     /// </summary>
-    public readonly struct ScriptMetadata
+    public readonly struct ScriptMeta
     {
-        internal ScriptMetadata(Type scriptType, String scriptAlias, ScriptGenerater generater)
+        unsafe internal ScriptMeta(Type scriptType, String scriptAlias, delegate*<AbstractScript> generater)
         {
             this.ScriptType = scriptType;
             this.ScriptAlias = scriptAlias;
@@ -71,9 +102,9 @@ namespace Magnet
 
 
         /// <summary>
-        /// 实例生成方法
+        /// static method pointer for the ScriptType
         /// </summary>
-        public readonly ScriptGenerater Generater;
+        public readonly unsafe delegate*<AbstractScript> Generater;
 
         /// <summary>
         /// Type of the script object
@@ -87,21 +118,23 @@ namespace Magnet
         /// <summary>
         /// The injectable point of the script
         /// </summary>
-        public readonly IReadOnlyList<AutowriredField> AutowriredFields  = new List<AutowriredField>();
+        public readonly IReadOnlyList<AutowriredField> AutowriredTable = new List<AutowriredField>();
 
         /// <summary>
         /// Export method of script
         /// </summary>
-        public readonly IReadOnlyDictionary<String, ScriptExportMethod> ExportMethods = new Dictionary<string, ScriptExportMethod>();
+        public readonly IReadOnlyDictionary<String, ScriptExportMethod> ExportMethodTable = new Dictionary<string, ScriptExportMethod>();
+
+
 
         internal void AddExportMethod(String key, ScriptExportMethod method)
         {
-            (ExportMethods as Dictionary<string, ScriptExportMethod>).Add(key, method);
+            (ExportMethodTable as Dictionary<string, ScriptExportMethod>).Add(key, method);
         }
 
         internal void AddAutowriredField(AutowriredField field)
         {
-            (AutowriredFields as List<AutowriredField>).Add(field);
+            (AutowriredTable as List<AutowriredField>).Add(field);
         }
     }
 }

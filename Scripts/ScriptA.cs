@@ -20,11 +20,20 @@ namespace System.Threading
 [Script(nameof(ScriptA))]
 public class ScriptA : GameScript
 {
+    [Autowired("A")]
+    private readonly ScriptExample scriptExample11;
+
+    [Autowired(typeof(ScriptExample))]
+    private readonly ScriptExample scriptExample22;
+
+    [Autowired(typeof(ScriptExample), "B")]
+    private readonly ScriptExample scriptExample33;
+
     [Autowired]
     private readonly IKillContext KilledContext;
 
-    [Autowired]
-    private readonly ScriptExample scriptExample;
+    [Autowired(typeof(HumContext))]
+    private readonly IObjectContext objectContext;
 
     public event Action? callback;
 
@@ -33,7 +42,7 @@ public class ScriptA : GameScript
 
     class ClassA<t>
     {
-
+        
     }
 
 
@@ -99,7 +108,7 @@ public class ScriptA : GameScript
         Print(ssss);
 
         Print("typeof:{0} nameof:{1}", [t, n]);
-        scriptExample?.Hello("Wrold");
+        scriptExample11?.Hello("Wrold");
         UI.DIALOG(120)?.TO(Player);
 
         UI.DIALOG(120).TO(Player)

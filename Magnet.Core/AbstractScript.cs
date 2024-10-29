@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -198,6 +199,9 @@ namespace Magnet.Core
             if (script != null) callback(script);
         }
 
-
+        void IScriptInstance.ProviderInject(List<IObjectProvider> providers)
+        {
+ 
+        }
     }
 }

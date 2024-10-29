@@ -11,7 +11,8 @@
     <Version>1.0.5</Version>
     <Authors>Hanks</Authors>
     <Company>None</Company>
-    <PackageDescription>Magnet脚本引擎基础包.&#xA;Magnet scripting engine base package.</PackageDescription>
+    <PackageDescription>Magnet脚本引擎基础包.
+Magnet scripting engine base package.</PackageDescription>
     <RepositoryUrl>https://github.com/vblegend/Magnet</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Magnet(Core)</Title>

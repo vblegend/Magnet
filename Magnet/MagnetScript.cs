@@ -84,7 +84,7 @@ namespace Magnet
 
 
         internal ScriptOptions Options { get; private set; }
-        internal IReadOnlyList<ScriptMetadata> scriptMetaInfos = new List<ScriptMetadata>();
+        internal IReadOnlyList<ScriptMeta> scriptMetaTable = new List<ScriptMeta>();
         internal readonly AnalyzerCollection Analyzers;
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
@@ -184,7 +184,7 @@ namespace Magnet
             }
             this.Unloading?.Invoke(this);
             this.Unloading = null;
-            this.scriptMetaInfos = [];
+            this.scriptMetaTable = [];
             this._scriptLoadContext?.Unload();
             this.Status = ScrriptStatus.Unloading;
         }
@@ -380,17 +380,17 @@ namespace Magnet
 
 
 
-        private void AssemblyLoaded(Assembly assembly)
+        private unsafe void AssemblyLoaded(Assembly assembly)
         {
             //this.PrepareJIT(assembly);
             var types = assembly.GetTypes();
             var baseType = typeof(AbstractScript);
-            this.scriptMetaInfos = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
+            this.scriptMetaTable = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
                                     .Select(type =>
                                     {
                                         var generater = ParseGenerateScriptInstanceMethod(type);
                                         var attribute = type.GetCustomAttribute<ScriptAttribute>();
-                                        var scriptConfig = new ScriptMetadata(type, String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias, generater);
+                                        var scriptConfig = new ScriptMeta(type, String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias, generater);
                                         ParseScriptAutowriredFields(scriptConfig);
                                         ParseScriptMethods(scriptConfig);
                                         this.Analyzers.DefineType(type);
@@ -406,16 +406,23 @@ namespace Magnet
 
 
 
-        private ScriptGenerater ParseGenerateScriptInstanceMethod(Type scriptType)
+        private unsafe delegate*<AbstractScript> ParseGenerateScriptInstanceMethod(Type scriptType)
         {
             var generateMethod = scriptType.GetMethod(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD, BindingFlags.Static | BindingFlags.NonPublic);
-            return (ScriptGenerater)Delegate.CreateDelegate(typeof(ScriptGenerater), null, generateMethod);
+            IntPtr pointer = generateMethod.MethodHandle.GetFunctionPointer();
+            var methodPointer =  (delegate*<AbstractScript>)pointer;
+            // 预热
+            {
+                RuntimeHelpers.PrepareMethod(generateMethod.MethodHandle);
+                methodPointer();
+            }
+            return methodPointer;
         }
 
 
 
 
-        private void ParseScriptAutowriredFields(ScriptMetadata metaInfo)
+        private void ParseScriptAutowriredFields(ScriptMeta metaInfo)
         {
             var fieldList = new List<FieldInfo>();
             var type = metaInfo.ScriptType;
@@ -436,7 +443,7 @@ namespace Magnet
             }
         }
 
-        private void ParseScriptMethods(ScriptMetadata metaInfo)
+        private void ParseScriptMethods(ScriptMeta metaInfo)
         {
             var fieldList = new List<MethodInfo>();
             var type = metaInfo.ScriptType;

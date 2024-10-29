@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Security.AccessControl;
+
 
 namespace Magnet
 {
@@ -18,12 +18,7 @@ namespace Magnet
     /// <returns></returns>
     public delegate Assembly AssemblyLoadDelegate(AssemblyLoadContext context, AssemblyName assemblyName);
 
-    internal class ObjectProvider
-    {
-        public Type Type;
-        public String SlotName;
-        public Object Instance;
-    }
+
 
     /// <summary>
     /// script compile kind
@@ -311,7 +306,7 @@ namespace Magnet
             return this;
         }
 
-        internal List<ObjectProvider> Providers { get; private set; } = [];
+        internal List<IObjectProvider> Providers { get; private set; } = [];
 
 
         /// <summary>
@@ -343,9 +338,9 @@ namespace Magnet
             var type = typeof(T);
             foreach (var item in Providers)
             {
-                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Value) throw new InvalidOperationException();
             }
-            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
+            var _object = new ObjectProvider(type, value,slotName);
             if (String.IsNullOrWhiteSpace(slotName))
             {
                 Providers.Add(_object);
@@ -690,7 +685,7 @@ namespace Magnet
 
             //script internal
             this.DisableType(typeof(IScriptInstance));
-            this.DisableType(typeof(ScriptMetadata));
+            this.DisableType(typeof(ScriptMeta));
             this.DisableType(typeof(AutowriredField));
             this.DisableType(typeof(ScriptExportMethod));
 

@@ -46,7 +46,7 @@ namespace Magnet.Analysis
         }
 
 
-        public void DefineInstance(ScriptMetadata metadata, AbstractScript script, IStateContext context)
+        public void DefineInstance(ScriptMeta metadata, AbstractScript script, IStateContext context)
         {
             foreach (var analyzer in _instanceAnalyzers)
             {

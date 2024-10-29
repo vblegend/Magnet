@@ -23,7 +23,7 @@ namespace Magnet
         /// </summary>
         public Int64 Identity { get; set; } = -1;
 
-        internal List<ObjectProvider> Providers = [];
+        internal List<IObjectProvider> Providers = [];
 
         internal StateOptions WithIdentity(Int64 identity)
         {
@@ -45,9 +45,9 @@ namespace Magnet
             var type = typeof(T);
             foreach (var item in Providers)
             {
-                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Instance) throw new InvalidOperationException();
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Value) throw new InvalidOperationException();
             }
-            var _object = new ObjectProvider() { Type = type, Instance = value, SlotName = slotName };
+            var _object = new ObjectProvider(type, value,slotName);
             if (String.IsNullOrWhiteSpace(slotName))
             {
                 Providers.Add(_object);
@@ -198,11 +198,11 @@ namespace Magnet
         }
 
 
-        private void CreateState()
+        private unsafe void CreateState()
         {
-            foreach (var meta in this._engine.scriptMetaInfos)
+            foreach (var meta in this._engine.scriptMetaTable)
             {
-                var instance = meta.Generater();  // (AbstractScript)Activator.CreateInstance(meta.ScriptType);
+                var instance = meta.Generater();
                 this._stateContext.AddInstance(meta, instance);
                 this._stateContext.RegisterProviderInternal(meta.ScriptType, instance);
                 _analyzers.DefineInstance(meta, instance, _stateContext);
@@ -211,6 +211,7 @@ namespace Magnet
             foreach (var item in this._stateContext.Instances2)
             {
                 ((IScriptInstance)item.Instance).InjectedContext(this._stateContext);
+                //((IScriptInstance)item.Instance).ProviderInject(this._stateContext._providers);
                 this._stateContext.Autowired(item.Instance, item.Metadata);
             }
             // Exec Init Function

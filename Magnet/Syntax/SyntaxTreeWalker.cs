@@ -97,7 +97,7 @@ namespace Magnet.Syntax
             if (type == null || type.Kind == SymbolKind.ErrorType)
             {
                 // 类型解析失败 如果ErrorType 则编译器不通过
-                //Console.WriteLine(node.Location());
+                Console.WriteLine(node.Location());
                 Debugger.Break();
                 return;
             }
@@ -193,42 +193,45 @@ namespace Magnet.Syntax
         /// 构造函数
         /// </summary>
         /// <param name="node"></param>
-        public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
-        {
-            var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
-            if (containingClass == null) return;
-            var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
-            if (classSymbol == null) return;
-            if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
-            {
-                if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
-                {
-                    ReportDiagnosticInternal(InternalDiagnostics.IllegalConstructor, node, classSymbol.ToDisplayString());
-                }
-            }
-            base.VisitConstructorDeclaration(node);
-        }
+        //public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
+        //{
+        //    var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+        //    if (containingClass == null) return;
+        //    var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
+        //    if (classSymbol == null) return;
+        //    if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
+        //    {
+        //        if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
+        //        {
+
+
+
+        //            ReportDiagnosticInternal(InternalDiagnostics.IllegalConstructor, node, classSymbol.ToDisplayString());
+        //        }
+        //    }
+        //    base.VisitConstructorDeclaration(node);
+        //}
 
 
         /// <summary>
         /// 析构函数
         /// </summary>
         /// <param name="node"></param>
-        public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
-        {
-            var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
-            if (containingClass == null) return;
-            var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
-            if (classSymbol == null) return;
-            if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
-            {
-                if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
-                {
-                    ReportDiagnosticInternal(InternalDiagnostics.IllegalDestructor, node, classSymbol.ToDisplayString());
-                }
-            }
-            base.VisitDestructorDeclaration(node);
-        }
+        //public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
+        //{
+        //    var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+        //    if (containingClass == null) return;
+        //    var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
+        //    if (classSymbol == null) return;
+        //    if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
+        //    {
+        //        if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
+        //        {
+        //            ReportDiagnosticInternal(InternalDiagnostics.IllegalDestructor, node, classSymbol.ToDisplayString());
+        //        }
+        //    }
+        //    base.VisitDestructorDeclaration(node);
+        //}
 
 
 
@@ -284,6 +287,20 @@ namespace Magnet.Syntax
                 {
                     var classSymbol = _semanticModel.GetDeclaredSymbol(node) as INamedTypeSymbol;
                     ReportDiagnosticInternal(InternalDiagnostics.InvalidScriptWarning2, node, classSymbol.ToDisplayString());
+                }
+                else
+                {
+                    foreach (var member in node.Members)
+                    {
+                        if (member is ConstructorDeclarationSyntax constructor && constructor.Identifier.Text == "")
+                        {
+                            ReportDiagnosticInternal(InternalDiagnostics.IllegalConstructor, member, node.Identifier.Text);
+                        }
+                        else if (member is DestructorDeclarationSyntax destructor)
+                        {
+                            ReportDiagnosticInternal(InternalDiagnostics.IllegalDestructor, member, node.Identifier.Text);
+                        }
+                    }
                 }
             }
             base.VisitClassDeclaration(node);

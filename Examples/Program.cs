@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Threading;
 public static class Program
@@ -77,7 +78,7 @@ public static class Program
         // options.AddReplaceType(typeof(Task), typeof(MyTask));
 
         //禁用类型
-        //options.DisableType(typeof(Thread));
+        //options.DisableType(typeof(Type));
 
         // 禁用泛类型的严格类型
         //options.DisableType("System.Collections.Generic.List<string>");
@@ -118,70 +119,8 @@ public static class Program
     }
 
 
-    static  StateOptions _createStateOptions()
-    {
-        return new StateOptions();
-    }
-
-
-    private static void TestGenObject()
-    {
-
-
-        using (new WatchTimer("New "))
-        {
-            for (int i = 0; i < 10000000; i++)
-            {
-                var d = new StateOptions();
-            }
-        }
-
-        var t = typeof(Program);
-
-       var m = t.GetMethod("_createStateOptions", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-       var _delegate = (Func<Object>)Delegate.CreateDelegate(typeof(Func<Object>), null, m);
-
-
-        using (new WatchTimer("_createStateOptions"))
-        {
-            for (int i = 0; i < 10000000; i++)
-            {
-                var d1 = _delegate();
-            }
-        }
-
-
-
-        using (new WatchTimer("Activator.CreateInstance"))
-        {
-            var t1 = typeof(StateOptions);
-            for (int i = 0; i < 10000000; i++)
-            {
-                var d1 = Activator.CreateInstance(t1);
-            }
-        }
-        Console.WriteLine(m);
-
-
-
-
-
-
-    }
-
-
-
-
-
-
-
-
-
-
-
     public static void Main()
     {
-        TestGenObject();
         GLOBAL.S[1] = "This is Global String Variable.";
 
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
@@ -203,8 +142,17 @@ public static class Program
         }
         if (result.Success)
         {
+            using (new WatchTimer("CreateState 100000"))
+            {
+                for (int i = 0; i < 100000; i++)
+                {
+                    var stateOption1s = StateOptions.Default;
+                    stateOption1s.RegisterProvider(new TimerService());
+                    scriptManager.CreateState(stateOption1s);
+                }
+            }
+
             var stateOptions = StateOptions.Default;
-            stateOptions.Identity = 666;
             stateOptions.RegisterProvider(new TimerService());
             var stateTest = scriptManager.CreateState(stateOptions);
             var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
@@ -214,7 +162,6 @@ public static class Program
                 using (new WatchTimer("With Call Main()")) main();
                 main = null;
             }
-
             var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {

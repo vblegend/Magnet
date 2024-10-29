@@ -671,10 +671,21 @@ namespace Magnet.Syntax
             bool isAbstractClass = node.Modifiers.Any(SyntaxKind.AbstractKeyword);
             bool isStaticClass = node.Modifiers.Any(SyntaxKind.StaticKeyword);
 
+
             if (hasScriptAttribute && inheritsFromBaseScript && !isAbstractClass && !isStaticClass)
             {
-                var newClassNode = Generate_Script_Instance_Method(node);
-                return newClassNode;
+                //var fields = FindAutowiredFields(node);
+                var method1 = Generate_Script_Instance_Method(node);
+                //if (fields.Count > 0)
+                //{
+                //    // 这里根据fields创建相应的代码。
+                //    var method2 = GenerateConstructorMethod(node, fields);
+                //    node = node.WithBaseList(node.BaseList.AddTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(nameof(IScriptInstance)))));
+                //    node = node.AddMembers(method2);
+                //}
+                node = node.AddMembers(method1);
+                Console.WriteLine(node.NormalizeWhitespace());
+                return node;
             }
             return base.VisitClassDeclaration(node);
         }
@@ -718,18 +729,151 @@ namespace Magnet.Syntax
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private ClassDeclarationSyntax Generate_Script_Instance_Method(ClassDeclarationSyntax node)
+        private MethodDeclarationSyntax Generate_Script_Instance_Method(ClassDeclarationSyntax node)
         {
             //var attribute = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.ParseName(typeof(FactoryAttribute).FullName))));
-            var methodBody = SyntaxFactory.ParseStatement("return new " + node.Identifier.Text + "();");
+            var methodBody = SyntaxFactory.ParseStatement("return new " + node.Identifier.Text + "();"); // (providers)
             var modifiers = new SyntaxTokenList([SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)]);
             var methodName = SyntaxFactory.Identifier(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD);
             var returnType = SyntaxFactory.ParseTypeName("AbstractScript");
             var staticMethod = SyntaxFactory.MethodDeclaration(returnType, methodName)
                 .WithModifiers(modifiers)
                 //.WithAttributeLists(SyntaxFactory.SingletonList(attribute))
+                //.WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[]
+                //{
+                //       SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<Magnet.Core.IObjectProvider>")),
+                //}))
+                //)
                 .WithBody(SyntaxFactory.Block(methodBody));
-            return node.AddMembers(staticMethod);
+            return staticMethod;
+        }
+
+
+
+        private struct AutowiredField
+        {
+            public IFieldSymbol FieldSymbol;
+            public String Type;
+            public String SlotName;
+        }
+
+
+        private List<AutowiredField> FindAutowiredFields(ClassDeclarationSyntax classDeclaration)
+        {
+            List<AutowiredField> list = new List<AutowiredField>();
+            // 列出基类中的字段
+            var baseType = _semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+            while (baseType != null && baseType.SpecialType != SpecialType.System_Object)
+            {
+                var fields = baseType.GetMembers().OfType<IFieldSymbol>();
+                foreach (var field in fields)
+                {
+                    // 获取字段的属性
+                    var attributes = field.GetAttributes();
+                    foreach (var attribute in attributes)
+                    {
+                        // 检查是否是 Abs 属性
+                        if (attribute.AttributeClass?.Name == "AutowiredAttribute" &&
+                            attribute.AttributeClass?.ContainingNamespace?.ToString() == "Magnet.Core") // 请替换为实际命名空间
+                        {
+                            // 获取字段类型和名称
+                            var fieldType = field.Type.ToDisplayString();
+                            var fieldName = field.Name;
+
+
+                            var typeName = "";
+                            var slotName = "";
+                            foreach (TypedConstant arg in attribute.ConstructorArguments)
+                            {
+                                // 检查参数类型并根据类型赋值
+                                if (arg.Kind == TypedConstantKind.Type && arg.Value is INamedTypeSymbol typeSymbol)
+                                {
+                                    // 获取 Type 参数
+                                    typeName = typeSymbol.ToDisplayString();
+                                }
+                                else if (arg.Kind == TypedConstantKind.Primitive && arg.Value is string stringValue)
+                                {
+                                    // 获取 ProviderName 参数
+                                    slotName = stringValue;
+                                }
+                            }
+                            list.Add(new AutowiredField() { FieldSymbol = field, SlotName = slotName, Type = typeName });
+                        }
+                    }
+                }
+                baseType = baseType.BaseType;
+            }
+            return list;
+        }
+
+
+
+
+
+
+
+
+
+
+
+        /// <summary>
+        /// 构造方法
+        /// 本来想用构造方法实现注入，但脚本之间的对象注入没法实现，方法注入又不支持readonly字段
+        /// 构造函数可以加速20%
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private MethodDeclarationSyntax GenerateConstructorMethod(ClassDeclarationSyntax node, List<AutowiredField> fields)
+        {
+            // 获取标记了 [Autowired] 属性的字段信息
+
+            var statements = new List<StatementSyntax>();
+            var index = 0;
+            foreach (var filed in fields)
+            {
+                var fieldName = SyntaxFactory.IdentifierName(filed.FieldSymbol.Name);
+                var fieldType = SyntaxFactory.ParseTypeName(filed.FieldSymbol.Type.ToDisplayString());
+                var varName = "var" + index;
+                List<String> expressions = [];
+                // if (typeof(ScriptExample) == provider.GetType() && provider is ScriptExample var2 && slotName == "B")
+                expressions.Add($"item.Value is {fieldType} {varName}");
+
+                if (!String.IsNullOrEmpty(filed.Type))
+                {
+                    expressions.Add($"item.TypeIs<{filed.Type}>()");
+                }
+
+                if (!String.IsNullOrEmpty(filed.SlotName))
+                {
+                    expressions.Add($"item.SlotName == \"{filed.SlotName}\"");
+                }
+                var condition = SyntaxFactory.ParseExpression(String.Join(" && ", expressions));
+                var assignment = SyntaxFactory.ExpressionStatement(SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, fieldName, SyntaxFactory.IdentifierName(varName)));
+                var ifStatement = SyntaxFactory.IfStatement(condition, SyntaxFactory.Block(assignment));
+                statements.Add(ifStatement);
+                index++;
+            }
+            var fors = SyntaxFactory.ForEachStatement(SyntaxFactory.ParseTypeName("var"), "item", SyntaxFactory.IdentifierName("providers"), SyntaxFactory.Block(statements));
+            var method = SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), nameof(IScriptInstance.ProviderInject))
+                 .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[]
+                 {
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<IObjectProvider>")),
+                 })))
+                 .WithExplicitInterfaceSpecifier(SyntaxFactory.ExplicitInterfaceSpecifier(SyntaxFactory.IdentifierName(nameof(IScriptInstance))))
+                .WithBody(SyntaxFactory.Block(statements)
+                );
+            // .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+            //var method2 = SyntaxFactory.ConstructorDeclaration(node.Identifier.ValueText)
+            //      .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PrivateKeyword)))
+            //      .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[]
+            //      {
+            //            SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<IObjectProvider>")),
+            //      }))
+            //      );
+
+            method = method.WithBody(SyntaxFactory.Block(fors));
+
+            return method;//  node.AddMembers(method);
         }
 
     }
