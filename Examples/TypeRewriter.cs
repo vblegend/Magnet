@@ -3,11 +3,7 @@ using Magnet;
 using Magnet.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Scripting;
 using System;
-using System.Collections.Generic;
-using System.Threading;
-
 
 namespace ScriptRuner
 {
@@ -24,8 +20,8 @@ namespace ScriptRuner
 
             if (typeFullName == "ScriptA.ABCD")
             {
-                //newType = typeof(NewList<>);
-                //return true;
+                newType = typeof(NewList<>);
+                return true;
             }
 
             if (typeFullName == "System.Threading.Thread")

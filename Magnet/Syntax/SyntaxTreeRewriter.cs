@@ -674,8 +674,9 @@ namespace Magnet.Syntax
 
             if (hasScriptAttribute && inheritsFromBaseScript && !isAbstractClass && !isStaticClass)
             {
-                //var fields = FindAutowiredFields(node);
+                node = base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
                 var method1 = Generate_Script_Instance_Method(node);
+                //var fields = FindAutowiredFields(node);
                 //if (fields.Count > 0)
                 //{
                 //    // 这里根据fields创建相应的代码。
@@ -684,10 +685,9 @@ namespace Magnet.Syntax
                 //    node = node.AddMembers(method2);
                 //}
                 node = node.AddMembers(method1);
-                Console.WriteLine(node.NormalizeWhitespace());
                 return node;
             }
-            return base.VisitClassDeclaration(node);
+            return base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
         }
 
 
@@ -826,7 +826,6 @@ namespace Magnet.Syntax
         private MethodDeclarationSyntax GenerateConstructorMethod(ClassDeclarationSyntax node, List<AutowiredField> fields)
         {
             // 获取标记了 [Autowired] 属性的字段信息
-
             var statements = new List<StatementSyntax>();
             var index = 0;
             foreach (var filed in fields)
@@ -870,7 +869,7 @@ namespace Magnet.Syntax
             //            SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<IObjectProvider>")),
             //      }))
             //      );
-
+       
             method = method.WithBody(SyntaxFactory.Block(fors));
 
             return method;//  node.AddMembers(method);

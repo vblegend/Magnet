@@ -75,7 +75,7 @@ public static class Program
 
 
         // 替换类型
-        // options.AddReplaceType(typeof(Task), typeof(MyTask));
+        // options.AddReplaceType(typeof(Task), typeof(MyTask));.
 
         //禁用类型
         //options.DisableType(typeof(Type));
@@ -142,15 +142,15 @@ public static class Program
         }
         if (result.Success)
         {
-            using (new WatchTimer("CreateState 100000"))
-            {
-                for (int i = 0; i < 100000; i++)
-                {
-                    var stateOption1s = StateOptions.Default;
-                    stateOption1s.RegisterProvider(new TimerService());
-                    scriptManager.CreateState(stateOption1s);
-                }
-            }
+            //using (new WatchTimer("CreateState 100000"))
+            //{
+            //    for (int i = 0; i < 100000; i++)
+            //    {
+            //        var stateOption1s = StateOptions.Default;
+            //        stateOption1s.RegisterProvider(new TimerService());
+            //        scriptManager.CreateState(stateOption1s);
+            //    }
+            //}
 
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
