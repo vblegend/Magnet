@@ -39,7 +39,7 @@ public class QManage : GameScript, IPlayLifeEvent
 
         var s = System.Threading.Thread.CurrentThread?.Priority;
 
-        var t = typeof(System.Threading.Thread);
+ 
         var n = nameof(System.Threading.Thread);
 
         UI.DIALOG(120)?.TO(Player);

@@ -43,20 +43,20 @@ namespace Magnet
             this.Alias = alias;
         }
         /// <summary>
-        /// Script method alias
-        /// </summary>
-        public readonly String Alias;
-        /// <summary>
         /// Script method info
         /// </summary>
         public readonly MethodInfo MethodInfo;
+        /// <summary>
+        /// Script method alias
+        /// </summary>
+        public readonly String Alias;
     }
 
 
     /// <summary>
     /// 
     /// </summary>
-    public struct AutowriredField
+    public class AutowriredField
     {
 
         internal AutowriredField(FieldInfo fieldInfo, Type requiredType, String slotName)
@@ -64,7 +64,21 @@ namespace Magnet
             this.FieldInfo = fieldInfo;
             this.SlotName = slotName;
             this.RequiredType = requiredType;
+            this.IsStatic = fieldInfo.IsStatic;
         }
+        /// <summary>
+        /// Inject field information at a point
+        /// </summary>
+        public readonly FieldInfo FieldInfo;
+
+        /// <summary>
+        /// Field is static
+        /// </summary>
+        public readonly Boolean IsStatic;
+
+        internal Boolean IsFilled;
+
+
         /// <summary>
         /// Slot name of the injection point, any matching type if empty
         /// </summary>
@@ -75,14 +89,10 @@ namespace Magnet
         /// </summary>
         public readonly Type RequiredType;
 
-        /// <summary>
-        /// Inject field information at a point
-        /// </summary>
-        public readonly FieldInfo FieldInfo;
 
-        internal Boolean IsStatic => this.FieldInfo.IsStatic;
 
-        internal Boolean IsFilled;
+
+
 
 
 

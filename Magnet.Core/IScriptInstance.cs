@@ -17,7 +17,7 @@ namespace Magnet.Core
         void InjectedContext(IStateContext stateContext);
 
         /// <summary>
-        /// 
+        /// 实验用的，没啥用
         /// </summary>
         /// <param name="providers"></param>
         void ProviderInject(List<IObjectProvider> providers);

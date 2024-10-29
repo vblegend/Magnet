@@ -95,8 +95,8 @@ public class ScriptA : GameScript
 
 
         ABCD<Thread> esd1 = new ABCD<Thread>();
-        NewList<App.Core.Types.NewThread> esd2 = new NewList<App.Core.Types.NewThread>();
-        esd2.Add(new App.Core.Types.NewThread(null));
+        List<Thread> esd2 = new List<Thread>();
+        esd2.Add(new Thread(() => { }));
 
         var s = System.Threading.Thread.CurrentThread?.Priority;
 

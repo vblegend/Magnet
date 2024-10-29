@@ -27,7 +27,7 @@ public static class Program
         // 调试模式 不启用脚本内置debugger()函数
         options.WithDebug(false);
         // 发布模式 编译优化
-        options.WithRelease();
+        //options.WithRelease();
 
 
         // #1 仅编译，可输出
@@ -158,8 +158,10 @@ public static class Program
             var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
-                using (new WatchTimer("With Call Main()")) main();
-                using (new WatchTimer("With Call Main()")) main();
+                using (new WatchTimer("With Call Main()"))
+                    for (int i = 0; i < 10000; i++) {
+                     main();
+                }
                 main = null;
             }
             var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
