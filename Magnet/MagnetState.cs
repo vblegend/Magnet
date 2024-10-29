@@ -194,25 +194,26 @@ namespace Magnet
             this.Identity = createStateOptions.Identity;
             this._engine = engine;
             this._stateContext = new MagnetStateContext(engine, createStateOptions);
+            this._stateContext.RegisterProviderInternal(typeof(IStateContext), this._stateContext, "Script-Context");
+
             this.CreateState();
         }
 
 
         private unsafe void CreateState()
         {
-            foreach (var meta in this._engine.scriptMetaTable)
+            foreach (var meta in this._engine.scriptMetaTables)
             {
                 var instance = meta.Generater();
-                this._stateContext.AddInstance(meta, instance);
-                this._stateContext.RegisterProviderInternal(meta.ScriptType, instance);
+                instance.MetaTable = meta;
+                this._stateContext.AddInstance(instance);
+                this._stateContext.RegisterProviderInternal(meta.Type, instance);
                 _analyzers.DefineInstance(meta, instance, _stateContext);
             }
-            //Injected Data
-            foreach (var item in this._stateContext.Instances2)
+            //Inject
+            foreach (var instance in this._stateContext.Instances)
             {
-                ((IScriptInstance)item.Instance).InjectedContext(this._stateContext);
-                //((IScriptInstance)item.Instance).ProviderInject(this._stateContext._providers);
-                this._stateContext.Autowired(item.Instance, item.Metadata);
+                this._stateContext.Autowired((AbstractScript)instance);
             }
             // Exec Init Function
             foreach (var instance in this._stateContext.Instances)

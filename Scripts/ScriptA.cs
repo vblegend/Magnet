@@ -92,7 +92,7 @@ public class ScriptA : GameScript
         Thread[] ffff = new Thread[0];
 
         System.Threading.Tasks.Task task = new System.Threading.Tasks.Task(() => { });
-
+        
 
         ABCD<Thread> esd1 = new ABCD<Thread>();
         List<Thread> esd2 = new List<Thread>();

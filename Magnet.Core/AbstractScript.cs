@@ -4,9 +4,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("Magnet")]
 
 namespace Magnet.Core
 {
+
+
     /// <summary>
     /// Base script object, script object needs to inherit this type, provides some basic scripting mechanisms
     /// </summary>
@@ -16,8 +19,16 @@ namespace Magnet.Core
 #if RELEASE
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
+        internal ScriptMetaTable MetaTable;
+
+#if RELEASE
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#endif
         [NotNull]
+        [Autowired("Script-Context")]
         private IStateContext _stateContext;
+
+
 
         /// <summary>
         /// Gets the context of the script state
@@ -46,11 +57,6 @@ namespace Magnet.Core
         }
 
         #region IScriptInstance
-        void IScriptInstance.InjectedContext(IStateContext stateContext)
-        {
-            this._stateContext = stateContext;
-        }
-
 
         void IScriptInstance.Initialize()
         {
@@ -199,9 +205,5 @@ namespace Magnet.Core
             if (script != null) callback(script);
         }
 
-        void IScriptInstance.ProviderInject(List<IObjectProvider> providers)
-        {
- 
-        }
     }
 }

@@ -14,6 +14,6 @@ namespace Magnet.Analysis
         /// <param name="metadata"></param>
         /// <param name="script"></param>
         /// <param name="context"></param>
-        void DefineInstance(ScriptMeta metadata , AbstractScript script, IStateContext context);
+        void DefineInstance(ScriptMetaTable metadata , AbstractScript script, IStateContext context);
     }
 }

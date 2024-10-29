@@ -685,9 +685,9 @@ namespace Magnet
 
             //script internal
             this.DisableType(typeof(IScriptInstance));
-            this.DisableType(typeof(ScriptMeta));
+            this.DisableType(typeof(ScriptMetaTable));
             this.DisableType(typeof(AutowriredField));
-            this.DisableType(typeof(ScriptExportMethod));
+            this.DisableType(typeof(ExportMethod));
 
 
 

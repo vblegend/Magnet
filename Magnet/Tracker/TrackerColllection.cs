@@ -11,7 +11,7 @@ namespace Magnet.Tracker
     {
 
         // 使用 List 来存储 ReferenceTracker 实例
-        private readonly List<ReferenceTracker> _trackers = new List<ReferenceTracker>();
+        private readonly List<ReferenceTracker> _trackers = new List<ReferenceTracker>(512);
         private readonly object lockedObject = new object();
 
 
@@ -33,7 +33,6 @@ namespace Magnet.Tracker
             {
                 if (trackObject != null) _trackers.Add(new ReferenceTracker(trackObject));
             }
-
         }
 
 

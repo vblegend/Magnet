@@ -3,41 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Magnet
+namespace Magnet.Core
 {
-
-
-
-    internal class ObjectProvider : IObjectProvider
-    {
-        internal ObjectProvider(Type type, Object value, String slotName)
-        {
-            this.Type = type;
-            this.Value = value;
-            this.SlotName = slotName;
-        }
-        public readonly Type Type;
-        public readonly String SlotName;
-        public readonly Object Value;
-
-        Type IObjectProvider.Type => Type;
-
-        string IObjectProvider.SlotName => SlotName;
-
-        object IObjectProvider.Value => Value;
-
-        public bool TypeIs<T>(string slotName = null)
-        {
-            return typeof(T) == this.Type && (String.IsNullOrEmpty(slotName) || slotName == SlotName);
-        }
-    }
 
     /// <summary>
     /// 
     /// </summary>
-    public readonly struct ScriptExportMethod
+    public class ExportMethod
     {
-        internal ScriptExportMethod(MethodInfo methodInfo, String alias)
+        internal ExportMethod(MethodInfo methodInfo, String alias)
         {
             this.MethodInfo = methodInfo;
             this.Alias = alias;
@@ -59,17 +33,21 @@ namespace Magnet
     public class AutowriredField
     {
 
-        internal AutowriredField(FieldInfo fieldInfo, Type requiredType, String slotName)
+        internal AutowriredField(FieldInfo fieldInfo, Action<AbstractScript, Object> setter, Type requiredType, String slotName)
         {
             this.FieldInfo = fieldInfo;
             this.SlotName = slotName;
             this.RequiredType = requiredType;
             this.IsStatic = fieldInfo.IsStatic;
+            this.Setter = setter;
         }
         /// <summary>
         /// Inject field information at a point
         /// </summary>
         public readonly FieldInfo FieldInfo;
+
+
+        public readonly Action<AbstractScript, Object> Setter;
 
         /// <summary>
         /// Field is static
@@ -88,28 +66,21 @@ namespace Magnet
         /// The type of data required for the injection point
         /// </summary>
         public readonly Type RequiredType;
-
-
-
-
-
-
-
-
     }
 
     /// <summary>
     /// Meta information of the script
     /// </summary>
-    public readonly struct ScriptMeta
+    public class ScriptMetaTable
     {
-        unsafe internal ScriptMeta(Type scriptType, String scriptAlias, delegate*<AbstractScript> generater)
+        unsafe internal ScriptMetaTable(Type scriptType, String scriptAlias, delegate*<AbstractScript> generater, Dictionary<String, ExportMethod> exportMethods, List<AutowriredField> autowriredTables)
         {
-            this.ScriptType = scriptType;
-            this.ScriptAlias = scriptAlias;
+            this.Type = scriptType;
+            this.Alias = scriptAlias;
             this.Generater = generater;
+            this.ExportMethods = exportMethods;
+            this.AutowriredTables = autowriredTables;
         }
-
 
         /// <summary>
         /// static method pointer for the ScriptType
@@ -117,34 +88,23 @@ namespace Magnet
         public readonly unsafe delegate*<AbstractScript> Generater;
 
         /// <summary>
-        /// Type of the script object
+        /// Type of the script
         /// </summary>
-        public readonly Type ScriptType;
+        public readonly Type Type;
+
         /// <summary>
-        /// Alias of the script object
+        /// Alias of the script
         /// </summary>
-        public readonly String ScriptAlias;
+        public readonly String Alias;
 
         /// <summary>
         /// The injectable point of the script
         /// </summary>
-        public readonly IReadOnlyList<AutowriredField> AutowriredTable = new List<AutowriredField>();
+        public readonly IReadOnlyList<AutowriredField> AutowriredTables;
 
         /// <summary>
         /// Export method of script
         /// </summary>
-        public readonly IReadOnlyDictionary<String, ScriptExportMethod> ExportMethodTable = new Dictionary<string, ScriptExportMethod>();
-
-
-
-        internal void AddExportMethod(String key, ScriptExportMethod method)
-        {
-            (ExportMethodTable as Dictionary<string, ScriptExportMethod>).Add(key, method);
-        }
-
-        internal void AddAutowriredField(AutowriredField field)
-        {
-            (AutowriredTable as List<AutowriredField>).Add(field);
-        }
+        public readonly IReadOnlyDictionary<String, ExportMethod> ExportMethods;
     }
 }

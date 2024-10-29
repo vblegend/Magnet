@@ -142,26 +142,38 @@ public static class Program
         }
         if (result.Success)
         {
-            //using (new WatchTimer("CreateState 100000"))
-            //{
-            //    for (int i = 0; i < 100000; i++)
-            //    {
-            //        var stateOption1s = StateOptions.Default;
-            //        stateOption1s.RegisterProvider(new TimerService());
-            //        scriptManager.CreateState(stateOption1s);
-            //    }
-            //}
+
 
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
             var stateTest = scriptManager.CreateState(stateOptions);
+
+
+            for (int y = 0; y < 10; y++)
+            {
+                using (new WatchTimer("CreateState 100000"))
+                {
+                    for (int i = 0; i < 100000; i++)
+                    {
+                        var stateOption1s = StateOptions.Default;
+                        stateOption1s.RegisterProvider(new TimerService());
+                        scriptManager.CreateState(stateOption1s);
+                    }
+                }
+            }
+
+
+
+
             var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
                 using (new WatchTimer("With Call Main()"))
-                    for (int i = 0; i < 10000; i++) {
-                     main();
-                }
+                    for (int i = 0; i < 10; i++)
+                    {
+                        main();
+                    }
+ 
                 main = null;
             }
             var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();

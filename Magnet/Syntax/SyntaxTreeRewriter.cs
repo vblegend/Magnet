@@ -853,7 +853,7 @@ namespace Magnet.Syntax
                 index++;
             }
             var fors = SyntaxFactory.ForEachStatement(SyntaxFactory.ParseTypeName("var"), "item", SyntaxFactory.IdentifierName("providers"), SyntaxFactory.Block(statements));
-            var method = SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), nameof(IScriptInstance.ProviderInject))
+            var method = SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), nameof(IScriptInstance.Initialize))
                  .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[]
                  {
                         SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<IObjectProvider>")),

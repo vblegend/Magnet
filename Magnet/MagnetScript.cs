@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
@@ -84,7 +85,7 @@ namespace Magnet
 
 
         internal ScriptOptions Options { get; private set; }
-        internal IReadOnlyList<ScriptMeta> scriptMetaTable = new List<ScriptMeta>();
+        internal IReadOnlyList<ScriptMetaTable> scriptMetaTables = new List<ScriptMetaTable>();
         internal readonly AnalyzerCollection Analyzers;
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
@@ -184,7 +185,7 @@ namespace Magnet
             }
             this.Unloading?.Invoke(this);
             this.Unloading = null;
-            this.scriptMetaTable = [];
+            this.scriptMetaTables = [];
             this._scriptLoadContext?.Unload();
             this.Status = ScrriptStatus.Unloading;
         }
@@ -385,14 +386,14 @@ namespace Magnet
             //this.PrepareJIT(assembly);
             var types = assembly.GetTypes();
             var baseType = typeof(AbstractScript);
-            this.scriptMetaTable = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
+            this.scriptMetaTables = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
                                     .Select(type =>
                                     {
                                         var generater = ParseGenerateScriptInstanceMethod(type);
                                         var attribute = type.GetCustomAttribute<ScriptAttribute>();
-                                        var scriptConfig = new ScriptMeta(type, String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias, generater);
-                                        ParseScriptAutowriredFields(scriptConfig);
-                                        ParseScriptMethods(scriptConfig);
+                                        var exportMethods = ParseExportMethods(type);
+                                        var autowriredFields = ParseAutowriredFields(type);
+                                        var scriptConfig = new ScriptMetaTable(type, String.IsNullOrEmpty(attribute.Alias) ? type.Name : attribute.Alias, generater, exportMethods, autowriredFields);
                                         this.Analyzers.DefineType(type);
                                         //Console.WriteLine($"Found Script：{type.Name}");
                                         return scriptConfig;
@@ -410,7 +411,7 @@ namespace Magnet
         {
             var generateMethod = scriptType.GetMethod(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD, BindingFlags.Static | BindingFlags.NonPublic);
             IntPtr pointer = generateMethod.MethodHandle.GetFunctionPointer();
-            var methodPointer =  (delegate*<AbstractScript>)pointer;
+            var methodPointer = (delegate*<AbstractScript>)pointer;
             // 预热
             {
                 RuntimeHelpers.PrepareMethod(generateMethod.MethodHandle);
@@ -418,14 +419,11 @@ namespace Magnet
             }
             return methodPointer;
         }
-
-
-
-
-        private void ParseScriptAutowriredFields(ScriptMeta metaInfo)
+ 
+        private List<AutowriredField> ParseAutowriredFields(Type scriptClassType)
         {
-            var fieldList = new List<FieldInfo>();
-            var type = metaInfo.ScriptType;
+            var fieldList = new List<AutowriredField>();
+            var type = scriptClassType;
             while (type != null)
             {
                 var _fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Static);
@@ -434,19 +432,20 @@ namespace Magnet
                     var attribute = fieldInfo.GetCustomAttribute<AutowiredAttribute>();
                     if (attribute != null)
                     {
-                        var autowrired = new AutowriredField(fieldInfo, attribute.Type, attribute.ProviderName);
-                        metaInfo.AddAutowriredField(autowrired);
+                        var setter = TypeUtils.CreateFieldSetter(fieldInfo);
+                        var autowrired = new AutowriredField(fieldInfo, setter, attribute.Type, attribute.ProviderName);
+                        fieldList.Add(autowrired);
                     }
                 }
-
                 type = type.BaseType;
             }
+            return fieldList;
         }
 
-        private void ParseScriptMethods(ScriptMeta metaInfo)
+        private Dictionary<String, ExportMethod> ParseExportMethods(Type scriptClassType)
         {
-            var fieldList = new List<MethodInfo>();
-            var type = metaInfo.ScriptType;
+            var methods = new Dictionary<String, ExportMethod>();
+            var type = scriptClassType;
             while (type != null)
             {
                 var _methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -455,12 +454,13 @@ namespace Magnet
                     var attribute = methodInfo.GetCustomAttribute<FunctionAttribute>();
                     if (attribute != null)
                     {
-                        var exportMethod = new ScriptExportMethod(methodInfo, String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias);
-                        metaInfo.AddExportMethod(exportMethod.Alias, exportMethod);
+                        var exportMethod = new ExportMethod(methodInfo, String.IsNullOrEmpty(attribute.Alias) ? methodInfo.Name : attribute.Alias);
+                        methods.Add(exportMethod.Alias, exportMethod);
                     }
                 }
                 type = type.BaseType;
             }
+            return methods;
         }
 
         /// <summary>

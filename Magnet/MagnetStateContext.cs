@@ -1,5 +1,6 @@
 ﻿using Magnet.Core;
 using Magnet.Tracker;
+using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -41,29 +42,31 @@ namespace Magnet
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private readonly Dictionary<Type, ScriptCachedItem> _cacheByType;
+        private readonly Dictionary<Type, AbstractScript> _cacheByType;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private readonly Dictionary<String, ScriptCachedItem> _cacheByString;
+        private readonly Dictionary<String, AbstractScript> _cacheByName;
 
 
 
         internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
         {
             this._engine = engine;
-            this._providers = engine.Options.Providers;
-
-            var count = engine.scriptMetaTable.Count;
+            var count = engine.scriptMetaTables.Count;
             _cache = new List<IScriptInstance>(count);
-            _cacheByType = new Dictionary<Type, ScriptCachedItem>(count);
-            _cacheByString = new Dictionary<String, ScriptCachedItem>(count);
+            _cacheByType = new Dictionary<Type, AbstractScript>(count);
+            _cacheByName = new Dictionary<String, AbstractScript>(count);
 
+            // 计算好容量 防止扩容
+            var length = engine.Options.Providers.Count + stateOptions.Providers.Count + count;
+
+            this._providers = new List<IObjectProvider>(length);
+            this._providers.AddRange(engine.Options.Providers);
 
             if (stateOptions.Providers.Count > 0)
             {
-                this._providers = new List<IObjectProvider>(engine.Options.Providers);
                 foreach (var item in stateOptions.Providers)
                 {
                     this.RegisterProviderInternal(item.Type, item.Value, item.SlotName);
@@ -84,7 +87,7 @@ namespace Magnet
             }
             this._cache.Clear();
             this._cacheByType.Clear();
-            this._cacheByString.Clear();
+            this._cacheByName.Clear();
             this._referenceTrackers = null;
         }
 
@@ -114,10 +117,12 @@ namespace Magnet
 
         internal void Autowired(IReadOnlyDictionary<Type, Object> objectMap)
         {
-            foreach (var pair in _cacheByType)
+
+            foreach (var instance in _cache)
             {
-                var instance = pair.Value;
-                foreach (var field in instance.Metadata.AutowriredTable)
+                var scriptInstance = instance as AbstractScript;
+                var metaTable = scriptInstance.MetaTable;
+                foreach (var field in metaTable.AutowriredTables)
                 {
                     foreach (var obj in objectMap)
                     {
@@ -134,16 +139,17 @@ namespace Magnet
         internal void Autowired<TObject>(TObject @object, String slotName = null)
         {
             var valType = typeof(TObject);
-            foreach (var pair in _cacheByType)
+            foreach (var instance in _cache)
             {
-                var script = pair.Value;
-                foreach (var field in script.Metadata.AutowriredTable)
+                var scriptInstance = instance as AbstractScript;
+                var metaTable = scriptInstance.MetaTable;
+                foreach (var field in metaTable.AutowriredTables)
                 {
                     if (!field.FieldInfo.IsStatic && valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
                     {
                         if (slotName == null || slotName == field.SlotName)
                         {
-                            field.FieldInfo.SetValue(script, @object);
+                            field.FieldInfo.SetValue(scriptInstance, @object);
                         }
                     }
                 }
@@ -152,11 +158,12 @@ namespace Magnet
 
 
 
-        internal void Autowired(AbstractScript instance, ScriptMeta metadata)
+        internal void Autowired(AbstractScript instance)
         {
-            for (int i = 0; i < metadata.AutowriredTable.Count; i++)
+            var metaTable = instance.MetaTable;
+            for (int i = 0; i < metaTable.AutowriredTables.Count; i++)
             {
-                var field = metadata.AutowriredTable[i];
+                var field = metaTable.AutowriredTables[i];
                 if (field.FieldInfo.IsStatic && field.IsFilled) continue;
                 for (int j = 0; j < this._providers.Count; j++)
                 {
@@ -167,12 +174,14 @@ namespace Magnet
                         {
                             if (field.FieldInfo.IsStatic)
                             {
-                                field.FieldInfo.SetValue(null, item.Value);
+                                //field.FieldInfo.SetValue(null, item.Value);
+                                field.Setter(null, item.Value);
                                 field.IsFilled = true;
                             }
                             else
                             {
-                                field.FieldInfo.SetValue(instance, item.Value);
+                                field.Setter(instance, item.Value);
+                                //field.FieldInfo.SetValue(instance, item.Value);
                             }
                             break;
                         }
@@ -197,11 +206,11 @@ namespace Magnet
                 return (T)_delegate;
             }
 
-            if (_cacheByString.TryGetValue(scriptName, out ScriptCachedItem instance))
+            if (_cacheByName.TryGetValue(scriptName, out AbstractScript instance))
             {
-                if (instance.Metadata.ExportMethodTable.TryGetValue(methodName, out var result))
+                if (instance.MetaTable.ExportMethods.TryGetValue(methodName, out var result))
                 {
-                    _delegate = Delegate.CreateDelegate(typeof(T), instance.Instance, result.MethodInfo);
+                    _delegate = Delegate.CreateDelegate(typeof(T), instance, result.MethodInfo);
                     this._delegateCache.TryAdd(key, _delegate);
                     this._referenceTrackers.Add(_delegate);
                     return (T)_delegate;
@@ -210,7 +219,6 @@ namespace Magnet
             return null;
         }
         #endregion
-
 
 
         #region Property
@@ -272,9 +280,6 @@ namespace Magnet
         #endregion
 
 
-
-
-
         #region Script 
 
 
@@ -290,9 +295,9 @@ namespace Magnet
 
         public T ScriptAs<T>(String scriptName) where T : class
         {
-            if (_cacheByString.TryGetValue(scriptName, out ScriptCachedItem instance))
+            if (_cacheByName.TryGetValue(scriptName, out AbstractScript instance))
             {
-                if (instance.Instance is T tt)
+                if (instance is T tt)
                 {
                     return tt;
                 }
@@ -324,43 +329,31 @@ namespace Magnet
 
 
 
-        #region Cache
+        #region Cache   
 
-        internal readonly struct ScriptCachedItem
+        internal void AddInstance(AbstractScript script)
         {
-            public ScriptCachedItem(AbstractScript instance, ScriptMeta metadata)
-            {
-                this.Instance = instance;
-                this.Metadata = metadata;
-            }
-            public readonly AbstractScript Instance;
-            public readonly ScriptMeta Metadata;
-        }
-
-        internal void AddInstance(ScriptMeta meta, AbstractScript script)
-        {
-            var metadata = new ScriptCachedItem(script, meta);
             _cache.Add(script);
-            _cacheByType.Add(meta.ScriptType, metadata);
-            _cacheByString.Add(meta.ScriptAlias, metadata);
+            _cacheByType.Add(script.MetaTable.Type, script);
+            _cacheByName.Add(script.MetaTable.Alias, script);
             this._referenceTrackers.Add(script);
         }
         public AbstractScript InstanceOfName(string scriptName)
         {
-            _cacheByString.TryGetValue(scriptName, out ScriptCachedItem instance);
-            return instance.Instance;
+            _cacheByName.TryGetValue(scriptName, out AbstractScript instance);
+            return instance;
         }
 
         public T InstanceOfType<T>() where T : AbstractScript
         {
-            _cacheByType.TryGetValue(typeof(T), out ScriptCachedItem instance);
-            return (T)instance.Instance;
+            _cacheByType.TryGetValue(typeof(T), out AbstractScript instance);
+            return (T)instance;
         }
 
         public AbstractScript InstanceOfType(Type type)
         {
-            _cacheByType.TryGetValue(type, out ScriptCachedItem instance);
-            return instance.Instance;
+            _cacheByType.TryGetValue(type, out AbstractScript instance);
+            return instance;
         }
 
 #if RELEASE
@@ -368,16 +361,9 @@ namespace Magnet
 #endif
         internal IReadOnlyList<IScriptInstance> Instances => _cache;
 
-#if RELEASE
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#endif
-        internal IEnumerable<ScriptCachedItem> Instances2 => _cacheByString.Values;
 
 
         #endregion
-
-
-
 
     }
 }
