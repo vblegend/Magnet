@@ -12,13 +12,23 @@ namespace Magnet
     /// </summary>
     public static class TypeUtils
     {
-        private static MethodInfo AssignBinaryExpressionMake;
+        private delegate Expression MakeDelegate(Expression left, Expression right, Boolean v);
+        /// <summary>
+        /// System.Linq.Expressions.AssignBinaryExpression.Make()
+        /// </summary>
+        private static MakeDelegate MakeAssignExpression;
+
 
         static TypeUtils()
         {
             // 获取 AssignBinaryExpression.Make()
             var binaryExprType = typeof(Expression).Assembly.GetType("System.Linq.Expressions.AssignBinaryExpression");
-            AssignBinaryExpressionMake = binaryExprType.GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => (m.Attributes & MethodAttributes.HideBySig) != 0 && m.Name == "Make").FirstOrDefault();
+            var makeMethod = binaryExprType.GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => (m.Attributes & MethodAttributes.HideBySig) != 0 && m.Name == "Make").FirstOrDefault();
+            MakeAssignExpression = (MakeDelegate)Delegate.CreateDelegate(typeof(MakeDelegate), null, makeMethod);
+            if (MakeAssignExpression == null)
+            {
+                throw new Exception("Unable to locate to System. Linq. Expressions. Make AssignBinaryExpression method.");
+            }
         }
         #region Field Getter Setter
 
@@ -40,7 +50,7 @@ namespace Magnet
             }
             var valueCast = Expression.Convert(valueParam, field.FieldType);
             var fieldAccess = Expression.Field(instanceCast, field);
-            var assign = AssignBinaryExpressionMake.Invoke(null, new Object[] { fieldAccess, valueCast, false }) as Expression;
+            var assign = MakeAssignExpression(fieldAccess, valueCast, false);
             var lambda = Expression.Lambda<Action<TInstance, TValue>>(assign, instanceParam, valueParam);
             return lambda.Compile();
         }
