@@ -8,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>Magnet</PackageId>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <Authors>Hanks</Authors>
     <Company>None</Company>
     <PackageDescription>基于Roslyn开发的可定制C#脚本引擎
