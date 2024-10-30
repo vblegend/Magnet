@@ -82,20 +82,17 @@ namespace Magnet
     {
         private static GCEventListener _gcEventListener = new GCEventListener();
         private static readonly Assembly[] _importantAssemblies = [Assembly.Load("System.Runtime"), Assembly.Load("System.Private.CoreLib"), typeof(ScriptAttribute).Assembly];
-
+        private static readonly String[] _baseUsing = ["System", "Magnet.Core"];
 
         internal ScriptOptions Options { get; private set; }
         internal IReadOnlyList<ScriptMetaTable> scriptMetaTables = new List<ScriptMetaTable>();
         internal readonly AnalyzerCollection Analyzers;
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
-
-
-        private String[] _baseUsing = ["System", "Magnet.Core"];
         private readonly WeakReference<Assembly> _scriptAssembly = new WeakReference<Assembly>(null);
         private CSharpCompilationOptions _compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         private ScriptLoadContext _scriptLoadContext;
-        private readonly Dictionary<Int64, MagnetState> _survivalStates = new();
+        private Dictionary<Int64, MagnetState> _survivalStates = new();
 
         /// <summary>
         /// The unique ID of the assembly compiled by the script
@@ -183,6 +180,7 @@ namespace Magnet
                     state = null;
                 }
             }
+            this._compilationOptions = null;
             this.Unloading?.Invoke(this);
             this.Unloading = null;
             this.scriptMetaTables = [];
@@ -192,15 +190,18 @@ namespace Magnet
 
         private void GcEventListener_OnGCFinalizers()
         {
-            ReferenceTrackers.AliveObjects();
+            ReferenceTrackers?.AliveObjects();
             if (this.Status == ScrriptStatus.Unloading && !this.IsAlive)
             {
                 _gcEventListener.OnGCFinalizers -= GcEventListener_OnGCFinalizers;
                 this.Unloaded?.Invoke(this);
+                this.ReferenceTrackers?.Dispose();
+                this.ReferenceTrackers = null;
                 this._scriptLoadContext = null;
                 this.Unloaded = null;
                 this.Options = null;
                 this.Status = ScrriptStatus.Unloaded;
+                this._survivalStates = null;
             }
         }
 
@@ -350,6 +351,7 @@ namespace Magnet
                     }
                 }
             }
+            this._compilationOptions = null;
             return result;
         }
 

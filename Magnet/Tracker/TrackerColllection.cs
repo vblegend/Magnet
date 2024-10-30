@@ -7,11 +7,11 @@ using System.Linq;
 
 namespace Magnet.Tracker
 {
-    internal class TrackerColllection : IEnumerable<ReferenceTracker>, IEnumerable
+    internal class TrackerColllection : IEnumerable<ReferenceTracker>, IEnumerable,IDisposable
     {
 
         // 使用 List 来存储 ReferenceTracker 实例
-        private readonly List<ReferenceTracker> _trackers = new List<ReferenceTracker>(512);
+        private List<ReferenceTracker> _trackers = new List<ReferenceTracker>(512);
         private readonly object lockedObject = new object();
 
 
@@ -72,6 +72,11 @@ namespace Magnet.Tracker
         IEnumerator IEnumerable.GetEnumerator()
         {
             lock (lockedObject) return _trackers.GetEnumerator();
+        }
+
+        public void Dispose()
+        {
+            this._trackers = null;
         }
     }
 }

@@ -3,6 +3,7 @@ using Magnet.Core;
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Xml.Linq;
 
 
 namespace Magnet
@@ -23,7 +24,7 @@ namespace Magnet
         /// </summary>
         public Int64 Identity { get; set; } = -1;
 
-        internal List<IObjectProvider> Providers = [];
+        internal List<ObjectProvider> Providers = [];
 
         internal StateOptions WithIdentity(Int64 identity)
         {
@@ -194,7 +195,6 @@ namespace Magnet
             this.Identity = createStateOptions.Identity;
             this._engine = engine;
             this._stateContext = new MagnetStateContext(engine, createStateOptions);
-            this._stateContext.RegisterProviderInternal(typeof(IStateContext), this._stateContext, "Script-Context");
 
             this.CreateState();
         }
@@ -202,6 +202,7 @@ namespace Magnet
 
         private unsafe void CreateState()
         {
+            this._stateContext.RegisterProviderInternal(typeof(IStateContext), this._stateContext, "Script-Context");
             foreach (var meta in this._engine.scriptMetaTables)
             {
                 var instance = meta.Generater();
@@ -210,14 +211,10 @@ namespace Magnet
                 this._stateContext.RegisterProviderInternal(meta.Type, instance);
                 _analyzers.DefineInstance(meta, instance, _stateContext);
             }
-            //Inject
+            // Inject && Init 
             foreach (var instance in this._stateContext.Instances)
             {
                 this._stateContext.Autowired((AbstractScript)instance);
-            }
-            // Exec Init Function
-            foreach (var instance in this._stateContext.Instances)
-            {
                 instance.Initialize();
             }
         }

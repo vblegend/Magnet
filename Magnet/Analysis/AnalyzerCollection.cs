@@ -9,8 +9,8 @@ namespace Magnet.Analysis
 {
     internal class AnalyzerCollection
     {
-        private readonly List<IAnalyzer> _analyzers = new List<IAnalyzer>();
-        private readonly List<IInstanceAsalyzer> _instanceAnalyzers = new List<IInstanceAsalyzer>();
+        private  List<IAnalyzer> _analyzers = new List<IAnalyzer>();
+        private  List<IInstanceAsalyzer> _instanceAnalyzers = new List<IInstanceAsalyzer>();
 
 
 
@@ -68,7 +68,10 @@ namespace Magnet.Analysis
             {
                 analyzer.Disconnect(magnet);
             }
-            _analyzers.Clear();
+            _analyzers = [];
+            _instanceAnalyzers = [];
+
+
         }
     }
 

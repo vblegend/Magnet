@@ -35,18 +35,23 @@ namespace Magnet.Core
 
         internal AutowriredField(FieldInfo fieldInfo, Action<AbstractScript, Object> setter, Type requiredType, String slotName)
         {
-            this.FieldInfo = fieldInfo;
             this.SlotName = slotName;
             this.RequiredType = requiredType;
             this.IsStatic = fieldInfo.IsStatic;
             this.Setter = setter;
+            this.FieldType = fieldInfo.FieldType;
         }
+
+
         /// <summary>
-        /// Inject field information at a point
+        /// Autowrired field type
         /// </summary>
-        public readonly FieldInfo FieldInfo;
+        public readonly Type FieldType;
 
 
+        /// <summary>
+        /// field setter
+        /// </summary>
         public readonly Action<AbstractScript, Object> Setter;
 
         /// <summary>
@@ -54,8 +59,10 @@ namespace Magnet.Core
         /// </summary>
         public readonly Boolean IsStatic;
 
+        /// <summary>
+        /// Whether the static field has been filled
+        /// </summary>
         internal Boolean IsFilled;
-
 
         /// <summary>
         /// Slot name of the injection point, any matching type if empty
@@ -83,7 +90,7 @@ namespace Magnet.Core
         }
 
         /// <summary>
-        /// static method pointer for the ScriptType
+        /// script object constructors
         /// </summary>
         public readonly unsafe delegate*<AbstractScript> Generater;
 

@@ -32,22 +32,22 @@ namespace Magnet
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        internal readonly List<IObjectProvider> _providers;
+        internal List<ObjectProvider> _providers;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private readonly List<IScriptInstance> _cache;
+        private List<IScriptInstance> _cache;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private readonly Dictionary<Type, AbstractScript> _cacheByType;
+        private Dictionary<Type, AbstractScript> _cacheByType;
 
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private readonly Dictionary<String, AbstractScript> _cacheByName;
+        private Dictionary<String, AbstractScript> _cacheByName;
 
 
 
@@ -62,7 +62,7 @@ namespace Magnet
             // 计算好容量 防止扩容
             var length = engine.Options.Providers.Count + stateOptions.Providers.Count + count;
 
-            this._providers = new List<IObjectProvider>(length);
+            this._providers = new List<ObjectProvider>(length);
             this._providers.AddRange(engine.Options.Providers);
 
             if (stateOptions.Providers.Count > 0)
@@ -85,9 +85,11 @@ namespace Magnet
             {
                 instance.Shutdown();
             }
-            this._cache.Clear();
-            this._cacheByType.Clear();
-            this._cacheByName.Clear();
+            this._cache = null;
+            this._delegateCache = null;
+            this._cacheByType = null;
+            this._cacheByName = null;
+            this._providers = null;
             this._referenceTrackers = null;
         }
 
@@ -126,9 +128,9 @@ namespace Magnet
                 {
                     foreach (var obj in objectMap)
                     {
-                        if (obj.Key == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(obj.Key))
+                        if ((field.RequiredType == null || obj.Key == field.RequiredType) && obj.Key == field.FieldType || field.FieldType.IsAssignableFrom(obj.Key))
                         {
-                            field.FieldInfo.SetValue(instance, obj.Value);
+                            field.Setter(scriptInstance, obj.Value);
                             break;
                         }
                     }
@@ -145,11 +147,11 @@ namespace Magnet
                 var metaTable = scriptInstance.MetaTable;
                 foreach (var field in metaTable.AutowriredTables)
                 {
-                    if (!field.FieldInfo.IsStatic && valType == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(valType))
+                    if ((field.RequiredType == null || valType == field.RequiredType) && !field.IsStatic && valType == field.FieldType || field.FieldType.IsAssignableFrom(valType))
                     {
                         if (slotName == null || slotName == field.SlotName)
                         {
-                            field.FieldInfo.SetValue(scriptInstance, @object);
+                            field.Setter(scriptInstance, @object);
                         }
                     }
                 }
@@ -164,24 +166,22 @@ namespace Magnet
             for (int i = 0; i < metaTable.AutowriredTables.Count; i++)
             {
                 var field = metaTable.AutowriredTables[i];
-                if (field.FieldInfo.IsStatic && field.IsFilled) continue;
+                if (field.IsStatic && field.IsFilled) continue;
                 for (int j = 0; j < this._providers.Count; j++)
                 {
                     var item = this._providers[j];
-                    if (item.Type == field.FieldInfo.FieldType || field.FieldInfo.FieldType.IsAssignableFrom(item.Type))
+                    if ((field.RequiredType == null || item.Type == field.RequiredType)  &&  item.Type == field.FieldType || field.FieldType.IsAssignableFrom(item.Type))
                     {
                         if (field.SlotName == null || field.SlotName == item.SlotName)
                         {
-                            if (field.FieldInfo.IsStatic)
+                            if (field.IsStatic)
                             {
-                                //field.FieldInfo.SetValue(null, item.Value);
                                 field.Setter(null, item.Value);
                                 field.IsFilled = true;
                             }
                             else
                             {
                                 field.Setter(instance, item.Value);
-                                //field.FieldInfo.SetValue(instance, item.Value);
                             }
                             break;
                         }

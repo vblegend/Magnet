@@ -119,6 +119,7 @@ public static class Program
     }
 
 
+
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
@@ -190,6 +191,8 @@ public static class Program
             {
                 Console.WriteLine();
             }
+
+
         }
 
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
@@ -200,6 +203,16 @@ public static class Program
         }
         GC.Collect();
         Console.WriteLine("=====================================================================================");
+
+        while (true)
+        {
+            //GC
+            var obj = new byte[1024 * 1024];
+            Thread.Sleep(10);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
         Console.ReadKey();
     }
 

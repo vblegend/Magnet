@@ -306,7 +306,7 @@ namespace Magnet
             return this;
         }
 
-        internal List<IObjectProvider> Providers { get; private set; } = [];
+        internal List<ObjectProvider> Providers { get; private set; } = [];
 
 
         /// <summary>
