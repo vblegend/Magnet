@@ -141,13 +141,14 @@ namespace Magnet
         internal void Autowired<TObject>(TObject @object, String slotName = null)
         {
             var valType = typeof(TObject);
+
             foreach (var instance in _cache)
             {
                 var scriptInstance = instance as AbstractScript;
                 var metaTable = scriptInstance.MetaTable;
                 foreach (var field in metaTable.AutowriredTables)
                 {
-                    if ((field.RequiredType == null || valType == field.RequiredType) && !field.IsStatic && valType == field.FieldType || field.FieldType.IsAssignableFrom(valType))
+                    if ((field.RequiredType == null || valType == field.RequiredType) && !field.IsStatic && valType.UnderlyingSystemType == field.FieldType || field.FieldType.IsAssignableFrom(valType))
                     {
                         if (slotName == null || slotName == field.SlotName)
                         {

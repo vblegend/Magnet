@@ -411,8 +411,7 @@ namespace Magnet
         private unsafe delegate*<AbstractScript> ParseGenerateScriptInstanceMethod(Type scriptType)
         {
             var generateMethod = scriptType.GetMethod(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD, BindingFlags.Static | BindingFlags.NonPublic);
-            IntPtr pointer = generateMethod.MethodHandle.GetFunctionPointer();
-            var methodPointer = (delegate*<AbstractScript>)pointer;
+            var methodPointer = TypeUtils.CreateMethodPointer<AbstractScript>(generateMethod);
             // 预热
             {
                 RuntimeHelpers.PrepareMethod(generateMethod.MethodHandle);
@@ -433,7 +432,7 @@ namespace Magnet
                     var attribute = fieldInfo.GetCustomAttribute<AutowiredAttribute>();
                     if (attribute != null)
                     {
-                        var setter = TypeUtils.CreateFieldSetter(fieldInfo);
+                        var setter = TypeUtils.CreateFieldSetter<AbstractScript, Object>(fieldInfo);
                         var autowrired = new AutowriredField(fieldInfo, setter, attribute.Type, attribute.ProviderName);
                         fieldList.Add(autowrired);
                     }
@@ -601,6 +600,7 @@ namespace Magnet
                 this.CompileError?.Invoke(this, result.Diagnostics);
             }
             diagnostics.AddRange(result.Diagnostics.Where(e => e.Severity != DiagnosticSeverity.Hidden));
+
             return new CompileResult(result.Success, diagnostics);
         }
 

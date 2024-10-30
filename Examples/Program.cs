@@ -17,6 +17,7 @@ public static class Program
 {
 
 
+
     private static GlobalVariableStore GLOBAL = new GlobalVariableStore();
 
     private static ScriptOptions Options(String name)
@@ -118,8 +119,6 @@ public static class Program
         return null;
     }
 
-
-
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
@@ -218,12 +217,12 @@ public static class Program
 
     private static void ScriptManager_Unloaded(MagnetScript obj)
     {
-        Console.WriteLine($"脚本{obj}卸载完毕.");
+        Console.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} 脚本{obj}卸载完毕.");
     }
 
     private static void ScriptManager_Unloading(MagnetScript obj)
     {
-        Console.WriteLine($"脚本{obj}卸载请求.");
+        Console.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} 脚本{obj}卸载请求.");
     }
 
 
