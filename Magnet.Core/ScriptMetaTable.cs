@@ -7,7 +7,7 @@ namespace Magnet.Core
 {
 
     /// <summary>
-    /// 
+    /// The exported method in the script is marked with [Function]
     /// </summary>
     public class ExportMethod
     {
@@ -28,7 +28,7 @@ namespace Magnet.Core
 
 
     /// <summary>
-    /// 
+    /// Injectable fields in the script marked with [Autowrired]
     /// </summary>
     public class AutowriredField
     {
@@ -76,7 +76,7 @@ namespace Magnet.Core
     }
 
     /// <summary>
-    /// Meta information of the script
+    /// Meta Infomation Table of the script
     /// </summary>
     public class ScriptMetaTable
     {

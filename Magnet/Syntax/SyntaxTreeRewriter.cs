@@ -21,7 +21,7 @@ namespace Magnet.Syntax
             this.typeResolver = typeResolver;
         }
 
-        public Boolean TryGetReplaceType(CSharpSyntaxNode syntaxNode, ITypeSymbol typeSymbol, out NameSyntax? nameSyntax)
+        public Boolean TryGetReplaceType(CSharpSyntaxNode syntaxNode, ITypeSymbol typeSymbol, out NameSyntax nameSyntax)
         {
             if (this.typeResolver.Resolver(syntaxNode, typeSymbol, out var newType))
             {
@@ -89,20 +89,6 @@ namespace Magnet.Syntax
             return base.VisitArrayType(node);
         }
 
-
-
-        // 处理字段声明中的类型替换
-        public override SyntaxNode VisitFieldDeclaration(FieldDeclarationSyntax node)
-        {
-            //var newNode = base.VisitFieldDeclaration(node) as FieldDeclarationSyntax;
-            //var typeInfo = semanticModel.GetTypeInfo(node.Declaration.Type);
-            //if (typeInfo.Type != null && TryGetReplaceType(node.Declaration.Type, typeInfo.Type, out var replacementType))
-            //{
-            //    var newTypeNode = replacementType.WithTriviaFrom(node.Declaration.Type);
-            //    return newNode.WithDeclaration(node.Declaration.WithType(newTypeNode));
-            //}
-            return base.VisitFieldDeclaration(node);
-        }
 
         // 处理属性声明中的类型替换
         public override SyntaxNode VisitPropertyDeclaration(PropertyDeclarationSyntax node)
@@ -396,9 +382,6 @@ namespace Magnet.Syntax
         /// <returns></returns>
         public override SeparatedSyntaxList<TNode> VisitList<TNode>(SeparatedSyntaxList<TNode> list)
         {
-            // AttributeSyntax AttributeArgumentSyntax ParameterSyntax VariableDeclaratorSyntax CollectionElementSyntax TypeParameterSyntax
-            //Console.WriteLine(list.GetType().FullName);
-            // 
             if (list is SeparatedSyntaxList<BaseTypeSyntax> baseTypeList)
             {
                 List<TNode> args = new List<TNode>();
@@ -438,106 +421,8 @@ namespace Magnet.Syntax
                 }
                 return SyntaxFactory.SeparatedList(args);
             }
-
-            //Console.WriteLine(list.GetType().FullName);
-
             return base.VisitList(list);
         }
-
-
-
-
-
-        //public override SyntaxNode VisitTypeArgumentList(TypeArgumentListSyntax node)
-        //{
-        //    node = base.VisitTypeArgumentList(node) as TypeArgumentListSyntax;
-        //    List<TypeSyntax> args = new List<TypeSyntax>();
-        //    foreach (var arg in node.Arguments)
-        //    {
-        //        var typeInfo = semanticModel.GetTypeInfo(arg);
-        //        if (typeInfo.Type != null && TryGetReplaceType(arg, typeInfo.Type, out var replacementType))
-        //        {
-        //            var arg2 = replacementType.WithTriviaFrom(arg);
-        //            args.Add(arg2);
-        //        }
-        //        else
-        //        {
-        //            args.Add((arg ));
-        //        }
-        //    }
-        //    node = node.WithArguments(SyntaxFactory.SeparatedList(args));
-        //    return node;
-        //}
-
-
-        /// <summary>
-        /// (Type)value
-        /// </summary>
-        /// <param name="node"></param>
-        /// <returns></returns>
-        //public override SyntaxNode VisitCastExpression(CastExpressionSyntax node)
-        //{
-        //    var typeInfo = semanticModel.GetTypeInfo(node);
-        //    var typeFullName = this.typeResolver.TypeCast(typeInfo.Type);
-        //    if (!String.IsNullOrEmpty(typeFullName))
-        //    {
-        //        return node.WithType(this.MakeNameSyntax(typeFullName));
-        //    }
-        //    return base.VisitCastExpression(node);
-        //}
-
-
-        /// <summary>
-        /// as  is
-        /// </summary>
-        /// <param name="node"></param>
-        /// <returns></returns>
-        //public override SyntaxNode VisitBinaryExpression(BinaryExpressionSyntax node)
-        //{
-        //    if (node.Kind() == SyntaxKind.AsExpression || node.Kind() == SyntaxKind.IsExpression)
-        //    {
-        //        var typeInfo = semanticModel.GetTypeInfo(node);
-        //        String typeFullName = null;
-        //        if (node.Kind() == SyntaxKind.AsExpression)
-        //        {
-        //            typeFullName = this.typeResolver.AsType(typeInfo.Type);
-        //        }
-        //        else
-        //        {
-        //            typeFullName = this.typeResolver.IsType(typeInfo.Type);
-        //        }
-        //        if (!String.IsNullOrEmpty(typeFullName))
-        //        {
-        //            return node.WithRight(this.MakeNameSyntax(typeFullName));
-        //        }
-        //    }
-        //    return base.VisitBinaryExpression(node);
-        //}
-
-        //public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        //{
-        //    var typeInfo = semanticModel.GetTypeInfo(node);
-        //    var typeFullName = this.typeResolver.TypeCreation(typeInfo.Type);
-        //    if (!String.IsNullOrEmpty(typeFullName))
-        //    {
-        //        return node.WithType(this.MakeNameSyntax(typeFullName));
-        //    }
-        //    return base.VisitObjectCreationExpression(node);
-        //}
-
-        //public override SyntaxNode VisitTypeOfExpression(TypeOfExpressionSyntax node)
-        //{
-        //    // 获取 typeof 内的类型
-        //    var typeSyntax = node.Type;
-        //    // 使用语义模型获取类型信息
-        //    var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
-        //    var typeFullName = this.typeResolver.TypeOf(typeInfo.Type);
-        //    if (!String.IsNullOrEmpty(typeFullName))
-        //    {
-        //        return node.WithType(this.MakeNameSyntax(typeFullName));
-        //    }
-        //    return base.VisitTypeOfExpression(node);
-        //}
 
 
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
@@ -591,24 +476,6 @@ namespace Magnet.Syntax
 
             return base.VisitMemberAccessExpression(node);
         }
-
-
-
-
-        //public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
-        //{
-        //    var symbol = semanticModel.GetDeclaredSymbol(node);
-        //    if (symbol.IsStatic)
-        //    {
-        //        if (VisitAttributes(node.AttributeLists, out var attributeLists))
-        //        {
-        //            return node.WithAttributeLists(attributeLists);
-        //        }
-        //    }
-        //    return base.VisitMethodDeclaration(node);
-        //}
-
-
 
 
         private bool VisitAttributes(SyntaxList<AttributeListSyntax> attributeLists, out SyntaxList<AttributeListSyntax> newList)
@@ -675,16 +542,8 @@ namespace Magnet.Syntax
             if (hasScriptAttribute && inheritsFromBaseScript && !isAbstractClass && !isStaticClass)
             {
                 node = base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
-                var method1 = Generate_Script_Instance_Method(node);
-                //var fields = FindAutowiredFields(node);
-                //if (fields.Count > 0)
-                //{
-                //    // 这里根据fields创建相应的代码。
-                //    var method2 = GenerateConstructorMethod(node, fields);
-                //    node = node.WithBaseList(node.BaseList.AddTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(nameof(IScriptInstance)))));
-                //    node = node.AddMembers(method2);
-                //}
-                node = node.AddMembers(method1);
+                var method = Generate_Script_Instance_Method(node);
+                node = node.AddMembers(method);
                 return node;
             }
             return base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
@@ -731,24 +590,24 @@ namespace Magnet.Syntax
         /// <returns></returns>
         private MethodDeclarationSyntax Generate_Script_Instance_Method(ClassDeclarationSyntax node)
         {
-            //var attribute = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.ParseName(typeof(FactoryAttribute).FullName))));
-            var methodBody = SyntaxFactory.ParseStatement("return new " + node.Identifier.Text + "();"); // (providers)
+            var methodBody = SyntaxFactory.ParseStatement("return new " + node.Identifier.Text + "();");
             var modifiers = new SyntaxTokenList([SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)]);
             var methodName = SyntaxFactory.Identifier(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD);
             var returnType = SyntaxFactory.ParseTypeName("AbstractScript");
             var staticMethod = SyntaxFactory.MethodDeclaration(returnType, methodName)
                 .WithModifiers(modifiers)
-                //.WithAttributeLists(SyntaxFactory.SingletonList(attribute))
-                //.WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[]
-                //{
-                //       SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<Magnet.Core.IObjectProvider>")),
-                //}))
-                //)
                 .WithBody(SyntaxFactory.Block(methodBody));
             return staticMethod;
         }
 
+    }
+}
 
+
+/*
+ 
+ 
+ 
 
         private struct AutowiredField
         {
@@ -807,15 +666,6 @@ namespace Magnet.Syntax
         }
 
 
-
-
-
-
-
-
-
-
-
         /// <summary>
         /// 构造方法
         /// 本来想用构造方法实现注入，但脚本之间的对象注入没法实现，方法注入又不支持readonly字段
@@ -861,19 +711,9 @@ namespace Magnet.Syntax
                  .WithExplicitInterfaceSpecifier(SyntaxFactory.ExplicitInterfaceSpecifier(SyntaxFactory.IdentifierName(nameof(IScriptInstance))))
                 .WithBody(SyntaxFactory.Block(statements)
                 );
-            // .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-            //var method2 = SyntaxFactory.ConstructorDeclaration(node.Identifier.ValueText)
-            //      .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PrivateKeyword)))
-            //      .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[]
-            //      {
-            //            SyntaxFactory.Parameter(SyntaxFactory.Identifier("providers")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<IObjectProvider>")),
-            //      }))
-            //      );
-       
             method = method.WithBody(SyntaxFactory.Block(fors));
 
-            return method;//  node.AddMembers(method);
+            return method;
         }
-
-    }
-}
+ 
+ */

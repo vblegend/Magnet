@@ -72,7 +72,6 @@ namespace Magnet
     /// <param name="magnetScript"></param>
     /// <param name="assembly"></param>
     /// <param name="assemblyStream"></param>
-    /// <param name="pdbStream"></param>
     public delegate void CompileCompleteHandler(MagnetScript magnetScript, Assembly assembly, Stream assemblyStream);
 
     /// <summary>

@@ -131,7 +131,7 @@ namespace Magnet.Test
                 var state = scriptManager?.CreateState();
                 for (int i = 0; i < 100000; i++)
                 {
-                    state?.MethodDelegate<Action>("ScriptA", "Login");
+                    state?.CreateDelegate<Action>("ScriptA", "Login");
                 }
                 state = null;
             }
@@ -156,7 +156,7 @@ namespace Magnet.Test
             }
             List<IMagnetState> states = new List<IMagnetState>();
             var state = scriptManager.CreateState();
-            var weak = state.MethodDelegate<Action>("ScriptA", "Login");
+            var weak = state.CreateDelegate<Action>("ScriptA", "Login");
             state.Dispose();
             scriptManager.Unload();
             while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
@@ -174,7 +174,7 @@ namespace Magnet.Test
         [Test]
         public void CallScriptMethod()
         {
-            var weak = state?.MethodDelegate<Action>("ScriptA", "Main");
+            var weak = state?.CreateDelegate<Action>("ScriptA", "Main");
             if (weak != null && weak.TryGetTarget(out var handler2))
             {
                 handler2();
@@ -188,7 +188,7 @@ namespace Magnet.Test
         [Test]
         public void PropertySetter()
         {
-            var weakSetter = state?.PropertySetterDelegate<Double>("ScriptExample", "Target");
+            var weakSetter = state?.CreateSetterDelegate<Double>("ScriptExample", "Target");
             if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
             {
                 setter(123.45);
@@ -202,7 +202,7 @@ namespace Magnet.Test
         [Test]
         public void PropertyGetter()
         {
-            var weakGetter = state?.PropertyGetterDelegate<Double>("ScriptExample", "Target");
+            var weakGetter = state?.CreateGetterDelegate<Double>("ScriptExample", "Target");
             if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
             {
                 Console.WriteLine(getter());
@@ -216,7 +216,7 @@ namespace Magnet.Test
         [Test]
         public void ScriptTypeOf()
         {
-            var weakAttackEvent = state?.ScriptAs<IPlayLifeEvent>();
+            var weakAttackEvent = state?.FirstAs<IPlayLifeEvent>();
             if (weakAttackEvent != null && weakAttackEvent.TryGetTarget(out var attackEvent))
             {
                 attackEvent.OnOnline(null);
@@ -246,12 +246,12 @@ namespace Magnet.Test
 
         private static void ScriptManager_Unloaded(MagnetScript obj)
         {
-            Console.WriteLine($"½Å±¾[{obj.Name}({obj.UniqueId})]Ð¶ÔØÍê±Ï.");
+            Console.WriteLine($"ï¿½Å±ï¿½[{obj.Name}({obj.UniqueId})]Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½.");
         }
 
         private static void ScriptManager_Unloading(MagnetScript obj)
         {
-            Console.WriteLine($"½Å±¾[{obj.Name}({obj.UniqueId})]Ð¶ÔØÇëÇó.");
+            Console.WriteLine($"ï¿½Å±ï¿½[{obj.Name}({obj.UniqueId})]Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.");
         }
 
 

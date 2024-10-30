@@ -283,7 +283,7 @@ namespace Magnet
         #region Script 
 
 
-        public T ScriptAs<T>() where T : class
+        public T FirstAs<T>() where T : class
         {
             foreach (var instance in _cache)
             {
@@ -291,6 +291,18 @@ namespace Magnet
             }
             return null;
         }
+
+
+
+        public IEnumerable<T> TypeOf<T>() where T : class
+        {
+            foreach (var instance in _cache)
+            {
+                if (instance is T tt)  yield return tt;
+            }
+        }
+
+
 
 
         public T ScriptAs<T>(String scriptName) where T : class

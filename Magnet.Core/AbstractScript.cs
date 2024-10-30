@@ -19,6 +19,7 @@ namespace Magnet.Core
 #if RELEASE
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
+        [NotNull]
         internal ScriptMetaTable MetaTable;
 
 #if RELEASE
@@ -26,7 +27,7 @@ namespace Magnet.Core
 #endif
         [NotNull]
         [Autowired("Script-Context")]
-        private IStateContext _stateContext;
+        private readonly IStateContext _stateContext;
 
 
 

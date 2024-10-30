@@ -187,54 +187,6 @@ namespace Magnet.Syntax
             base.VisitArgument(node);
         }
 
-
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="node"></param>
-        //public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
-        //{
-        //    var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
-        //    if (containingClass == null) return;
-        //    var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
-        //    if (classSymbol == null) return;
-        //    if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
-        //    {
-        //        if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
-        //        {
-
-
-
-        //            ReportDiagnosticInternal(InternalDiagnostics.IllegalConstructor, node, classSymbol.ToDisplayString());
-        //        }
-        //    }
-        //    base.VisitConstructorDeclaration(node);
-        //}
-
-
-        /// <summary>
-        /// 析构函数
-        /// </summary>
-        /// <param name="node"></param>
-        //public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
-        //{
-        //    var containingClass = node.FirstAncestorOrSelf<ClassDeclarationSyntax>();
-        //    if (containingClass == null) return;
-        //    var classSymbol = _semanticModel.GetDeclaredSymbol(containingClass);
-        //    if (classSymbol == null) return;
-        //    if (HasAttribute(classSymbol, typeof(ScriptAttribute)))
-        //    {
-        //        if (IsSubclassOf(classSymbol, typeof(AbstractScript)))
-        //        {
-        //            ReportDiagnosticInternal(InternalDiagnostics.IllegalDestructor, node, classSymbol.ToDisplayString());
-        //        }
-        //    }
-        //    base.VisitDestructorDeclaration(node);
-        //}
-
-
-
         /// <summary>
         /// 继承类型列表
         /// </summary>

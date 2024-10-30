@@ -419,14 +419,14 @@ protected readonly static GlobalVariableStore Global;
 
 ## 💥宿主调用脚本内方法
 为保障脚本的可卸载性，脚本的方法委托或实例均以WeakReference返回。<br>
-宿主使用MethodDelegate调用方法时，脚本内方法必须被[Function]属性标记<br>
-ScriptAs方式获取接口实例则不需要<br>
+宿主使用CreateDelegate调用方法时，脚本内方法必须被[Function]属性标记<br>
+FirstAs方式获取接口实例则不需要<br>
 
 
 ``` csharp
 
 // 尝试获取stateTest内第一个实现了IPlayLifeEvent接口的脚本对象(推荐)
-var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
+var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
 if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
 {   
     // 调用脚本的OnOnline方法
@@ -435,7 +435,7 @@ if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
 }
 
 // 创建 stateTest中脚本ScriptA的Main方法委托(推荐)
-var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
+var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
 if (weakMain != null && weakMain.TryGetTarget(out var main))
 {
     // 调用脚本Main方法
@@ -444,7 +444,7 @@ if (weakMain != null && weakMain.TryGetTarget(out var main))
 }
 
 // 创建脚本ScriptExample中属性Target的Getter委托
-var weakGetter = state?.PropertyGetterDelegate<Double>("ScriptExample", "Target");
+var weakGetter = state?.CreateGetterDelegate<Double>("ScriptExample", "Target");
 if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
 {
     // 获取脚本ScriptExample中属性Target值
@@ -454,7 +454,7 @@ if (weakGetter != null && weakGetter.TryGetTarget(out var getter))
 
 
 // 创建脚本ScriptExample中属性Target的Setter委托
-var weakSetter = state?.PropertySetterDelegate<Double>("ScriptExample", "Target");
+var weakSetter = state?.CreateSetterDelegate<Double>("ScriptExample", "Target");
 if (weakSetter != null && weakSetter.TryGetTarget(out var setter))
 {
     // 对脚本ScriptExample中属性Target赋值
@@ -591,7 +591,7 @@ while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
             return null;
         }
         var state = scriptManager.CreateState();
-        var weak = state.MethodDelegate<Action>("ScriptExample", "Hello");
+        var weak = state.CreateDelegate<Action>("ScriptExample", "Hello");
         state.Dispose();
         scriptManager.Unload();
         return weak;
@@ -613,14 +613,14 @@ while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
             var stateTest = scriptManager.CreateState(stateOptions);
-            var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
+            var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
                 using (new WatchTimer("With Call Main()")) main();
                 main = null;
             }
 
-            var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
+            var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);

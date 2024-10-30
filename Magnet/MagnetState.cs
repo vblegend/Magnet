@@ -3,6 +3,7 @@ using Magnet.Core;
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 
 
@@ -104,31 +105,36 @@ namespace Magnet
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
-        /// <param name="methodName"></param>
+        /// <param name="exportMethodName"></param>
         /// <returns></returns>
-        WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate;
-
+        WeakReference<T> CreateDelegate<T>(String scriptName, String exportMethodName) where T : Delegate;
 
 
         /// <summary>
-        /// Gets a weak reference to the tripartite interface implemented by the script
+        /// Gets a weak reference to the tripartite interface implemented by the script <br/>
         /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
         /// <returns></returns>
-        WeakReference<T> ScriptAs<T>(String scriptName) where T : class;
+        WeakReference<T> NameAs<T>(String scriptName) where T : class;
 
 
         /// <summary>
-        /// Gets a weak reference to the tripartite interface implemented by any script
+        /// Gets weak references to all script objects that implement interface T <br/>
         /// Note: Script Unload is blocked when external references to reference objects inside the script
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        WeakReference<T> ScriptAs<T>() where T : class;
+        IEnumerable<WeakReference<T>> TypeOf<T>() where T : class;
 
-
+        /// <summary>
+        /// Gets the first weak reference to the script object that implements interface T <br/>
+        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        WeakReference<T> FirstAs<T>() where T : class;
 
         /// <summary>
         /// Gets a weak reference to the script's property Getter delegate
@@ -138,7 +144,7 @@ namespace Magnet
         /// <param name="scriptName"></param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
-        WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName);
+        WeakReference<Getter<T>> CreateGetterDelegate<T>(String scriptName, String propertyName);
 
         /// <summary>
         /// Gets the script's property Setter delegate weak reference
@@ -147,7 +153,7 @@ namespace Magnet
         /// <param name="scriptName"></param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
-        WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName);
+        WeakReference<Setter<T>> CreateSetterDelegate<T>(String scriptName, String propertyName);
 
 
         /// <summary>
@@ -234,37 +240,39 @@ namespace Magnet
 
 
 
-        public WeakReference<T> MethodDelegate<T>(String scriptName, String methodName) where T : Delegate
+        public WeakReference<T> CreateDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
             var _delegate = this._stateContext.GetScriptMethod<T>(scriptName, methodName);
             return _delegate != null ? new WeakReference<T>(_delegate) : null;
         }
 
 
-        public WeakReference<T> ScriptAs<T>(String scriptName) where T : class
+        public WeakReference<T> NameAs<T>(String scriptName) where T : class
         {
             var _object = this._stateContext.ScriptAs<T>(scriptName);
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
 
-
-
-        public WeakReference<T> ScriptAs<T>() where T : class
+        public WeakReference<T> FirstAs<T>() where T : class
         {
-            var _object = this._stateContext.ScriptAs<T>();
+            var _object = this._stateContext.FirstAs<T>();
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
+        public IEnumerable<WeakReference<T>> TypeOf<T>() where T : class
+        {
+            return this._stateContext.TypeOf<T>().Select(e => new WeakReference<T>(e));
+        }
 
-        public WeakReference<Getter<T>> PropertyGetterDelegate<T>(String scriptName, String propertyName)
+        public WeakReference<Getter<T>> CreateGetterDelegate<T>(String scriptName, String propertyName)
         {
             var getter = this._stateContext.GetScriptPropertyGetter<T>(scriptName, propertyName);
             return getter != null ? new WeakReference<Getter<T>>(getter) : null;
         }
 
 
-        public WeakReference<Setter<T>> PropertySetterDelegate<T>(String scriptName, String propertyName)
+        public WeakReference<Setter<T>> CreateSetterDelegate<T>(String scriptName, String propertyName)
         {
             var setter = this._stateContext.GetScriptPropertySetter<T>(scriptName, propertyName);
             return setter != null ? new WeakReference<Setter<T>>(setter) : null;

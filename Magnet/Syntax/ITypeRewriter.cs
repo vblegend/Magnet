@@ -12,12 +12,12 @@ namespace Magnet.Syntax
     /// </summary>
     public interface ITypeRewriter
     {
-        
+
         /// <summary>
         /// rewrite typs
         /// </summary>
         /// <param name="syntaxNode"></param>
-        /// <param name="typeSymbolm"></param>
+        /// <param name="typeSymbol"></param>
         /// <param name="newType"></param>
         /// <returns></returns>
         Boolean RewriteType(CSharpSyntaxNode syntaxNode, ITypeSymbol typeSymbol , out Type newType);

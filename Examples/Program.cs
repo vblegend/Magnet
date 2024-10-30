@@ -166,7 +166,7 @@ public static class Program
 
 
 
-            var weakMain = stateTest.MethodDelegate<Action>("ScriptA", "Main");
+            var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
                 using (new WatchTimer("With Call Main()"))
@@ -177,7 +177,7 @@ public static class Program
  
                 main = null;
             }
-            var weakPlayerLife = stateTest.ScriptAs<IPlayLifeEvent>();
+            var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
@@ -229,7 +229,7 @@ public static class Program
 
     private static void CallLogin(IMagnetState state)
     {
-        var login = state.MethodDelegate<Action>("ScriptA", "Main");
+        var login = state.CreateDelegate<Action>("ScriptA", "Main");
         if (login.TryGetTarget(out var target))
         {
             target();
