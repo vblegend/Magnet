@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Threading;
+ 
 public static class Program
 {
 
@@ -119,6 +120,7 @@ public static class Program
         return null;
     }
 
+
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
@@ -173,7 +175,7 @@ public static class Program
                     {
                         main();
                     }
- 
+
                 main = null;
             }
             var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();

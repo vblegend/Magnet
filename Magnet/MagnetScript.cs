@@ -411,7 +411,7 @@ namespace Magnet
         private unsafe delegate*<AbstractScript> ParseGenerateScriptInstanceMethod(Type scriptType)
         {
             var generateMethod = scriptType.GetMethod(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD, BindingFlags.Static | BindingFlags.NonPublic);
-            var methodPointer = TypeUtils.CreateMethodPointer<AbstractScript>(generateMethod);
+            var methodPointer = TypeUtils.CreateStaticMethodPointer<AbstractScript>(generateMethod);
             // 预热
             {
                 RuntimeHelpers.PrepareMethod(generateMethod.MethodHandle);
