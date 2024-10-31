@@ -49,7 +49,7 @@ namespace Magnet
             {
                 if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Value) throw new InvalidOperationException();
             }
-            var _object = new ObjectProvider(type, value,slotName);
+            var _object = new ObjectProvider(null, type, value, slotName);
             if (String.IsNullOrWhiteSpace(slotName))
             {
                 Providers.Add(_object);
@@ -60,6 +60,37 @@ namespace Magnet
             }
             return this;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="targetType">The qualified target type of the object to which the field belongs</param>
+        /// <param name="value"> </param>
+        /// <param name="slotName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public StateOptions RegisterProvider<T>(Type targetType, T value, String slotName = null)
+        {
+            var type = typeof(T);
+            foreach (var item in Providers)
+            {
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Value) throw new InvalidOperationException();
+            }
+            var _object = new ObjectProvider(targetType, type, value, slotName);
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                Providers.Add(_object);
+            }
+            else
+            {
+                Providers.Insert(0, _object);
+            }
+            return this;
+        }
+
+
+
 
     }
 
@@ -208,7 +239,7 @@ namespace Magnet
 
         private unsafe void CreateState()
         {
-            this._stateContext.RegisterProviderInternal(typeof(IStateContext), this._stateContext, "Script-Context");
+            this._stateContext.RegisterProviderInternal(typeof(AbstractScript), typeof(IStateContext), this._stateContext);
             foreach (var meta in this._engine.scriptMetaTables)
             {
                 var instance = meta.Generater();

@@ -39,7 +39,7 @@ namespace Magnet
         /// </summary>
         /// <param name="field"></param>
         /// <returns>当字段为静态时，参数TInstance为null</returns>
-        public static Action<TInstance, TValue> CreateFieldSetter<TInstance, TValue>(FieldInfo field)
+        public static Action<TInstance, TValue> CreateFieldSetter<TInstance, TValue>(this FieldInfo field)
         {
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
             var valueParam = Expression.Parameter(typeof(Object), "value");
@@ -63,7 +63,7 @@ namespace Magnet
         /// </summary>
         /// <param name="field"></param>
         /// <returns>当字段为静态时，参数TInstance为null</returns>
-        public static Func<TInstance, TResult> CreateFieldGetter<TInstance, TResult>(FieldInfo field)
+        public static Func<TInstance, TResult> CreateFieldGetter<TInstance, TResult>(this FieldInfo field)
         {
             var instanceType = typeof(TInstance);
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
@@ -88,7 +88,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<TResult> CreateStaticMethodPointer<TResult>(MethodInfo method)
+        public unsafe static delegate*<TResult> CreateStaticMethodPointer<TResult>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<TResult>)pointer;
@@ -102,7 +102,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<TParam1, TResult> CreateStaticMethodPointer<TParam1, TResult>(MethodInfo method)
+        public unsafe static delegate*<TParam1, TResult> CreateStaticMethodPointer<TParam1, TResult>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<TParam1, TResult>)pointer;
@@ -117,7 +117,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<TParam1, TParam2, TResult> CreateStaticMethodPointer<TParam1, TParam2, TResult>(MethodInfo method)
+        public unsafe static delegate*<TParam1, TParam2, TResult> CreateStaticMethodPointer<TParam1, TParam2, TResult>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<TParam1, TParam2, TResult>)pointer;
@@ -133,7 +133,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<TParam1, TParam2, TParam3, TResult> CreateStaticMethodPointer<TParam1, TParam2, TParam3, TResult>(MethodInfo method)
+        public unsafe static delegate*<TParam1, TParam2, TParam3, TResult> CreateStaticMethodPointer<TParam1, TParam2, TParam3, TResult>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<TParam1, TParam2, TParam3, TResult>)pointer;
@@ -150,7 +150,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<TParam1, TParam2, TParam3, TParam4, TResult> CreateStaticMethodPointer<TParam1, TParam2, TParam3, TParam4, TResult>(MethodInfo method)
+        public unsafe static delegate*<TParam1, TParam2, TParam3, TParam4, TResult> CreateStaticMethodPointer<TParam1, TParam2, TParam3, TParam4, TResult>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<TParam1, TParam2, TParam3, TParam4, TResult>)pointer;
@@ -166,7 +166,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<void> CreateStaticActionPointer(MethodInfo method)
+        public unsafe static delegate*<void> CreateStaticActionPointer(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<void>)pointer;
@@ -179,7 +179,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<TParam1, void> CreateStaticActionPointer<TParam1>(MethodInfo method)
+        public unsafe static delegate*<TParam1, void> CreateStaticActionPointer<TParam1>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<TParam1, void>)pointer;
@@ -193,7 +193,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<in TParam1, in TParam2, void> CreateStaticActionPointer<TParam1, TParam2>(MethodInfo method)
+        public unsafe static delegate*<in TParam1, in TParam2, void> CreateStaticActionPointer<TParam1, TParam2>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<in TParam1, in TParam2, void>)pointer;
@@ -208,7 +208,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<in TParam1, in TParam2, in TParam3, void> CreateStaticActionPointer<TParam1, TParam2, TParam3>(MethodInfo method)
+        public unsafe static delegate*<in TParam1, in TParam2, in TParam3, void> CreateStaticActionPointer<TParam1, TParam2, TParam3>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<in TParam1, in TParam2, in TParam3, void>)pointer;
@@ -224,7 +224,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static delegate*<in TParam1, in TParam2, in TParam3, in TParam4, void> CreateStaticActionPointer<TParam1, TParam2, TParam3, TParam4>(MethodInfo method)
+        public unsafe static delegate*<in TParam1, in TParam2, in TParam3, in TParam4, void> CreateStaticActionPointer<TParam1, TParam2, TParam3, TParam4>(this MethodInfo method)
         {
             IntPtr pointer = method.MethodHandle.GetFunctionPointer();
             return (delegate*<in TParam1, in TParam2, in TParam3, in TParam4, void>)pointer;
@@ -240,7 +240,7 @@ namespace Magnet
         /// <typeparam name="TResult"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Func<TInstance, TResult> CreateMethodDelegate<TInstance, TResult>(MethodInfo method)
+        public static Func<TInstance, TResult> CreateMethodDelegate<TInstance, TResult>(this MethodInfo method)
         {
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
             var call = Expression.Call(instanceParam, method);
@@ -257,7 +257,7 @@ namespace Magnet
         /// <typeparam name="TResult"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Func<TInstance, TParam1, TResult> CreateMethodDelegate<TInstance, TParam1, TResult>(MethodInfo method)
+        public static Func<TInstance, TParam1, TResult> CreateMethodDelegate<TInstance, TParam1, TResult>(this MethodInfo method)
         {
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
             var param1 = Expression.Parameter(typeof(TParam1), "param1");
@@ -276,7 +276,7 @@ namespace Magnet
         /// <typeparam name="TResult"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Func<TInstance, TParam1, TParam2, TResult> CreateMethodDelegate<TInstance, TParam1, TParam2, TResult>(MethodInfo method)
+        public static Func<TInstance, TParam1, TParam2, TResult> CreateMethodDelegate<TInstance, TParam1, TParam2, TResult>(this MethodInfo method)
         {
             if (method == null) return null;
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
@@ -298,7 +298,7 @@ namespace Magnet
         /// <param name="method"></param>
         /// <returns></returns>
         /// 
-        public static Func<TInstance, TParam1, TParam2, TParam3, TResult> CreateMethodDelegate<TInstance, TParam1, TParam2, TParam3, TResult>(MethodInfo method)
+        public static Func<TInstance, TParam1, TParam2, TParam3, TResult> CreateMethodDelegate<TInstance, TParam1, TParam2, TParam3, TResult>(this MethodInfo method)
         {
             if (method == null) return null;
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
@@ -318,10 +318,11 @@ namespace Magnet
         /// <typeparam name="TParam1"></typeparam>
         /// <typeparam name="TParam2"></typeparam>
         /// <typeparam name="TParam3"></typeparam>
+        /// <typeparam name="TParam4"></typeparam>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Func<TInstance, TParam1, TParam2, TParam3, TParam4, TResult>? CreateMethodDelegate<TInstance, TParam1, TParam2, TParam3, TParam4, TResult>(MethodInfo method)
+        public static Func<TInstance, TParam1, TParam2, TParam3, TParam4, TResult>? CreateMethodDelegate<TInstance, TParam1, TParam2, TParam3, TParam4, TResult>(this MethodInfo method)
         {
             if (method == null) return null;
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
@@ -350,7 +351,7 @@ namespace Magnet
         /// <typeparam name="TInstance"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Action<TInstance> CreateMethodAction<TInstance>(MethodInfo method)
+        public static Action<TInstance> CreateMethodAction<TInstance>(this MethodInfo method)
         {
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
             var call = Expression.Call(instanceParam, method);
@@ -366,7 +367,7 @@ namespace Magnet
         /// <typeparam name="TParam1"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Action<TInstance, TParam1> CreateMethodAction<TInstance, TParam1>(MethodInfo method)
+        public static Action<TInstance, TParam1> CreateMethodAction<TInstance, TParam1>(this MethodInfo method)
         {
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
             var param1 = Expression.Parameter(typeof(TParam1), "param1");
@@ -384,7 +385,7 @@ namespace Magnet
         /// <typeparam name="TParam2"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Action<TInstance, TParam1, TParam2> CreateMethodAction<TInstance, TParam1, TParam2>(MethodInfo method)
+        public static Action<TInstance, TParam1, TParam2> CreateMethodAction<TInstance, TParam1, TParam2>(this MethodInfo method)
         {
             if (method == null) return null;
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
@@ -404,7 +405,7 @@ namespace Magnet
         /// <typeparam name="TParam3"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Action<TInstance, TParam1, TParam2, TParam3> CreateMethodAction<TInstance, TParam1, TParam2, TParam3>(MethodInfo method)
+        public static Action<TInstance, TParam1, TParam2, TParam3> CreateMethodAction<TInstance, TParam1, TParam2, TParam3>(this MethodInfo method)
         {
             if (method == null) return null;
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");
@@ -427,7 +428,7 @@ namespace Magnet
         /// <typeparam name="TParam4"></typeparam>
         /// <param name="method"></param>
         /// <returns></returns>
-        public static Action<TInstance, TParam1, TParam2, TParam3, TParam4> CreateMethodAction<TInstance, TParam1, TParam2, TParam3, TParam4>(MethodInfo method)
+        public static Action<TInstance, TParam1, TParam2, TParam3, TParam4> CreateMethodAction<TInstance, TParam1, TParam2, TParam3, TParam4>(this MethodInfo method)
         {
             if (method == null) return null;
             var instanceParam = Expression.Parameter(typeof(TInstance), "instance");

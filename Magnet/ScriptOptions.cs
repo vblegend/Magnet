@@ -340,7 +340,7 @@ namespace Magnet
             {
                 if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Value) throw new InvalidOperationException();
             }
-            var _object = new ObjectProvider(type, value,slotName);
+            var _object = new ObjectProvider(null, type, value, slotName);
             if (String.IsNullOrWhiteSpace(slotName))
             {
                 Providers.Add(_object);
@@ -352,6 +352,33 @@ namespace Magnet
             return this;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="targetType">The qualified target type of the object to which the field belongs</param>
+        /// <param name="value"> </param>
+        /// <param name="slotName"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public ScriptOptions RegisterProvider<T>(Type targetType, T value, String slotName = null)
+        {
+            var type = typeof(T);
+            foreach (var item in Providers)
+            {
+                if (((slotName == null && item.SlotName == null) || (slotName == item.SlotName)) && (Object)value == item.Value) throw new InvalidOperationException();
+            }
+            var _object = new ObjectProvider(targetType, type, value, slotName);
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                Providers.Add(_object);
+            }
+            else
+            {
+                Providers.Insert(0, _object);
+            }
+            return this;
+        }
 
 
 

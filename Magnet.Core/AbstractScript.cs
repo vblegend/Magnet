@@ -26,7 +26,7 @@ namespace Magnet.Core
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
         [NotNull]
-        [Autowired("Script-Context")]
+        [Autowired]
         private readonly IStateContext _stateContext;
 
 

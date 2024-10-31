@@ -69,7 +69,7 @@ namespace Magnet
             {
                 foreach (var item in stateOptions.Providers)
                 {
-                    this.RegisterProviderInternal(item.Type, item.Value, item.SlotName);
+                    this.RegisterProviderInternal(item.TargetType, item.ValueType, item.Value, item.SlotName);
                 }
             }
             this._referenceTrackers = engine.ReferenceTrackers;
@@ -104,7 +104,7 @@ namespace Magnet
         /// <exception cref="InvalidOperationException"></exception>
         internal void RegisterProviderInternal(Type objectType, Object value, String slotName = null)
         {
-            var _object = new ObjectProvider(objectType, value, slotName);
+            var _object = new ObjectProvider(null, objectType, value, slotName);
             if (String.IsNullOrWhiteSpace(slotName))
             {
                 _providers.Add(_object);
@@ -114,6 +114,28 @@ namespace Magnet
                 _providers.Insert(0, _object);
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="targetType">The qualified target type of the object to which the field belongs</param>
+        /// <param name="valueType"></param>
+        /// <param name="value"></param>
+        /// <param name="slotName"></param>
+        internal void RegisterProviderInternal(Type targetType, Type valueType, Object value, String slotName = null)
+        {
+            var _object = new ObjectProvider(targetType, valueType, value, slotName);
+            if (String.IsNullOrWhiteSpace(slotName))
+            {
+                _providers.Add(_object);
+            }
+            else
+            {
+                _providers.Insert(0, _object);
+            }
+        }
+
+
 
 
 
@@ -171,21 +193,22 @@ namespace Magnet
                 for (int j = 0; j < this._providers.Count; j++)
                 {
                     var item = this._providers[j];
-                    if ((field.RequiredType == null || item.Type == field.RequiredType)  &&  item.Type == field.FieldType || field.FieldType.IsAssignableFrom(item.Type))
+                    if ((item.TargetType == null || item.TargetType == field.DeclaringType) &&                  // Provider 限定目标类型
+                        (field.RequiredType == null || item.ValueType == field.RequiredType) &&                 // Autowrired 限定字段类型
+                        (field.SlotName == null || field.SlotName == item.SlotName) &&                         // Provider 限定了槽名字
+                        (item.ValueType == field.FieldType || field.FieldType.IsAssignableFrom(item.ValueType)))  // 字段类型相同的// 继承的
                     {
-                        if (field.SlotName == null || field.SlotName == item.SlotName)
+                        if (field.IsStatic)
                         {
-                            if (field.IsStatic)
-                            {
-                                field.Setter(null, item.Value);
-                                field.IsFilled = true;
-                            }
-                            else
-                            {
-                                field.Setter(instance, item.Value);
-                            }
-                            break;
+                            field.Setter(null, item.Value);
+                            field.IsFilled = true;
                         }
+                        else
+                        {
+                            field.Setter(instance, item.Value);
+                        }
+                        break;
+
                     }
                 }
             }
@@ -299,7 +322,7 @@ namespace Magnet
         {
             foreach (var instance in _cache)
             {
-                if (instance is T tt)  yield return tt;
+                if (instance is T tt) yield return tt;
             }
         }
 
@@ -326,7 +349,7 @@ namespace Magnet
             var typed = typeof(T);
             foreach (var provider in this._providers)
             {
-                if (typed == provider.Type || typed.IsAssignableFrom(provider.Type))
+                if (typed == provider.ValueType || typed.IsAssignableFrom(provider.ValueType))
                 {
                     if (String.IsNullOrEmpty(providerName) || provider.SlotName == providerName)
                     {

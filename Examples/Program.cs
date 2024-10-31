@@ -5,6 +5,7 @@ using App.Core;
 using App.Core.Events;
 using App.Core.Timer;
 using Magnet;
+using Microsoft.CodeAnalysis;
 using ScriptRuner;
 using System;
 using System.Collections.Generic;
@@ -13,12 +14,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Threading;
- 
+
 public static class Program
 {
-
-
-
     private static GlobalVariableStore GLOBAL = new GlobalVariableStore();
 
     private static ScriptOptions Options(String name)
@@ -120,10 +118,35 @@ public static class Program
         return null;
     }
 
-
+    public static String[] CleanTypeName(this Type type)
+    {
+        if (type.IsGenericType)
+        {
+            var args = type.GetGenericArguments();
+            var result = new String[args.Length + 1];
+            result[0] = type.FullName.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
+            for (int i = 0; i < args.Length; i++)
+            {
+                result[i+1] = args[i].FullName;
+            }
+            return result;
+        }
+        else
+        {
+            return [type.FullName];
+        }
+    }
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
+
+        var t = typeof(MagnetScript);
+        var sss = CleanTypeName(t);
+
+
+        Console.WriteLine(t);
+
+
 
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         scriptManager.Unloading += ScriptManager_Unloading;
@@ -170,7 +193,7 @@ public static class Program
             var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
-                using (new WatchTimer("With Call Main()"))
+                using (new WatchTimer("With Call Main() x10"))
                     for (int i = 0; i < 10; i++)
                     {
                         main();

@@ -40,8 +40,13 @@ namespace Magnet.Core
             this.IsStatic = fieldInfo.IsStatic;
             this.Setter = setter;
             this.FieldType = fieldInfo.FieldType;
+            this.DeclaringType = fieldInfo.DeclaringType;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public readonly Type DeclaringType;
 
         /// <summary>
         /// Autowrired field type
