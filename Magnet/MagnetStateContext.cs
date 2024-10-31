@@ -1,11 +1,9 @@
 ﻿using Magnet.Core;
 using Magnet.Tracker;
-using Microsoft.CodeAnalysis.Scripting;
+
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
+
 using System.Reflection;
 
 
@@ -141,18 +139,24 @@ namespace Magnet
 
         internal void Autowired(IReadOnlyDictionary<Type, Object> objectMap)
         {
-
             foreach (var instance in _cache)
             {
                 var scriptInstance = instance as AbstractScript;
                 var metaTable = scriptInstance.MetaTable;
                 foreach (var field in metaTable.AutowriredTables)
                 {
+                    var target = scriptInstance;
+                    if (field.IsStatic)
+                    {
+                        if (field.IsFilled) continue;
+                        target = null;
+                    }
                     foreach (var obj in objectMap)
                     {
                         if ((field.RequiredType == null || obj.Key == field.RequiredType) && obj.Key == field.FieldType || field.FieldType.IsAssignableFrom(obj.Key))
                         {
-                            field.Setter(scriptInstance, obj.Value);
+                            field.Setter(target, obj.Value);
+                            if (field.IsStatic) field.IsFilled = true;
                             break;
                         }
                     }
@@ -160,22 +164,28 @@ namespace Magnet
             }
         }
 
-        internal void Autowired<TObject>(TObject @object, String slotName = null)
+        internal void Autowired<TObject>(Type targetType, TObject @object, String slotName = null)
         {
-            var valType = typeof(TObject);
-
+            var valueType = typeof(TObject);
             foreach (var instance in _cache)
             {
                 var scriptInstance = instance as AbstractScript;
                 var metaTable = scriptInstance.MetaTable;
                 foreach (var field in metaTable.AutowriredTables)
                 {
-                    if ((field.RequiredType == null || valType == field.RequiredType) && !field.IsStatic && valType.UnderlyingSystemType == field.FieldType || field.FieldType.IsAssignableFrom(valType))
+                    var target = scriptInstance;
+                    if (field.IsStatic)
                     {
-                        if (slotName == null || slotName == field.SlotName)
-                        {
-                            field.Setter(scriptInstance, @object);
-                        }
+                        if (field.IsFilled) continue;
+                        target = null;
+                    }
+                    if ((field.RequiredType == null || valueType == field.RequiredType) &&            // Autowrired 限定字段类型
+                        (field.SlotName == null || field.SlotName == slotName) &&                    // Provider 限定了槽名字
+                        (valueType == field.FieldType || field.FieldType.IsAssignableFrom(valueType)))  // 字段类型相同的// 继承的
+                    {
+                        field.Setter(target, @object);
+                        if (field.IsStatic) field.IsFilled = true;
+                        break;
                     }
                 }
             }
@@ -189,7 +199,12 @@ namespace Magnet
             for (int i = 0; i < metaTable.AutowriredTables.Count; i++)
             {
                 var field = metaTable.AutowriredTables[i];
-                if (field.IsStatic && field.IsFilled) continue;
+                var target = instance;
+                if (field.IsStatic)
+                {
+                    if (field.IsFilled) continue;
+                    target = null;
+                }
                 for (int j = 0; j < this._providers.Count; j++)
                 {
                     var item = this._providers[j];
@@ -198,15 +213,8 @@ namespace Magnet
                         (field.SlotName == null || field.SlotName == item.SlotName) &&                         // Provider 限定了槽名字
                         (item.ValueType == field.FieldType || field.FieldType.IsAssignableFrom(item.ValueType)))  // 字段类型相同的// 继承的
                     {
-                        if (field.IsStatic)
-                        {
-                            field.Setter(null, item.Value);
-                            field.IsFilled = true;
-                        }
-                        else
-                        {
-                            field.Setter(instance, item.Value);
-                        }
+                        field.Setter(target, item.Value);
+                        if (field.IsStatic) field.IsFilled = true;
                         break;
 
                     }

@@ -125,9 +125,10 @@ namespace Magnet
         /// Inject objects into all script instances
         /// </summary>
         /// <typeparam name="TObject"></typeparam>
+        /// <param name="targetType">Qualifies the type of the target script, or not if null</param>
         /// <param name="obj"></param>
         /// <param name="slotName">[Autowired] Specifies the slot name</param>
-        void InjectProvider<TObject>(TObject obj, String slotName = null);
+        void InjectProvider<TObject>(Type targetType, TObject obj, String slotName = null);
 
 
         /// <summary>
@@ -158,6 +159,10 @@ namespace Magnet
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         IEnumerable<WeakReference<T>> TypeOf<T>() where T : class;
+
+
+
+
 
         /// <summary>
         /// Gets the first weak reference to the script object that implements interface T <br/>
@@ -264,9 +269,9 @@ namespace Magnet
         }
 
 
-        public void InjectProvider<TObject>(TObject obj, String slotName = null)
+        public void InjectProvider<TObject>(Type targetType, TObject obj, String slotName = null)
         {
-            this._stateContext.Autowired<TObject>(obj, slotName);
+            this._stateContext.Autowired<TObject>(targetType, obj, slotName);
         }
 
 

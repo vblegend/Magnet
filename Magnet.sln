@@ -21,8 +21,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "App.Core", "App.Core\App.Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Magnet.Test", "Magnet.Test\Magnet.Test.csproj", "{BF5D19CC-04EE-4C39-B00A-DB60FABF05DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Game.Toolkit", "Toolkit.Privite\Game.Toolkit.csproj", "{71A12933-E488-450F-8B13-1890D322B18F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,14 +77,6 @@ Global
 		{BF5D19CC-04EE-4C39-B00A-DB60FABF05DF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BF5D19CC-04EE-4C39-B00A-DB60FABF05DF}.Release|x64.ActiveCfg = Release|Any CPU
 		{BF5D19CC-04EE-4C39-B00A-DB60FABF05DF}.Release|x64.Build.0 = Release|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Debug|x64.Build.0 = Debug|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Release|x64.ActiveCfg = Release|Any CPU
-		{71A12933-E488-450F-8B13-1890D322B18F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

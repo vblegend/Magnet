@@ -49,15 +49,19 @@ namespace Magnet.Core
         public readonly Type DeclaringType;
 
         /// <summary>
+        /// The type of data required for the injection point
+        /// </summary>
+        public readonly Type RequiredType;
+
+        /// <summary>
+        /// Slot name of the injection point, any matching type if empty
+        /// </summary>
+        public readonly String SlotName;
+
+        /// <summary>
         /// Autowrired field type
         /// </summary>
         public readonly Type FieldType;
-
-
-        /// <summary>
-        /// field setter
-        /// </summary>
-        public readonly Action<AbstractScript, Object> Setter;
 
         /// <summary>
         /// Field is static
@@ -70,14 +74,13 @@ namespace Magnet.Core
         internal Boolean IsFilled;
 
         /// <summary>
-        /// Slot name of the injection point, any matching type if empty
+        /// field setter
         /// </summary>
-        public readonly String SlotName;
+        public readonly Action<AbstractScript, Object> Setter;
 
-        /// <summary>
-        /// The type of data required for the injection point
-        /// </summary>
-        public readonly Type RequiredType;
+
+
+
     }
 
     /// <summary>
