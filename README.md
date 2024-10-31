@@ -22,7 +22,7 @@
 
 
 ## 💥编译运行测试
-创建啊1000000个State然后卸载MagnetScript<br/>
+创建1000000个State实例然后卸载MagnetScript<br/>
 CPU:  13th Gen Intel(R) Core(TM) i7-13700KF  <br/>
 内存:  DDR5 64.0 GB  速度:	4000 MT/秒 <br/>
 <div align=center><img src="screenshot/test.png"></div>
