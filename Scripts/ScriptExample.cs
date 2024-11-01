@@ -29,9 +29,9 @@ public class ScriptExample : AbstractScript
 
 
     [Function("IsTypeEqual")]
-    public Boolean IsTypeEqual( Type type)
+    public Boolean IsTypeEqual(Type type)
     {
-        return type ==null;
+        return type == typeof(AbstractScript);
     }
 
 

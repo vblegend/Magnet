@@ -193,7 +193,7 @@ public static class Program
             {
                 using (new WatchTimer("CreateState 100000"))
                 {
-                    for (int i = 0; i < 100000; i++)
+                    for (int i = 0; i < 1000; i++)
                     {
                         var stateOption1s = StateOptions.Default;
                         stateOption1s.RegisterProvider(new TimerService());
@@ -202,14 +202,15 @@ public static class Program
                 }
             }
 
-            //var weakIsTypeEqual = stateTest.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
-            //if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
-            //{
-            //    var bol = isTypeEqual(typeof(AbstractScript));
-            //    //为什么传个type进去会导致卸载不掉？？？？
-            //    Console.WriteLine(bol);
-            //    isTypeEqual = null;
-            //}
+            var weakIsTypeEqual = stateTest.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
+            if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
+            {
+                //为什么isTypeEqual(typeof(AbstractScript))就会卸载不掉  isTypeEqual(type) 就没事？？？？
+                var type = typeof(AbstractScript);
+                var bol = isTypeEqual(type);
+                Console.WriteLine(bol);
+                isTypeEqual = null;
+            }
 
 
             var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
