@@ -285,7 +285,7 @@ namespace Magnet
 
         public WeakReference<T> NameAs<T>(String scriptName) where T : class
         {
-            var _object = this._stateContext.ScriptAs<T>(scriptName);
+            var _object = this._stateContext.NameAs<T>(scriptName);
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
@@ -317,7 +317,7 @@ namespace Magnet
 
         public object GetFieldValue(string scriptName, string variableName)
         {
-            AbstractScript script = this._stateContext.InstanceOfName(scriptName);
+            AbstractScript script = this._stateContext.NameAs<AbstractScript>(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -332,7 +332,7 @@ namespace Magnet
 
         public void SetFieldValue(string scriptName, string variableName, object value)
         {
-            AbstractScript script = this._stateContext.InstanceOfName(scriptName);
+            AbstractScript script = this._stateContext.NameAs<AbstractScript>(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();

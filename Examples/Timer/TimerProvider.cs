@@ -36,7 +36,7 @@ namespace App.Core.Timer
             {
                 if (timersDefine.TryGetValue(timerIndex, out var timerInfo))
                 {
-                    var script = state.InstanceOfType(timerInfo.MethodInfo.DeclaringType);
+                    var script = state.FirstAs<AbstractScript>(timerInfo.MethodInfo.DeclaringType);
                     if (script != null)
                     {
                         var callback = (Action)timerInfo.MethodInfo.CreateDelegate(typeof(Action), script);

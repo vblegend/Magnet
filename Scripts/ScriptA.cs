@@ -148,20 +148,6 @@ public class ScriptA : GameScript
         debugger();
 
         Print("System.Drawing.dll");
-
-
-        Call("ScriptB", "Test", []);
-        Call("ScriptB", "PrintMessage", ["Help"]);
-        TryCall("ScriptB", "PrintMessage1", ["Help"]);
-
-
-        Script<ScriptB>().PrintMessage("AAA");
-
-        Script<ScriptB>((script) =>
-        {
-            script.PrintMessage("BBB");
-        });
-
         //ScriptB.PrintMessage(message);
     }
 }

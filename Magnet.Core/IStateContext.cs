@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 
 namespace Magnet.Core
@@ -8,34 +9,34 @@ namespace Magnet.Core
     /// </summary>
     public interface IStateContext
     {
-
-
         /// <summary>
-        /// get script instance of the T type
+        /// 
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">AbstractScript or interface</typeparam>
         /// <returns></returns>
-        public T InstanceOfType<T>() where T : AbstractScript;
-
+        public T FirstAs<T>() where T : class;
 
         /// <summary>
-        /// get script instance of the type
+        /// 
         /// </summary>
+        /// <typeparam name="T">AbstractScript or interface</typeparam>
         /// <param name="type"></param>
         /// <returns></returns>
-        public AbstractScript InstanceOfType(Type type);
+        public T FirstAs<T>(Type type) where T : AbstractScript;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T">AbstractScript or interface</typeparam>
+        /// <returns></returns>
+        public IEnumerable<T> TypeOf<T>() where T : class;
 
         /// <summary>
-        /// get script instance of the script name
+        /// 
         /// </summary>
+        /// <typeparam name="T">AbstractScript or interface</typeparam>
         /// <param name="scriptName"></param>
         /// <returns></returns>
-        public AbstractScript InstanceOfName(String scriptName);
-
-        /// <summary>
-        /// Script information output stream
-        /// </summary>
-        public IOutput Output { get; }
+        public T NameAs<T>(String scriptName) where T : class;
 
         /// <summary>
         /// Get the state provider
@@ -44,5 +45,11 @@ namespace Magnet.Core
         /// <param name="providerName"></param>
         /// <returns></returns>
         public T GetProvider<T>(string providerName = null) where T : class;
+
+
+        /// <summary>
+        /// Script information output stream
+        /// </summary>
+        public IOutput Output { get; }
     }
 }

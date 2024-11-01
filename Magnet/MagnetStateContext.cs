@@ -38,14 +38,9 @@ namespace Magnet
         private List<IScriptInstance> _cache;
 
 #if RELEASE
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private Dictionary<Type, AbstractScript> _cacheByType;
-
-#if RELEASE
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#endif
-        private Dictionary<String, AbstractScript> _cacheByName;
+        internal IReadOnlyList<IScriptInstance> Instances => _cache;
 
 
 
@@ -54,9 +49,6 @@ namespace Magnet
             this._engine = engine;
             var count = engine.scriptMetaTables.Count;
             _cache = new List<IScriptInstance>(count);
-            _cacheByType = new Dictionary<Type, AbstractScript>(count);
-            _cacheByName = new Dictionary<String, AbstractScript>(count);
-
             // 计算好容量 防止扩容
             var length = engine.Options.Providers.Count + stateOptions.Providers.Count + count;
 
@@ -85,8 +77,6 @@ namespace Magnet
             }
             this._cache = null;
             this._delegateCache = null;
-            this._cacheByType = null;
-            this._cacheByName = null;
             this._providers = null;
             this._referenceTrackers = null;
         }
@@ -237,8 +227,8 @@ namespace Magnet
             {
                 return (T)_delegate;
             }
-
-            if (_cacheByName.TryGetValue(scriptName, out AbstractScript instance))
+            var instance = this.NameAs<AbstractScript>(scriptName);
+            if (instance != null)
             {
                 if (instance.MetaTable.ExportMethods.TryGetValue(methodName, out var result))
                 {
@@ -267,7 +257,7 @@ namespace Magnet
             {
                 return (Getter<T>)_delegate;
             }
-            AbstractScript script = this.InstanceOfName(scriptName);
+            AbstractScript script = this.NameAs<AbstractScript>(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -294,7 +284,7 @@ namespace Magnet
             {
                 return (Setter<T>)_delegate;
             }
-            AbstractScript script = this.InstanceOfName(scriptName);
+            AbstractScript script = this.NameAs<AbstractScript>(scriptName);
             if (script != null)
             {
                 Type type = script.GetType();
@@ -312,7 +302,7 @@ namespace Magnet
         #endregion
 
 
-        #region Script 
+        #region IStateContext 
 
 
         public T FirstAs<T>() where T : class
@@ -326,6 +316,16 @@ namespace Magnet
 
 
 
+        public T FirstAs<T>(Type type) where T : AbstractScript
+        {
+            foreach (AbstractScript instance in _cache)
+            {
+                if (instance.MetaTable.Type == type && instance is T tt) return tt;
+            }
+            return null;
+        }
+
+
         public IEnumerable<T> TypeOf<T>() where T : class
         {
             foreach (var instance in _cache)
@@ -334,17 +334,11 @@ namespace Magnet
             }
         }
 
-
-
-
-        public T ScriptAs<T>(String scriptName) where T : class
+        public T NameAs<T>(String scriptName) where T : class
         {
-            if (_cacheByName.TryGetValue(scriptName, out AbstractScript instance))
+            foreach (AbstractScript instance in _cache)
             {
-                if (instance is T tt)
-                {
-                    return tt;
-                }
+                if (instance is T tt && instance.MetaTable.Alias == scriptName) return tt;
             }
             return null;
         }
@@ -373,39 +367,12 @@ namespace Magnet
 
 
 
-        #region Cache   
-
+        #region AddCache   
         internal void AddInstance(AbstractScript script)
         {
             _cache.Add(script);
-            _cacheByType.Add(script.MetaTable.Type, script);
-            _cacheByName.Add(script.MetaTable.Alias, script);
             this._referenceTrackers.Add(script);
         }
-        public AbstractScript InstanceOfName(string scriptName)
-        {
-            _cacheByName.TryGetValue(scriptName, out AbstractScript instance);
-            return instance;
-        }
-
-        public T InstanceOfType<T>() where T : AbstractScript
-        {
-            _cacheByType.TryGetValue(typeof(T), out AbstractScript instance);
-            return (T)instance;
-        }
-
-        public AbstractScript InstanceOfType(Type type)
-        {
-            _cacheByType.TryGetValue(type, out AbstractScript instance);
-            return instance;
-        }
-
-#if RELEASE
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#endif
-        internal IReadOnlyList<IScriptInstance> Instances => _cache;
-
-
 
         #endregion
 
