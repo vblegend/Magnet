@@ -4,7 +4,7 @@ using System;
 
 namespace Magnet
 {
-    internal class ObjectProvider
+    internal struct ObjectProvider
     {
         internal ObjectProvider(Type targetType, Type valueType, Object value, String slotName)
         {
