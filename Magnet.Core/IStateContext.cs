@@ -38,14 +38,6 @@ namespace Magnet.Core
         /// <returns></returns>
         public T NameAs<T>(String scriptName) where T : class;
 
-        /// <summary>
-        /// Get the state provider
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="providerName"></param>
-        /// <returns></returns>
-        public T GetProvider<T>(string providerName = null) where T : class;
-
 
         /// <summary>
         /// Script information output stream

@@ -252,8 +252,41 @@ public class TimerProvider : ITypeAnalyzer
 
 
 
+
+## 💥脚本编译诊断抑制
+脚本支持编译诊断抑制的默认等级设置，支持C#编译器的全量诊断代码和以下*Magnet*内置编译诊断
+
+| 诊断ID | 默认级别 | 描述 |
+| :-----------: | :-----------: | ----------- | 
+| SW001 | Warning | 无效的脚本对象，检测到对象继承了AbstractScript 但未被[ScriptAttribute]标记 | 
+| SW002 | Warning | 无效的脚本对象，检测到对象被[ScriptAttribute]标记 但未继承AbstractScript对象 | 
+| SW003 | Warning | 不明确的全局字段，字段被标记为static但未被[GlobalAttribute]标记 | 
+| SW004 | Warning | 不明确的全局属性，属性被标记为static但未被[GlobalAttribute]标记 | 
+| SE001 | Error   | 脚本不允许使用异步操作符号async await | 
+| SE002 | Error   | 被禁止使用的命名空间 | 
+| SE003 | Error   | 被禁止使用的类型 | 
+| SE004 | Error   | 脚本对象禁止实现构造函数 | 
+| SE005 | Error   | 脚本对象禁止实现析构函数 | 
+
+
+``` csharp
+// 将SW001诊断提升至Error，没有标记[ScriptAttribute]的脚本对象会导致编译失败
+options.AddDiagnosticSuppress("SW001", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+// 将SW002诊断提升至Error，没有继承AbstractScript的脚本对象会导致编译失败
+options.AddDiagnosticSuppress("SW002", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+// 将SW003诊断提升至Error，没有标记[GlobalAttribute]的静态字段会导致编译失败
+options.AddDiagnosticSuppress("SW003", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+
+// 将SW004诊断提升至Error，没有标记[GlobalAttribute]的静态属性会导致编译失败
+options.AddDiagnosticSuppress("SW004", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
+```
+
+
+
 ## 💥脚本依赖注入
-Magnet实现了简单的依赖注入功能，支持依赖的Type和Name匹配。
+Magnet实现了简单的依赖注入功能，支持目标对象的Type、依赖的Type和Name匹配。
 
 1.全局依赖注入
 ``` csharp
@@ -264,14 +297,15 @@ options.RegisterProvider(GLOBAL);
 options.RegisterProvider<IObjectContext>(new HumContext(), "SELF");
 ```
 
-2.State级别依赖注入，继承了全局依赖
+2.`MagnetState`级别依赖注入，继承了全局依赖
 ```csharp
 var stateOptions = StateOptions.Default;
 stateOptions.Identity = 666;
 stateOptions.RegisterProvider(new TimerService());
 var stateTest = scriptManager.CreateState(stateOptions);
 ```
-3.脚本间依赖注入，脚本实例创建后会自动注册进State级别的依赖注入列表内
+3.脚本`MagnetState`的`IStateContext`会自动注册进`MagnetState`级别的依赖注入列表内<br>
+4.脚本实例在创建后会自动注册进`MagnetState`级别的依赖注入列表内
 
 
 脚本
@@ -317,42 +351,18 @@ public class ScriptB : AbstractScript
 ```
 
 
-## 💥脚本编译诊断抑制
-脚本支持编译诊断抑制的默认等级设置，支持C#编译器的全量诊断代码和以下*Magnet*内置编译诊断
 
-| 诊断ID | 默认级别 | 描述 |
-| :-----------: | :-----------: | ----------- | 
-| SW001 | Warning | 无效的脚本对象，检测到对象继承了AbstractScript 但未被[ScriptAttribute]标记 | 
-| SW002 | Warning | 无效的脚本对象，检测到对象被[ScriptAttribute]标记 但未继承AbstractScript对象 | 
-| SW003 | Warning | 不明确的全局字段，字段被标记为static但未被[GlobalAttribute]标记 | 
-| SW004 | Warning | 不明确的全局属性，属性被标记为static但未被[GlobalAttribute]标记 | 
-| SE001 | Error   | 脚本不允许使用异步操作符号async await | 
-| SE002 | Error   | 被禁止使用的命名空间 | 
-| SE003 | Error   | 被禁止使用的类型 | 
-| SE004 | Error   | 脚本对象禁止实现构造函数 | 
-| SE005 | Error   | 脚本对象禁止实现析构函数 | 
+## 💥脚本之间相互调用
+`MagnetState`中脚本实例之间的调用通过注入的方式将目标脚本对象注入到当前脚本内<br>
+具体实现查看上面的`脚本依赖注入`部分
 
 
 
-
-
-``` csharp
-// 将SW001诊断提升至Error，没有标记[ScriptAttribute]的脚本对象会导致编译失败
-options.AddDiagnosticSuppress("SW001", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
-
-// 将SW002诊断提升至Error，没有继承AbstractScript的脚本对象会导致编译失败
-options.AddDiagnosticSuppress("SW002", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
-
-// 将SW003诊断提升至Error，没有标记[GlobalAttribute]的静态字段会导致编译失败
-options.AddDiagnosticSuppress("SW003", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
-
-// 将SW004诊断提升至Error，没有标记[GlobalAttribute]的静态属性会导致编译失败
-options.AddDiagnosticSuppress("SW004", Microsoft.CodeAnalysis.ReportDiagnostic.Error);
-```
 
 
 ## 💥脚本的生命周期
-脚本需要继承 AbstractScript
+AbstractScript中实现了 Initialize、Shutdown 虚方法<br>
+派生类中通过重写这两个方法进行处理脚本初始化和脚本卸载事件。
 
 ``` csharp
 // 脚本初始化，在所有脚本实例创建完成之后且依赖注入完毕之后执行。
@@ -378,33 +388,6 @@ public void Debug(Object @object, [CallerFilePath] String callFilePath = null, [
 ```
 
 
-## 💥脚本之间相互调用
-因每个State内的脚本对象是动态创建的，所以脚本对象初始状态下是离散的。<br>
-`State与State之间的脚本对象由对象实例进行隔离，无法互相调用，但是可以通过静态变量或全局变量进行交互。`<br>
-State中脚本对象之间的调用有以下4种办法。<br>
-<br>
-1.脚本之间的依赖注入，参考上方的依赖注入（推荐）<br>
-2.题本提供的Script方法获取脚本实例<br>
-3.脚本提供的Call方法（不推荐、早期API）<br>
-4.脚本提供的TryCall方法（不推荐、早期API）
-
-``` csharp
-// 调用ScriptB的Test方法，出现错误会抛出异常
-Call("ScriptB", "Test", []);
-
-// 尝试调用ScriptB的PrintMessage方法，出现任何错误均不会抛出异常
-TryCall("ScriptB", "PrintMessage", ["Help"]);
-
-// 调用ScriptB的PrintMessage方法（支持强类型签名）出现错误会抛出异常
-Script<ScriptB>().PrintMessage("AAA");
-
-// 当脚本ScriptB存在时调用ScriptB的PrintMessage方法（支持强类型签名）出现错误会抛出异常
-Script<ScriptB>((script) =>
-{
-    script.PrintMessage("BBB");
-});
-```
-
 ## 💥脚本调试断点
 使用Debug模式编译运行脚本时，执行到`debugger()`将自动打开调试器并断点暂停。<br>
 Release模式编译时此函数将被编译器优化掉
@@ -414,9 +397,10 @@ debugger();
 
 
 ## 💥全局变量定义
-由于C#的特性通过 static 定义的方法、属性、字段 均可被所有State内使用<br>
+由于C#的特性通过 static 定义的方法、属性、字段 均可被所有`MagnetState`内使用<br>
 所以为了不混淆全局变量与静态变量，增加了`GlobalAttribute` 属性标签<br>
-当字段或属性声明为static时，如果未标记[Global]属性，则编译时会产生编译警告但不影响正常运行。
+当字段或属性声明为static时，如果未标记[Global]属性，则编译时会产生编译警告但不影响正常运行。<br>
+全局变量同样支持依赖注入功能
 
 ``` csharp
 [Global]
@@ -428,15 +412,16 @@ protected readonly static GlobalVariableStore Global;
 
 
 ## 💥宿主调用脚本内方法
-为保障脚本的可卸载性，脚本的方法委托或实例均以WeakReference返回。<br>
-宿主使用CreateDelegate调用方法时，脚本内方法必须被[Function]属性标记<br>
-FirstAs方式获取接口实例则不需要<br>
+为保障脚本的可卸载性，脚本的方法委托或实例均以`WeakReference`返回。<br>
+宿主使用`CreateDelegate`调用方法时，脚本内方法必须被`[Function]`属性标记<br>
+`FirstAs`方式获取接口实例则不需要，<br>
+🎉推荐使用`FirstAs`泛型方法和`TypeOf`泛型方法<br>
 
 
 ``` csharp
 
 // 尝试获取stateTest内第一个实现了IPlayLifeEvent接口的脚本对象(推荐)
-var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
+WeakReference<IPlayLifeEvent> weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
 if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
 {   
     // 调用脚本的OnOnline方法
@@ -444,8 +429,8 @@ if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
     lifeEvent = null;
 }
 
-// 创建 stateTest中脚本ScriptA的Main方法委托(推荐)
-var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
+// 创建 stateTest中脚本ScriptA的Main方法委托
+WeakReference<Action> weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
 if (weakMain != null && weakMain.TryGetTarget(out var main))
 {
     // 调用脚本Main方法

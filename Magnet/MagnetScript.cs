@@ -420,7 +420,7 @@ namespace Magnet
             return methodPointer;
         }
  
-        private List<AutowriredField> ParseAutowriredFields(Type scriptClassType)
+        private AutowriredField[] ParseAutowriredFields(Type scriptClassType)
         {
             var fieldList = new List<AutowriredField>();
             var type = scriptClassType;
@@ -439,7 +439,7 @@ namespace Magnet
                 }
                 type = type.BaseType;
             }
-            return fieldList;
+            return [.. fieldList];
         }
 
         private Dictionary<String, ExportMethod> ParseExportMethods(Type scriptClassType)

@@ -3,7 +3,7 @@ using Magnet.Tracker;
 
 using System;
 using System.Collections.Generic;
-
+using System.Diagnostics;
 using System.Reflection;
 
 
@@ -30,11 +30,6 @@ namespace Magnet
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        internal List<ObjectProvider> _providers;
-
-#if RELEASE
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#endif
         private List<IScriptInstance> _cache;
 
 #if RELEASE
@@ -42,26 +37,11 @@ namespace Magnet
 #endif
         internal IReadOnlyList<IScriptInstance> Instances => _cache;
 
-
-
         internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
         {
             this._engine = engine;
             var count = engine.scriptMetaTables.Count;
             _cache = new List<IScriptInstance>(count);
-            // 计算好容量 防止扩容
-            var length = engine.Options.Providers.Count + stateOptions.Providers.Count + count;
-
-            this._providers = new List<ObjectProvider>(length);
-            this._providers.AddRange(engine.Options.Providers);
-
-            if (stateOptions.Providers.Count > 0)
-            {
-                foreach (var item in stateOptions.Providers)
-                {
-                    this.RegisterProviderInternal(item.TargetType, item.ValueType, item.Value, item.SlotName);
-                }
-            }
             this._referenceTrackers = engine.ReferenceTrackers;
         }
 
@@ -77,55 +57,10 @@ namespace Magnet
             }
             this._cache = null;
             this._delegateCache = null;
-            this._providers = null;
             this._referenceTrackers = null;
         }
 
         #region Autowired
-
-        /// <summary>
-        /// Register the State private Providers
-        /// </summary>
-        /// <param name="objectType"></param>
-        /// <param name="value"></param>
-        /// <param name="slotName"></param>
-        /// <exception cref="InvalidOperationException"></exception>
-        internal void RegisterProviderInternal(Type objectType, Object value, String slotName = null)
-        {
-            var _object = new ObjectProvider(null, objectType, value, slotName);
-            if (String.IsNullOrWhiteSpace(slotName))
-            {
-                _providers.Add(_object);
-            }
-            else
-            {
-                _providers.Insert(0, _object);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="targetType">The qualified target type of the object to which the field belongs</param>
-        /// <param name="valueType"></param>
-        /// <param name="value"></param>
-        /// <param name="slotName"></param>
-        internal void RegisterProviderInternal(Type targetType, Type valueType, Object value, String slotName = null)
-        {
-            var _object = new ObjectProvider(targetType, valueType, value, slotName);
-            if (String.IsNullOrWhiteSpace(slotName))
-            {
-                _providers.Add(_object);
-            }
-            else
-            {
-                _providers.Insert(0, _object);
-            }
-        }
-
-
-
-
 
         internal void Autowired(IReadOnlyDictionary<Type, Object> objectMap)
         {
@@ -133,8 +68,9 @@ namespace Magnet
             {
                 var scriptInstance = instance as AbstractScript;
                 var metaTable = scriptInstance.MetaTable;
-                foreach (var field in metaTable.AutowriredTables)
+                for (int i = 0; i < metaTable.AutowriredTables.Length; i++)
                 {
+                    var field = metaTable.AutowriredTables[i];
                     var target = scriptInstance;
                     if (field.IsStatic)
                     {
@@ -146,7 +82,11 @@ namespace Magnet
                         if ((field.RequiredType == null || obj.Key == field.RequiredType) && obj.Key == field.FieldType || field.FieldType.IsAssignableFrom(obj.Key))
                         {
                             field.Setter(target, obj.Value);
-                            if (field.IsStatic) field.IsFilled = true;
+                            if (field.IsStatic)
+                            {
+                                field.IsFilled = true;
+                                metaTable.AutowriredTables[i] = field;
+                            }
                             break;
                         }
                     }
@@ -161,8 +101,9 @@ namespace Magnet
             {
                 var scriptInstance = instance as AbstractScript;
                 var metaTable = scriptInstance.MetaTable;
-                foreach (var field in metaTable.AutowriredTables)
+                for (int i = 0; i < metaTable.AutowriredTables.Length; i++)
                 {
+                    var field = metaTable.AutowriredTables[i];
                     var target = scriptInstance;
                     if (field.IsStatic)
                     {
@@ -174,43 +115,17 @@ namespace Magnet
                         (valueType == field.FieldType || field.FieldType.IsAssignableFrom(valueType)))  // 字段类型相同的// 继承的
                     {
                         field.Setter(target, @object);
-                        if (field.IsStatic) field.IsFilled = true;
+                        if (field.IsStatic)
+                        {
+                            field.IsFilled = true;
+                            metaTable.AutowriredTables[i] = field;
+                        }
                         break;
                     }
                 }
             }
         }
 
-
-
-        internal void Autowired(AbstractScript instance)
-        {
-            var metaTable = instance.MetaTable;
-            for (int i = 0; i < metaTable.AutowriredTables.Count; i++)
-            {
-                var field = metaTable.AutowriredTables[i];
-                var target = instance;
-                if (field.IsStatic)
-                {
-                    if (field.IsFilled) continue;
-                    target = null;
-                }
-                for (int j = 0; j < this._providers.Count; j++)
-                {
-                    var item = this._providers[j];
-                    if ((item.TargetType == null || item.TargetType == field.DeclaringType) &&                  // Provider 限定目标类型
-                        (field.RequiredType == null || item.ValueType == field.RequiredType) &&                 // Autowrired 限定字段类型
-                        (field.SlotName == null || field.SlotName == item.SlotName) &&                         // Provider 限定了槽名字
-                        (item.ValueType == field.FieldType || field.FieldType.IsAssignableFrom(item.ValueType)))  // 字段类型相同的// 继承的
-                    {
-                        field.Setter(target, item.Value);
-                        if (field.IsStatic) field.IsFilled = true;
-                        break;
-
-                    }
-                }
-            }
-        }
         #endregion
 
 
@@ -343,28 +258,6 @@ namespace Magnet
             return null;
         }
         #endregion
-
-
-
-        public T GetProvider<T>(string providerName = null) where T : class
-        {
-            var typed = typeof(T);
-            foreach (var provider in this._providers)
-            {
-                if (typed == provider.ValueType || typed.IsAssignableFrom(provider.ValueType))
-                {
-                    if (String.IsNullOrEmpty(providerName) || provider.SlotName == providerName)
-                    {
-                        return provider.Value as T;
-                    }
-                }
-            }
-            return null;
-        }
-
-
-
-
 
 
         #region AddCache   

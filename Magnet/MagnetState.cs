@@ -1,10 +1,8 @@
 ﻿using Magnet.Analysis;
 using Magnet.Core;
-using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
 
 
 namespace Magnet
@@ -237,29 +235,33 @@ namespace Magnet
             this.Identity = createStateOptions.Identity;
             this._engine = engine;
             this._stateContext = new MagnetStateContext(engine, createStateOptions);
-
-            this.CreateState();
+            using (var injector = new DependencyInjector(_engine, createStateOptions))
+            {
+                injector.RegisterProviderInternal(typeof(AbstractScript), typeof(IStateContext), this._stateContext);
+                this.CreateState(injector);
+            }
         }
+       
 
 
-        private unsafe void CreateState()
+        private unsafe void CreateState(DependencyInjector injector)
         {
-            this._stateContext.RegisterProviderInternal(typeof(AbstractScript), typeof(IStateContext), this._stateContext);
             foreach (var meta in this._engine.scriptMetaTables)
             {
                 var instance = meta.Generater();
                 instance.MetaTable = meta;
                 this._stateContext.AddInstance(instance);
-                this._stateContext.RegisterProviderInternal(meta.Type, instance);
+                injector.RegisterProviderInternal(meta.Type, instance);
                 _analyzers.DefineInstance(meta, instance, _stateContext);
             }
             // Inject && Init 
             foreach (var instance in this._stateContext.Instances)
             {
-                this._stateContext.Autowired((AbstractScript)instance);
+                injector.Autowired((AbstractScript)instance);
                 instance.Initialize();
             }
         }
+
 
 
 

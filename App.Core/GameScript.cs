@@ -23,13 +23,15 @@ namespace App.Core
         [Autowired]
         private readonly ITimerManager timerManager;
 
+        [Autowired]
+        private readonly ITimerService timerService;
+
 
         private IStateContext StateContext => (this as IScriptInstance).GetStateContext();
 
         /// <inheritdoc/>
         protected override void Initialize()
         {
-            var timerService = this.StateContext?.GetProvider<ITimerService>();
             timerManager?.SetTimerService(timerService);
         }
 

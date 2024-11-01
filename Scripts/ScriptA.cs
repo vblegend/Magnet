@@ -49,8 +49,6 @@ public class ScriptA : GameScript
 
     protected override void Initialize()
     {
-        var context = base.GetStateContext();
-        saaaa = context.GetProvider<System.Threading.Thread>();
         base.Initialize();
     }
 

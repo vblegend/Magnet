@@ -78,9 +78,6 @@ namespace Magnet.Core
         /// </summary>
         public readonly Action<AbstractScript, Object> Setter;
 
-
-
-
     }
 
     /// <summary>
@@ -88,7 +85,7 @@ namespace Magnet.Core
     /// </summary>
     public class ScriptMetaTable
     {
-        unsafe internal ScriptMetaTable(Type scriptType, String scriptAlias, delegate*<AbstractScript> generater, Dictionary<String, ExportMethod> exportMethods, List<AutowriredField> autowriredTables)
+        unsafe internal ScriptMetaTable(Type scriptType, String scriptAlias, delegate*<AbstractScript> generater, Dictionary<String, ExportMethod> exportMethods, AutowriredField[] autowriredTables)
         {
             this.Type = scriptType;
             this.Alias = scriptAlias;
@@ -115,7 +112,7 @@ namespace Magnet.Core
         /// <summary>
         /// The injectable point of the script
         /// </summary>
-        public readonly IReadOnlyList<AutowriredField> AutowriredTables;
+        public readonly AutowriredField[] AutowriredTables;
 
         /// <summary>
         /// Export method of script
