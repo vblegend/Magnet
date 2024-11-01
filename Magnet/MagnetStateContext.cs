@@ -30,7 +30,9 @@ namespace Magnet
 #if RELEASE
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private List<IScriptInstance> _cache;
+        private IScriptInstance[] _cache;
+
+        private Int32 _cacheLength = 0;
 
 #if RELEASE
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -41,7 +43,7 @@ namespace Magnet
         {
             this._engine = engine;
             var count = engine.scriptMetaTables.Count;
-            _cache = new List<IScriptInstance>(count);
+            _cache = new IScriptInstance[count];
             this._referenceTrackers = engine.ReferenceTrackers;
         }
 
@@ -51,10 +53,13 @@ namespace Magnet
         public void Dispose()
         {
             this._engine = null;
-            foreach (var instance in this._cache)
+
+            for (int i = 0; i < _cacheLength; i++)
             {
-                instance.Shutdown();
+                this._cache[i].Shutdown();
+                this._cache[i] = null;
             }
+            this._cacheLength = 0;
             this._cache = null;
             this._delegateCache = null;
             this._referenceTrackers = null;
@@ -222,9 +227,9 @@ namespace Magnet
 
         public T FirstAs<T>() where T : class
         {
-            foreach (var instance in _cache)
+            for (int i = 0; i < _cache.Length; i++)
             {
-                if (instance is T tt) return tt;
+                if (_cache[i] is T tObject) return tObject;
             }
             return null;
         }
@@ -233,9 +238,10 @@ namespace Magnet
 
         public T FirstAs<T>(Type type) where T : AbstractScript
         {
-            foreach (AbstractScript instance in _cache)
+            for (int i = 0; i < _cache.Length; i++)
             {
-                if (instance.MetaTable.Type == type && instance is T tt) return tt;
+                var instance = _cache[i] as AbstractScript;
+                if (instance.MetaTable.Type == type && instance is T tObject) return tObject;
             }
             return null;
         }
@@ -243,17 +249,19 @@ namespace Magnet
 
         public IEnumerable<T> TypeOf<T>() where T : class
         {
-            foreach (var instance in _cache)
+            for (int i = 0; i < _cache.Length; i++)
             {
-                if (instance is T tt) yield return tt;
+                if (_cache[i] is T tObject) yield return tObject;
             }
         }
 
+
         public T NameAs<T>(String scriptName) where T : class
         {
-            foreach (AbstractScript instance in _cache)
+            for (int i = 0; i < _cache.Length; i++)
             {
-                if (instance is T tt && instance.MetaTable.Alias == scriptName) return tt;
+                var instance = _cache[i] as AbstractScript;
+                if (instance.MetaTable.Alias == scriptName && instance is T tObject) return tObject;
             }
             return null;
         }
@@ -263,8 +271,10 @@ namespace Magnet
         #region AddCache   
         internal void AddInstance(AbstractScript script)
         {
-            _cache.Add(script);
+            _cache[_cacheLength] = script;
+            _cacheLength++;
             this._referenceTrackers.Add(script);
+
         }
 
         #endregion

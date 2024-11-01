@@ -481,6 +481,33 @@ namespace Magnet
         {
             return typeFullName.ToDisplayString().Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
         }
+
+
+        /// <summary>
+        /// get type types
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static String[] CleanTypeNames(this Type type)
+        {
+            if (type.IsGenericType)
+            {
+                var args = type.GetGenericArguments();
+                var result = new String[args.Length + 1];
+                result[0] = type.FullName.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
+                for (int i = 0; i < args.Length; i++)
+                {
+                    result[i + 1] = args[i].FullName;
+                }
+                return result;
+            }
+            else
+            {
+                return [type.FullName];
+            }
+        }
+
+
         #endregion
 
     }

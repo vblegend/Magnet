@@ -26,7 +26,18 @@ public class ScriptExample : AbstractScript
     }
 
 
- 
+
+
+    [Function("IsTypeEqual")]
+    public Boolean IsTypeEqual( Type type)
+    {
+        return type ==null;
+    }
+
+
+
+
+
     public Double Target
     {
         get

@@ -26,9 +26,6 @@ namespace App.Core
         [Autowired]
         private readonly ITimerService timerService;
 
-
-        private IStateContext StateContext => (this as IScriptInstance).GetStateContext();
-
         /// <inheritdoc/>
         protected override void Initialize()
         {

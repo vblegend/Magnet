@@ -5,6 +5,7 @@ using App.Core;
 using App.Core.Events;
 using App.Core.Timer;
 using Magnet;
+using Magnet.Core;
 using Microsoft.CodeAnalysis;
 using ScriptRuner;
 using System;
@@ -118,36 +119,16 @@ public static class Program
         return null;
     }
 
-    public static String[] CleanTypeName(this Type type)
-    {
-        if (type.IsGenericType)
-        {
-            var args = type.GetGenericArguments();
-            var result = new String[args.Length + 1];
-            result[0] = type.FullName.Split(['`', '<'], StringSplitOptions.RemoveEmptyEntries)[0];
-            for (int i = 0; i < args.Length; i++)
-            {
-                result[i+1] = args[i].FullName;
-            }
-            return result;
-        }
-        else
-        {
-            return [type.FullName];
-        }
-    }
+
+    class ScriptX : AbstractScript { }
+
+
+
+
+
     public static void Main()
     {
         GLOBAL.S[1] = "This is Global String Variable.";
-
-        var t = typeof(MagnetScript);
-        var sss = CleanTypeName(t);
-
-
-        Console.WriteLine(t);
-
-
-
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         scriptManager.Unloading += ScriptManager_Unloading;
         scriptManager.Unloaded += ScriptManager_Unloaded;
@@ -167,11 +148,45 @@ public static class Program
         }
         if (result.Success)
         {
-
-
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
             var stateTest = scriptManager.CreateState(stateOptions);
+            //var t = typeof(AbstractScript);
+
+            //using (new WatchTimer("FirstAs 10000000"))
+            //{
+            //    for (int i = 0; i < 10000000; i++)
+            //    {
+            //       var r1= stateTest.FirstAs<AbstractScript>(t);
+            //    }
+            //}
+
+
+            //using (new WatchTimer("FirstAs 10000000"))
+            //{
+            //    for (int i = 0; i < 10000000; i++)
+            //    {
+            //        var r1 = stateTest.FirstAs<AbstractScript>(t);
+            //    }
+            //}
+
+
+            //using (new WatchTimer("FirstAs 10000000"))
+            //{
+            //    for (int i = 0; i < 10000000; i++)
+            //    {
+            //        var r1 = stateTest.FirstAs<AbstractScript>();
+            //    }
+            //}
+
+
+            //using (new WatchTimer("FirstAs 10000000"))
+            //{
+            //    for (int i = 0; i < 10000000; i++)
+            //    {
+            //        var r1 = stateTest.FirstAs<AbstractScript>();
+            //    }
+            //}
 
 
             for (int y = 0; y < 10; y++)
@@ -187,7 +202,14 @@ public static class Program
                 }
             }
 
-
+            //var weakIsTypeEqual = stateTest.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
+            //if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
+            //{
+            //    var bol = isTypeEqual(typeof(AbstractScript));
+            //    //为什么传个type进去会导致卸载不掉？？？？
+            //    Console.WriteLine(bol);
+            //    isTypeEqual = null;
+            //}
 
 
             var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
@@ -221,7 +243,7 @@ public static class Program
 
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
         {
-            //GC
+            // Trigger GC
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
         }
@@ -230,7 +252,7 @@ public static class Program
 
         while (true)
         {
-            //GC
+            // Trigger GC, Recycling more memory
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
             GC.Collect();

@@ -131,7 +131,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets a delegated weak reference to a script method
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -142,7 +142,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets a weak reference to the tripartite interface implemented by the script <br/>
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -152,27 +152,33 @@ namespace Magnet
 
         /// <summary>
         /// Gets weak references to all script objects that implement interface T <br/>
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         IEnumerable<WeakReference<T>> TypeOf<T>() where T : class;
 
-
-
+        /// <summary>
+        /// Gets a weak reference to a script object whose first type is the parameter type and derived from type T <br/>
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        WeakReference<T> FirstAs<T>(Type type) where T: AbstractScript;
 
 
         /// <summary>
         /// Gets the first weak reference to the script object that implements interface T <br/>
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         WeakReference<T> FirstAs<T>() where T : class;
 
         /// <summary>
-        /// Gets a weak reference to the script's property Getter delegate
-        /// Note: Script Unload is blocked when external references to reference objects inside the script
+        /// Gets a weak reference to the script's property Getter delegate<br/>
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -182,6 +188,7 @@ namespace Magnet
 
         /// <summary>
         /// Gets the script's property Setter delegate weak reference
+        /// Note: You need to cache weakly referenced objects instead of calling this function frequently, but you can't cache the Target of the weakly referenced object, which will cause the script assembly to fail to unload
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
@@ -298,7 +305,15 @@ namespace Magnet
             return _object != null ? new WeakReference<T>(_object) : null;
         }
 
-        public IEnumerable<WeakReference<T>> TypeOf<T>() where T : class
+        public WeakReference<T> FirstAs<T>(Type type) where T : AbstractScript
+        {
+            var _object = this._stateContext.FirstAs<T>(type);
+            return _object != null ? new WeakReference<T>(_object) : null;
+        }
+
+
+
+    public IEnumerable<WeakReference<T>> TypeOf<T>() where T : class
         {
             return this._stateContext.TypeOf<T>().Select(e => new WeakReference<T>(e));
         }
