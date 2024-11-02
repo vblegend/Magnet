@@ -85,7 +85,7 @@ namespace Magnet.Core
     /// </summary>
     public class ScriptMetaTable
     {
-        unsafe internal ScriptMetaTable(Type scriptType, String scriptAlias, delegate*<AbstractScript> generater, Dictionary<String, ExportMethod> exportMethods, AutowriredField[] autowriredTables)
+        internal ScriptMetaTable(Type scriptType, String scriptAlias, Func<AbstractScript> generater, Dictionary<String, ExportMethod> exportMethods, AutowriredField[] autowriredTables)
         {
             this.Type = scriptType;
             this.Alias = scriptAlias;
@@ -97,7 +97,7 @@ namespace Magnet.Core
         /// <summary>
         /// script object constructors
         /// </summary>
-        public readonly unsafe delegate*<AbstractScript> Generater;
+        public readonly Func<AbstractScript> Generater;
 
         /// <summary>
         /// Type of the script

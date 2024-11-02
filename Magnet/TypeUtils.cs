@@ -269,6 +269,20 @@ namespace Magnet
         }
         #endregion
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="TObject"></typeparam>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Func<TObject> CreateDefaultConstructor<TObject>(this Type type) 
+        {
+            return (Func<TObject>)Expression.Lambda(typeof(Func<TObject>), Expression.New(type.GetConstructor([]))).Compile();
+        }
+
+
+
         #region CreateMethodDelegate(Instance)
 
         /// <summary>

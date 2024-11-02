@@ -120,14 +120,27 @@ public static class Program
     }
 
 
-    class ScriptX : AbstractScript { }
-
-
-
-
-
-    public static void Main()
+    class ScriptX : AbstractScript
     {
+
+        public static ScriptX New()
+        {
+            return new ScriptX();
+        }
+
+    }
+
+
+
+
+
+    public unsafe static void Main()
+    {
+        var typeX = typeof(ScriptX);
+        Func<AbstractScript> constructor = TypeUtils.CreateDefaultConstructor<AbstractScript>(typeX);
+
+
+
         GLOBAL.S[1] = "This is Global String Variable.";
         MagnetScript scriptManager = new MagnetScript(Options("My.Raffler"));
         scriptManager.Unloading += ScriptManager_Unloading;
@@ -150,10 +163,7 @@ public static class Program
         {
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
-            var stateTest = scriptManager.CreateState(stateOptions);
-
-        
-            Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
+            var state = scriptManager.CreateState(stateOptions);
             for (int y = 0; y < 10; y++)
             {
                 using (new WatchTimer("CreateState 100000"))
@@ -165,11 +175,10 @@ public static class Program
                         scriptManager.CreateState(stateOption1s);
                     }
                 }
-                Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
             }
 
 
-            var weakIsTypeEqual = stateTest.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
+            var weakIsTypeEqual = state.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
             if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
             {
                 //为什么isTypeEqual(typeof(AbstractScript))就会卸载不掉  isTypeEqual(type) 就没事？？？？
@@ -179,7 +188,7 @@ public static class Program
                 isTypeEqual = null;
             }
 
-            var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
+            var weakMain = state.CreateDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
                 using (new WatchTimer("With Call Main() x100000"))
@@ -191,14 +200,14 @@ public static class Program
                 }
                 main = null;
             }
-            var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
+            var weakPlayerLife = state.FirstAs<IPlayLifeEvent>();
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
                 using (new WatchTimer("With Call OnOffline()")) lifeEvent.OnOffline(null);
                 lifeEvent = null;
             }
-            stateTest = null;
+            state = null;
             scriptManager.Unload(true);
 
             using (new WatchTimer("time()"))
@@ -224,6 +233,8 @@ public static class Program
             // Trigger GC, Recycling more memory
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
             //Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
         }
 

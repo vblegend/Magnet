@@ -39,7 +39,6 @@ public class ScriptA : GameScript
 
     [Autowired("Script-Context")]
     private readonly IStateContext _stateContext;
-    public System.Threading.Thread saaaa { get; set; } = new System.Threading.Thread(() => { });
 
     class ClassA<t>
     {

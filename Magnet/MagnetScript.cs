@@ -233,33 +233,23 @@ namespace Magnet
 
         }
 
-        private CompilationUnitSyntax AddUsingStatement(CompilationUnitSyntax root, string name)
-        {
-            if (root.Usings.Any(u => u.Name.ToString() == name))
-            {
-                // using statement already exists.
-                return root;
-            }
-            UsingDirectiveSyntax usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(name));
-            var rootCompilation = root.AddUsings(usingDirective);
-            return rootCompilation;
-        }
-
         private SyntaxTree GlobalUsings(SyntaxTree syntaxTree, params String[] usings)
         {
-            // 创建全局 using 指令
             var compilationUnit = (CompilationUnitSyntax)syntaxTree.GetRoot();
-            var directives = usings.Select(MakeUsingDirective);
-            foreach (var _using in usings)
+            List<UsingDirectiveSyntax> usingDirectives = new List<UsingDirectiveSyntax>();
+            foreach (var usingNameSpace in usings)
             {
-                compilationUnit = AddUsingStatement(compilationUnit, _using);
+                var exist = compilationUnit.Usings.Any(u => u.Name.ToString() == usingNameSpace);
+                if (!exist)
+                {
+                    usingDirectives.Add(MakeUsingDirective(usingNameSpace));
+                }
             }
-
-            //Console.WriteLine("===============================================================");
-            //Console.WriteLine(compilationUnit.NormalizeWhitespace().ToFullString());
-            //Console.WriteLine("===============================================================");
-            // 更新语法树
-            return syntaxTree.WithRootAndOptions(compilationUnit, syntaxTree.Options);
+            if (usingDirectives.Count > 0)
+            {
+                return syntaxTree.WithRootAndOptions(compilationUnit.AddUsings([.. usingDirectives]), syntaxTree.Options);
+            }
+            return null;
         }
 
 
@@ -299,15 +289,14 @@ namespace Magnet
             {
                 if (needCompile)
                 {
-                    var parseOptions = CSharpParseOptions.Default;
-                    var symbols = new List<String>();
+
+                    var symbols = new HashSet<String>();
                     if (this.Options.Optimization == OptimizationLevel.Debug) symbols.Add("DEBUG");
+                    if (this.Options.Optimization == OptimizationLevel.Release) symbols.Add("RELEASE");
                     if (this.Options.UseDebugger) symbols.Add("USE_DEBUGGER");
-                    if (this.Options.CompileSymbols != null && this.Options.CompileSymbols.Length > 0) symbols.AddRange(this.Options.CompileSymbols);
-                    if (symbols.Count > 0)
-                    {
-                        parseOptions = parseOptions.WithPreprocessorSymbols(symbols);
-                    }
+                    foreach (var symbol in this.Options.CompileSymbols) symbols.Add(symbol);
+                    var parseOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(symbols);
+
                     var rootDir = Path.GetFullPath(this.Options.ScanDirectory);
                     var ScanOptions = this.Options.RecursiveScanning ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
                     var scriptFiles = Directory.GetFiles(rootDir, this.Options.ScriptFilePattern, ScanOptions);
@@ -390,7 +379,8 @@ namespace Magnet
             this.scriptMetaTables = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
                                     .Select(type =>
                                     {
-                                        var generater = ParseGenerateScriptInstanceMethod(type);
+                                        //var generater = ParseGenerateScriptInstanceMethod(type);
+                                        var generater = TypeUtils.CreateDefaultConstructor<AbstractScript>(type);
                                         var attribute = type.GetCustomAttribute<ScriptAttribute>();
                                         var exportMethods = ParseExportMethods(type);
                                         var autowriredFields = ParseAutowriredFields(type);
@@ -419,7 +409,7 @@ namespace Magnet
             }
             return methodPointer;
         }
- 
+
         private AutowriredField[] ParseAutowriredFields(Type scriptClassType)
         {
             var fieldList = new List<AutowriredField>();
@@ -506,7 +496,9 @@ namespace Magnet
         {
             var code = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
             var syntaxTree = CSharpSyntaxTree.ParseText(text: code, options: parseOptions, path: filePath, encoding: Encoding.UTF8);
-            return GlobalUsings(syntaxTree, _baseUsing.Concat(this.Options.Using).ToArray());
+            var newTree = GlobalUsings(syntaxTree, _baseUsing.Concat(this.Options.Using).ToArray());
+            if (newTree != null) return newTree;
+            return syntaxTree;
         }
 
 
@@ -552,18 +544,18 @@ namespace Magnet
             );
 
             var typeResolver = new TypeResolver(this.Options);
-            if (typeResolver.IsCanRewrite)
+            //if (typeResolver.IsCanRewrite)
+            //{
+            // 类型替换
+            var newTrees = syntaxTrees.Select(syntaxTree => SyntaxTreeTypeRewrite(compilation, syntaxTree, typeResolver)).ToArray();
+            var reWriteTrees = new List<SyntaxTree>(Task.WhenAll(newTrees).Result);
+            //替换语法树
+            for (int i = 1; i < syntaxTrees.Count; i++)
             {
-                // 类型替换
-                var newTrees = syntaxTrees.Select(syntaxTree => SyntaxTreeTypeRewrite(compilation, syntaxTree, typeResolver)).ToArray();
-                var reWriteTrees = new List<SyntaxTree>(Task.WhenAll(newTrees).Result);
-                //替换语法树
-                for (int i = 1; i < syntaxTrees.Count; i++)
-                {
-                    compilation = compilation.ReplaceSyntaxTree(syntaxTrees[i], reWriteTrees[i]);
-                    syntaxTrees[i] = reWriteTrees[i];
-                }
+                compilation = compilation.ReplaceSyntaxTree(syntaxTrees[i], reWriteTrees[i]);
+                syntaxTrees[i] = reWriteTrees[i];
             }
+            //}
             // 类型检查，跳过第一个语法树（程序集属性定义）
             var diagnosticsTasks = syntaxTrees.Skip(1).Select(syntaxTree => SyntaxTreeTypeCheck(compilation, syntaxTree)).ToArray();
             var diagnostics = new List<Diagnostic>(Task.WhenAll(diagnosticsTasks).Result.SelectMany(e => e));

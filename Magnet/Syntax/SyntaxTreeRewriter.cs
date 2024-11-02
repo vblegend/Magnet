@@ -531,21 +531,21 @@ namespace Magnet.Syntax
         {
             // 生成脚本对象实例化方法
             // 检查是否有 ScriptAttribute
-            bool hasScriptAttribute = HasAttribute(node, typeof(ScriptAttribute));
-            // 检查是否继承自 BaseScript
-            bool inheritsFromBaseScript = IsSubclassOf(node, typeof(AbstractScript));
-            // 检查是否为非抽象类
-            bool isAbstractClass = node.Modifiers.Any(SyntaxKind.AbstractKeyword);
-            bool isStaticClass = node.Modifiers.Any(SyntaxKind.StaticKeyword);
+            //bool hasScriptAttribute = HasAttribute(node, typeof(ScriptAttribute));
+            //// 检查是否继承自 BaseScript
+            //bool inheritsFromBaseScript = IsSubclassOf(node, typeof(AbstractScript));
+            //// 检查是否为非抽象类
+            //bool isAbstractClass = node.Modifiers.Any(SyntaxKind.AbstractKeyword);
+            //bool isStaticClass = node.Modifiers.Any(SyntaxKind.StaticKeyword);
 
 
-            if (hasScriptAttribute && inheritsFromBaseScript && !isAbstractClass && !isStaticClass)
-            {
-                node = base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
-                var method = Generate_Script_Instance_Method(node);
-                node = node.AddMembers(method);
-                return node;
-            }
+            //if (hasScriptAttribute && inheritsFromBaseScript && !isAbstractClass && !isStaticClass)
+            //{
+            //    node = base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
+            //    var method = Generate_Script_Instance_Method(node);
+            //    node = node.AddMembers(method);
+            //    return node;
+            //}
             return base.VisitClassDeclaration(node) as ClassDeclarationSyntax;
         }
 

@@ -256,7 +256,7 @@ namespace Magnet
 
 
 
-        private unsafe void CreateState(DependencyInjector injector)
+        private void CreateState(DependencyInjector injector)
         {
             foreach (var meta in this._engine.scriptMetaTables)
             {
