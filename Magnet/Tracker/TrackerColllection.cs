@@ -26,6 +26,13 @@ namespace Magnet.Tracker
             }
 
         }
+        public void AddTracker(ReferenceTracker tracker)
+        {
+            lock (lockedObject)
+            {
+                if (tracker != null) _trackers.Add(tracker);
+            }
+        }
 
         public void Add(object trackObject)
         {

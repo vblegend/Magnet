@@ -1,8 +1,10 @@
 ﻿using Magnet.Analysis;
 using Magnet.Core;
+using Magnet.Tracker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 
 namespace Magnet
@@ -137,7 +139,7 @@ namespace Magnet
         /// <param name="scriptName"></param>
         /// <param name="exportMethodName"></param>
         /// <returns></returns>
-        WeakReference<T> CreateDelegate<T>(String scriptName, String exportMethodName) where T : Delegate;
+        IReadOnlyWeakReference<T> CreateDelegate<T>(String scriptName, String exportMethodName) where T : Delegate;
 
 
         /// <summary>
@@ -147,7 +149,7 @@ namespace Magnet
         /// <typeparam name="T"></typeparam>
         /// <param name="scriptName"></param>
         /// <returns></returns>
-        WeakReference<T> NameAs<T>(String scriptName) where T : class;
+        IReadOnlyWeakReference<T> NameAs<T>(String scriptName) where T : class;
 
 
         /// <summary>
@@ -156,7 +158,7 @@ namespace Magnet
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IEnumerable<WeakReference<T>> TypeOf<T>() where T : class;
+        IEnumerable<IReadOnlyWeakReference<T>> TypeOf<T>() where T : class;
 
         /// <summary>
         /// Gets a weak reference to a script object whose first type is the parameter type and derived from type T <br/>
@@ -165,7 +167,7 @@ namespace Magnet
         /// <typeparam name="T"></typeparam>
         /// <param name="type"></param>
         /// <returns></returns>
-        WeakReference<T> FirstAs<T>(Type type) where T: AbstractScript;
+        IReadOnlyWeakReference<T> FirstAs<T>(Type type) where T : AbstractScript;
 
 
         /// <summary>
@@ -174,7 +176,7 @@ namespace Magnet
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        WeakReference<T> FirstAs<T>() where T : class;
+        IReadOnlyWeakReference<T> FirstAs<T>() where T : class;
 
         /// <summary>
         /// Gets a weak reference to the script's property Getter delegate<br/>
@@ -184,7 +186,7 @@ namespace Magnet
         /// <param name="scriptName"></param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
-        WeakReference<Getter<T>> CreateGetterDelegate<T>(String scriptName, String propertyName);
+        IReadOnlyWeakReference<Getter<T>> CreateGetterDelegate<T>(String scriptName, String propertyName);
 
         /// <summary>
         /// Gets the script's property Setter delegate weak reference
@@ -194,7 +196,7 @@ namespace Magnet
         /// <param name="scriptName"></param>
         /// <param name="propertyName"></param>
         /// <returns></returns>
-        WeakReference<Setter<T>> CreateSetterDelegate<T>(String scriptName, String propertyName);
+        IReadOnlyWeakReference<Setter<T>> CreateSetterDelegate<T>(String scriptName, String propertyName);
 
 
         /// <summary>
@@ -248,7 +250,10 @@ namespace Magnet
                 this.CreateState(injector);
             }
         }
-       
+
+
+
+
 
 
         private unsafe void CreateState(DependencyInjector injector)
@@ -262,10 +267,11 @@ namespace Magnet
                 _analyzers.DefineInstance(meta, instance, _stateContext);
             }
             // Inject && Init 
-            foreach (var instance in this._stateContext.Instances)
+            foreach (var item in this._stateContext.Cache)
             {
-                injector.Autowired((AbstractScript)instance);
-                instance.Initialize();
+                injector.Autowired(item.Instance);
+                var script = (IScriptInstance)item.Instance;
+                script.Initialize();
             }
         }
 
@@ -277,58 +283,44 @@ namespace Magnet
             this._stateContext.Autowired(objectMap);
         }
 
-
         public void InjectProvider<TObject>(Type targetType, TObject obj, String slotName = null)
         {
             this._stateContext.Autowired<TObject>(targetType, obj, slotName);
         }
 
-
-
-        public WeakReference<T> CreateDelegate<T>(String scriptName, String methodName) where T : Delegate
+        public IReadOnlyWeakReference<T> CreateDelegate<T>(String scriptName, String methodName) where T : Delegate
         {
-            var _delegate = this._stateContext.GetScriptMethod<T>(scriptName, methodName);
-            return _delegate != null ? new WeakReference<T>(_delegate) : null;
+            return this._stateContext.GetScriptMethod<T>(scriptName, methodName);
         }
 
-
-        public WeakReference<T> NameAs<T>(String scriptName) where T : class
+        public IReadOnlyWeakReference<T> NameAs<T>(String scriptName) where T : class
         {
-            var _object = this._stateContext.NameAs<T>(scriptName);
-            return _object != null ? new WeakReference<T>(_object) : null;
+            return this._stateContext.NameAsTracker<T>(scriptName);
         }
 
-
-        public WeakReference<T> FirstAs<T>() where T : class
+        public IReadOnlyWeakReference<T> FirstAs<T>() where T : class
         {
-            var _object = this._stateContext.FirstAs<T>();
-            return _object != null ? new WeakReference<T>(_object) : null;
+            return this._stateContext.FirstAsTracker<T>();
         }
 
-        public WeakReference<T> FirstAs<T>(Type type) where T : AbstractScript
+        public IReadOnlyWeakReference<T> FirstAs<T>(Type type) where T : AbstractScript
         {
-            var _object = this._stateContext.FirstAs<T>(type);
-            return _object != null ? new WeakReference<T>(_object) : null;
+            return this._stateContext.FirstAsTracker<T>(type);
         }
 
-
-
-    public IEnumerable<WeakReference<T>> TypeOf<T>() where T : class
+        public IEnumerable<IReadOnlyWeakReference<T>> TypeOf<T>() where T : class
         {
-            return this._stateContext.TypeOf<T>().Select(e => new WeakReference<T>(e));
+            return this._stateContext.TypeOfTracker<T>();
         }
 
-        public WeakReference<Getter<T>> CreateGetterDelegate<T>(String scriptName, String propertyName)
+        public IReadOnlyWeakReference<Getter<T>> CreateGetterDelegate<T>(String scriptName, String propertyName)
         {
-            var getter = this._stateContext.GetScriptPropertyGetter<T>(scriptName, propertyName);
-            return getter != null ? new WeakReference<Getter<T>>(getter) : null;
+            return this._stateContext.CreateGetterTracker<T>(scriptName, propertyName);
         }
 
-
-        public WeakReference<Setter<T>> CreateSetterDelegate<T>(String scriptName, String propertyName)
+        public IReadOnlyWeakReference<Setter<T>> CreateSetterDelegate<T>(String scriptName, String propertyName)
         {
-            var setter = this._stateContext.GetScriptPropertySetter<T>(scriptName, propertyName);
-            return setter != null ? new WeakReference<Setter<T>>(setter) : null;
+            return this._stateContext.CreateSetterTracker<T>(scriptName, propertyName);
         }
 
 

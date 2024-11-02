@@ -91,7 +91,7 @@ public class ScriptA : GameScript
         Thread[] ffff = new Thread[0];
 
         System.Threading.Tasks.Task task = new System.Threading.Tasks.Task(() => { });
-        
+
 
         ABCD<Thread> esd1 = new ABCD<Thread>();
         List<Thread> esd2 = new List<Thread>();
@@ -129,9 +129,9 @@ public class ScriptA : GameScript
         Debug($"SCRIPT GLOBAL.VAR = {GLOBAL.S[1]}");
         GLOBAL.S[1] = "Hello Wrold";
 
-        EnableTimer(0);
+        //EnableTimer(0);
 
-        EnableTimer(1);
+        //EnableTimer(1);
 
         //var typed = this.GetType().FullName; 
 
@@ -139,8 +139,8 @@ public class ScriptA : GameScript
 
         //Assert(typed == "Magnet.Safety.Thread");
 
-        DisableTimer(0);
-        DisableTimer(1);
+        //DisableTimer(0);
+        //DisableTimer(1);
         List<string> list = [];
 
         debugger();

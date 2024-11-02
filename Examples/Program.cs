@@ -151,84 +151,51 @@ public static class Program
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
             var stateTest = scriptManager.CreateState(stateOptions);
-            //var t = typeof(AbstractScript);
 
-            //using (new WatchTimer("FirstAs 10000000"))
-            //{
-            //    for (int i = 0; i < 10000000; i++)
-            //    {
-            //       var r1= stateTest.FirstAs<AbstractScript>(t);
-            //    }
-            //}
-
-
-            //using (new WatchTimer("FirstAs 10000000"))
-            //{
-            //    for (int i = 0; i < 10000000; i++)
-            //    {
-            //        var r1 = stateTest.FirstAs<AbstractScript>(t);
-            //    }
-            //}
-
-
-            //using (new WatchTimer("FirstAs 10000000"))
-            //{
-            //    for (int i = 0; i < 10000000; i++)
-            //    {
-            //        var r1 = stateTest.FirstAs<AbstractScript>();
-            //    }
-            //}
-
-
-            //using (new WatchTimer("FirstAs 10000000"))
-            //{
-            //    for (int i = 0; i < 10000000; i++)
-            //    {
-            //        var r1 = stateTest.FirstAs<AbstractScript>();
-            //    }
-            //}
-
-
+        
+            Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
             for (int y = 0; y < 10; y++)
             {
                 using (new WatchTimer("CreateState 100000"))
                 {
-                    for (int i = 0; i < 1000; i++)
+                    for (int i = 0; i < 100000; i++)
                     {
                         var stateOption1s = StateOptions.Default;
                         stateOption1s.RegisterProvider(new TimerService());
                         scriptManager.CreateState(stateOption1s);
                     }
                 }
+                Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
             }
+
 
             var weakIsTypeEqual = stateTest.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
             if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
             {
                 //为什么isTypeEqual(typeof(AbstractScript))就会卸载不掉  isTypeEqual(type) 就没事？？？？
-                var type = typeof(AbstractScript);
+                var type = typeof(Console);
                 var bol = isTypeEqual(type);
                 Console.WriteLine(bol);
                 isTypeEqual = null;
             }
 
-
             var weakMain = stateTest.CreateDelegate<Action>("ScriptA", "Main");
             if (weakMain != null && weakMain.TryGetTarget(out var main))
             {
-                using (new WatchTimer("With Call Main() x10"))
+                using (new WatchTimer("With Call Main() x100000"))
+                {
                     for (int i = 0; i < 10; i++)
                     {
                         main();
                     }
-
+                }
                 main = null;
             }
             var weakPlayerLife = stateTest.FirstAs<IPlayLifeEvent>();
             if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
             {
                 using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
-                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
+                using (new WatchTimer("With Call OnOffline()")) lifeEvent.OnOffline(null);
                 lifeEvent = null;
             }
             stateTest = null;
@@ -247,6 +214,7 @@ public static class Program
             // Trigger GC
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
+            //Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
         }
         GC.Collect();
         Console.WriteLine("=====================================================================================");
@@ -256,8 +224,7 @@ public static class Program
             // Trigger GC, Recycling more memory
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            //Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
         }
 
         Console.ReadKey();

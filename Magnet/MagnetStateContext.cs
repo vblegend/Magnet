@@ -5,11 +5,51 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 
 
 namespace Magnet
 {
+
+    [StructLayout(LayoutKind.Explicit)]
+    internal class InstanceCacheItem
+    {
+        public InstanceCacheItem(AbstractScript instance, ReferenceTracker weakReference)
+        {
+            this.Instance = instance;
+            this.WeakReference = weakReference;
+        }
+
+        [FieldOffset(0)]
+        public readonly AbstractScript Instance;
+
+        [FieldOffset(0)]
+        public readonly IScriptInstance Interface;
+
+        [FieldOffset(8)]
+        public readonly ReferenceTracker WeakReference;
+    }
+
+
+
+    internal class DelegateCacheItem
+    {
+        internal DelegateCacheItem(Delegate _delegate, ReferenceTracker weakReference)
+        {
+            this.Delegate = _delegate;
+            this.WeakReference = weakReference;
+        }
+
+
+        public readonly Delegate Delegate;
+
+        public readonly ReferenceTracker WeakReference;
+    }
+
+
+
+
     internal class MagnetStateContext : IStateContext, IDisposable
     {
 #if RELEASE
@@ -25,25 +65,25 @@ namespace Magnet
 #if RELEASE
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        public Dictionary<String, Delegate> _delegateCache;
+        private Dictionary<String, DelegateCacheItem> _delegateCache;
 
 #if RELEASE
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        private IScriptInstance[] _cache;
+        private InstanceCacheItem[] _cache;
 
         private Int32 _cacheLength = 0;
 
 #if RELEASE
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #endif
-        internal IReadOnlyList<IScriptInstance> Instances => _cache;
+        internal IReadOnlyList<InstanceCacheItem> Cache => _cache;
 
         internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
         {
             this._engine = engine;
             var count = engine.scriptMetaTables.Count;
-            _cache = new IScriptInstance[count];
+            _cache = new InstanceCacheItem[count];
             this._referenceTrackers = engine.ReferenceTrackers;
         }
 
@@ -56,7 +96,8 @@ namespace Magnet
 
             for (int i = 0; i < _cacheLength; i++)
             {
-                this._cache[i].Shutdown();
+                var script = (IScriptInstance)this._cache[i].Instance;
+                script.Shutdown();
                 this._cache[i] = null;
             }
             this._cacheLength = 0;
@@ -71,7 +112,7 @@ namespace Magnet
         {
             foreach (var instance in _cache)
             {
-                var scriptInstance = instance as AbstractScript;
+                var scriptInstance = instance.Instance;
                 var metaTable = scriptInstance.MetaTable;
                 for (int i = 0; i < metaTable.AutowriredTables.Length; i++)
                 {
@@ -104,7 +145,7 @@ namespace Magnet
             var valueType = typeof(TObject);
             foreach (var instance in _cache)
             {
-                var scriptInstance = instance as AbstractScript;
+                var scriptInstance = instance.Instance;
                 var metaTable = scriptInstance.MetaTable;
                 for (int i = 0; i < metaTable.AutowriredTables.Length; i++)
                 {
@@ -135,47 +176,46 @@ namespace Magnet
 
 
         #region Method
-
-
-
-        public T GetScriptMethod<T>(String scriptName, String methodName) where T : Delegate
+        public ReferenceTracker<T> GetScriptMethod<T>(String scriptName, String methodName) where T : Delegate
         {
             var key = scriptName + "." + methodName;
-            if (_delegateCache == null) _delegateCache = new Dictionary<String, Delegate>();
-            Delegate _delegate = null;
+            if (_delegateCache == null) _delegateCache = new Dictionary<String, DelegateCacheItem>();
+            DelegateCacheItem _delegate = null;
             if (this._delegateCache.TryGetValue(key, out _delegate))
             {
-                return (T)_delegate;
+                return _delegate.WeakReference.As<T>();
             }
             var instance = this.NameAs<AbstractScript>(scriptName);
             if (instance != null)
             {
                 if (instance.MetaTable.ExportMethods.TryGetValue(methodName, out var result))
                 {
-                    _delegate = Delegate.CreateDelegate(typeof(T), instance, result.MethodInfo);
+                    var methodDelgate = TypeUtils.CreateMethodDelegate<T>(result.MethodInfo, instance);
+                    // var methodDelgate = Delegate.CreateDelegate(typeof(T), instance, result.MethodInfo);
+                    var weak = new ReferenceTracker(methodDelgate);
+                    _delegate = new DelegateCacheItem(methodDelgate, weak);
+
                     this._delegateCache.TryAdd(key, _delegate);
-                    this._referenceTrackers.Add(_delegate);
-                    return (T)_delegate;
+                    this._referenceTrackers.AddTracker(weak);
+                    return weak.As<T>();
                 }
             }
             return null;
         }
+
         #endregion
 
 
         #region Property
 
-
-
-
-        public Getter<T> GetScriptPropertyGetter<T>(String scriptName, String propertyName)
+        public ReferenceTracker<Getter<T>> CreateGetterTracker<T>(String scriptName, String propertyName)
         {
             var key = $"$get_{scriptName}.{propertyName}";
-            if (_delegateCache == null) _delegateCache = new Dictionary<String, Delegate>();
-            Delegate _delegate = null;
+            if (_delegateCache == null) _delegateCache = new Dictionary<String, DelegateCacheItem>();
+            DelegateCacheItem _delegate = null;
             if (this._delegateCache.TryGetValue(key, out _delegate))
             {
-                return (Getter<T>)_delegate;
+                return _delegate.WeakReference.As<Getter<T>>();
             }
             AbstractScript script = this.NameAs<AbstractScript>(scriptName);
             if (script != null)
@@ -185,24 +225,24 @@ namespace Magnet
                 if (propertyInfo != null)
                 {
                     var getter = (Getter<T>)Delegate.CreateDelegate(typeof(Getter<T>), script, propertyInfo.GetMethod);
-                    this._delegateCache.Add(key, getter);
-                    _referenceTrackers.Add(getter);
-                    return getter;
+                    var weak = new ReferenceTracker(getter);
+                    _delegate = new DelegateCacheItem(getter, weak);
+                    this._delegateCache.Add(key, _delegate);
+                    _referenceTrackers.AddTracker(weak);
+                    return weak.As<Getter<T>>();
                 }
-
             }
             return null;
         }
 
-
-        public Setter<T> GetScriptPropertySetter<T>(String scriptName, String propertyName)
+        public ReferenceTracker<Setter<T>> CreateSetterTracker<T>(String scriptName, String propertyName)
         {
             var key = $"$set_{scriptName}.{propertyName}";
-            if (_delegateCache == null) _delegateCache = new Dictionary<String, Delegate>();
-            Delegate _delegate = null;
+            if (_delegateCache == null) _delegateCache = new Dictionary<String, DelegateCacheItem>();
+            DelegateCacheItem _delegate = null;
             if (this._delegateCache.TryGetValue(key, out _delegate))
             {
-                return (Setter<T>)_delegate;
+                return _delegate.WeakReference.As<Setter<T>>();
             }
             AbstractScript script = this.NameAs<AbstractScript>(scriptName);
             if (script != null)
@@ -212,13 +252,16 @@ namespace Magnet
                 if (propertyInfo != null)
                 {
                     var setter = (Setter<T>)Delegate.CreateDelegate(typeof(Setter<T>), script, propertyInfo.SetMethod);
-                    _delegateCache.Add(key, setter);
-                    _referenceTrackers.Add(setter);
-                    return setter;
+                    var weak = new ReferenceTracker(setter);
+                    _delegate = new DelegateCacheItem(setter, weak);
+                    _delegateCache.Add(key, _delegate);
+                    _referenceTrackers.AddTracker(weak);
+                    return weak.As<Setter<T>>();
                 }
             }
             return null;
         }
+
         #endregion
 
 
@@ -229,29 +272,63 @@ namespace Magnet
         {
             for (int i = 0; i < _cache.Length; i++)
             {
-                if (_cache[i] is T tObject) return tObject;
+                var tObject = _cache[i].Instance as T;
+                if (tObject != null) return tObject;
             }
             return null;
         }
 
+
+
+        public ReferenceTracker<T> FirstAsTracker<T>() where T : class
+        {
+            for (int i = 0; i < _cache.Length; i++)
+            {
+                if (_cache[i].Instance as T != null) return _cache[i].WeakReference.As<T>();
+            }
+            return null;
+        }
 
 
         public T FirstAs<T>(Type type) where T : AbstractScript
         {
             for (int i = 0; i < _cache.Length; i++)
             {
-                var instance = _cache[i] as AbstractScript;
-                if (instance.MetaTable.Type == type && instance is T tObject) return tObject;
+                var instance = _cache[i].Instance;
+                if (ReferenceEquals(instance.MetaTable.Type, type) && instance is T tObject) return tObject;
             }
             return null;
         }
+
+
+        public ReferenceTracker<T> FirstAsTracker<T>(Type type) where T : AbstractScript
+        {
+            for (int i = 0; i < _cache.Length; i++)
+            {
+                var instance = _cache[i].Instance;
+                if (ReferenceEquals(instance.MetaTable.Type, type) && instance as T != null) return _cache[i].WeakReference.As<T>();
+            }
+            return null;
+        }
+
+
 
 
         public IEnumerable<T> TypeOf<T>() where T : class
         {
             for (int i = 0; i < _cache.Length; i++)
             {
-                if (_cache[i] is T tObject) yield return tObject;
+                var tObject = _cache[i].Instance as T;
+                if (tObject != null) yield return tObject;
+            }
+        }
+
+
+        public IEnumerable<ReferenceTracker<T>> TypeOfTracker<T>() where T : class
+        {
+            for (int i = 0; i < _cache.Length; i++)
+            {
+                if (_cache[i].Instance as T != null) yield return _cache[i].WeakReference.As<T>();
             }
         }
 
@@ -260,21 +337,34 @@ namespace Magnet
         {
             for (int i = 0; i < _cache.Length; i++)
             {
-                var instance = _cache[i] as AbstractScript;
+                var instance = _cache[i].Instance;
                 if (instance.MetaTable.Alias == scriptName && instance is T tObject) return tObject;
             }
             return null;
         }
+
+        public ReferenceTracker<T> NameAsTracker<T>(String scriptName) where T : class
+        {
+            for (int i = 0; i < _cache.Length; i++)
+            {
+                var instance = _cache[i].Instance;
+                if (instance.MetaTable.Alias == scriptName && instance as T != null) return _cache[i].WeakReference.As<T>();
+            }
+            return null;
+        }
+
+
         #endregion
 
 
         #region AddCache   
         internal void AddInstance(AbstractScript script)
         {
-            _cache[_cacheLength] = script;
+            var weak = new ReferenceTracker(script);
+            var cacheItem = new InstanceCacheItem(script, weak);
+            _cache[_cacheLength] = cacheItem;
             _cacheLength++;
-            this._referenceTrackers.Add(script);
-
+            this._referenceTrackers.AddTracker(weak);
         }
 
         #endregion

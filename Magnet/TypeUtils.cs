@@ -1,8 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 
 namespace Magnet
@@ -231,6 +233,42 @@ namespace Magnet
         }
         #endregion
 
+        #region CreateMethodDelegate
+        /// <summary>
+        /// Create a method delegate <br/>
+        /// If instance is specified, a closed delegate is created, and the first object instance parameter should not exist in the TDelegate type<br/>
+        /// If instance is not specified, a standard C version of the delegate is created, and the first argument to TDelegate must be the object instance<br/>
+        /// </summary>
+        /// <typeparam name="TDelegate"></typeparam>
+        /// <param name="method"></param>
+        /// <param name="instance">If instance is null, the instance is passed in the first argument of the delegate TDelegate</param>
+        /// <returns></returns>
+        public static TDelegate CreateMethodDelegate<TDelegate>(this MethodInfo method, Object instance = null) where TDelegate : Delegate
+        {
+            Expression instanceParam = null;
+            var _parameters = method.GetParameters();
+            var parameters = new ParameterExpression[_parameters.Length];
+            for (int i = 0; i < _parameters.Length; i++)
+            {
+                parameters[i] = Expression.Parameter(_parameters[i].ParameterType, $"param{i + 1}");
+            }
+            if (!method.IsStatic)
+            {
+                if (instance != null)
+                {
+                    instanceParam = Expression.Constant(instance);
+                }
+                else
+                {
+                    instanceParam = Expression.Parameter(method.DeclaringType, "instance");
+                }
+            }
+            var call = Expression.Call(instanceParam, method, parameters);
+            return (TDelegate)Expression.Lambda(typeof(TDelegate), call, parameters).Compile();
+
+        }
+        #endregion
+
         #region CreateMethodDelegate(Instance)
 
         /// <summary>
@@ -265,6 +303,9 @@ namespace Magnet
             var lambda = Expression.Lambda<Func<TInstance, TParam1, TResult>>(call, instanceParam, param1);
             return lambda.Compile();
         }
+
+
+
 
 
         /// <summary>
