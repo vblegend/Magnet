@@ -583,7 +583,16 @@ namespace Magnet.Syntax
         }
 
 
-        /// <summary>
+
+
+    }
+}
+
+
+/*
+ 
+ 
+         /// <summary>
         /// 在脚本class中创建 脚本实例化的方法
         /// </summary>
         /// <param name="node"></param>
@@ -599,15 +608,6 @@ namespace Magnet.Syntax
                 .WithBody(SyntaxFactory.Block(methodBody));
             return staticMethod;
         }
-
-    }
-}
-
-
-/*
- 
- 
- 
 
         private struct AutowiredField
         {

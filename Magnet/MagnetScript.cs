@@ -379,7 +379,6 @@ namespace Magnet
             this.scriptMetaTables = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
                                     .Select(type =>
                                     {
-                                        //var generater = ParseGenerateScriptInstanceMethod(type);
                                         var generater = TypeUtils.CreateDefaultConstructor<AbstractScript>(type);
                                         var attribute = type.GetCustomAttribute<ScriptAttribute>();
                                         var exportMethods = ParseExportMethods(type);
@@ -394,20 +393,6 @@ namespace Magnet
             this.Status = ScrriptStatus.Loaded;
             this.Analyzers.ConnectTo(this);
             this.Analyzers.DefineAssembly(assembly);
-        }
-
-
-
-        private unsafe delegate*<AbstractScript> ParseGenerateScriptInstanceMethod(Type scriptType)
-        {
-            var generateMethod = scriptType.GetMethod(IdentifierDefine.GENERATE_SCRIPT_INSTANCE_METHOD, BindingFlags.Static | BindingFlags.NonPublic);
-            var methodPointer = TypeUtils.CreateStaticMethodPointer<AbstractScript>(generateMethod);
-            // 预热
-            {
-                RuntimeHelpers.PrepareMethod(generateMethod.MethodHandle);
-                methodPointer();
-            }
-            return methodPointer;
         }
 
         private AutowriredField[] ParseAutowriredFields(Type scriptClassType)
@@ -544,18 +529,18 @@ namespace Magnet
             );
 
             var typeResolver = new TypeResolver(this.Options);
-            //if (typeResolver.IsCanRewrite)
-            //{
-            // 类型替换
-            var newTrees = syntaxTrees.Select(syntaxTree => SyntaxTreeTypeRewrite(compilation, syntaxTree, typeResolver)).ToArray();
-            var reWriteTrees = new List<SyntaxTree>(Task.WhenAll(newTrees).Result);
-            //替换语法树
-            for (int i = 1; i < syntaxTrees.Count; i++)
+            if (typeResolver.IsCanRewrite)
             {
-                compilation = compilation.ReplaceSyntaxTree(syntaxTrees[i], reWriteTrees[i]);
-                syntaxTrees[i] = reWriteTrees[i];
+                // 类型替换
+                var newTrees = syntaxTrees.Select(syntaxTree => SyntaxTreeTypeRewrite(compilation, syntaxTree, typeResolver)).ToArray();
+                var reWriteTrees = new List<SyntaxTree>(Task.WhenAll(newTrees).Result);
+                //替换语法树
+                for (int i = 1; i < syntaxTrees.Count; i++)
+                {
+                    compilation = compilation.ReplaceSyntaxTree(syntaxTrees[i], reWriteTrees[i]);
+                    syntaxTrees[i] = reWriteTrees[i];
+                }
             }
-            //}
             // 类型检查，跳过第一个语法树（程序集属性定义）
             var diagnosticsTasks = syntaxTrees.Skip(1).Select(syntaxTree => SyntaxTreeTypeCheck(compilation, syntaxTree)).ToArray();
             var diagnostics = new List<Diagnostic>(Task.WhenAll(diagnosticsTasks).Result.SelectMany(e => e));

@@ -28,7 +28,7 @@ public static class Program
         // 调试模式 不启用脚本内置debugger()函数
         options.WithDebug(false);
         // 发布模式 编译优化
-        //options.WithRelease();
+        // options.WithRelease();
 
 
         // #1 仅编译，可输出
@@ -131,10 +131,64 @@ public static class Program
     }
 
 
+    public static void CallIsTypeEqual(IMagnetState state)
+    {
+        var weakIsTypeEqual = state.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
+        if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
+        {
+            var bol = isTypeEqual(typeof(Console));
+            Console.WriteLine(bol);
+            isTypeEqual = null;
+        }
+    }
+
+    public static void CallMain(IMagnetState state)
+    {
+        var weakMain = state.CreateDelegate<Action>("ScriptA", "Main");
+        if (weakMain != null && weakMain.TryGetTarget(out var main))
+        {
+            using (new WatchTimer("With Call Main() x100000"))
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    main();
+                }
+            }
+            main = null;
+        }
+    }
+
+    public static void CallOnOnline(IMagnetState state)
+    {
+        var weakPlayerLife = state.FirstAs<IPlayLifeEvent>();
+        if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
+        {
+            using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
+            using (new WatchTimer("With Call OnOffline()")) lifeEvent.OnOffline(null);
+            lifeEvent = null;
+        }
+    }
+
+
+    public static void CreateStates(MagnetScript scriptManager)
+    {
+        for (int y = 0; y < 10; y++)
+        {
+            using (new WatchTimer("CreateState 100000"))
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    var stateOption1s = StateOptions.Default;
+                    stateOption1s.RegisterProvider(new TimerService());
+                    scriptManager.CreateState(stateOption1s);
+                }
+            }
+        }
+    }
 
 
 
-    public unsafe static void Main()
+    public  static void Main()
     {
         var typeX = typeof(ScriptX);
         Func<AbstractScript> constructor = TypeUtils.CreateDefaultConstructor<AbstractScript>(typeX);
@@ -164,58 +218,12 @@ public static class Program
             var stateOptions = StateOptions.Default;
             stateOptions.RegisterProvider(new TimerService());
             var state = scriptManager.CreateState(stateOptions);
-            for (int y = 0; y < 10; y++)
-            {
-                using (new WatchTimer("CreateState 100000"))
-                {
-                    for (int i = 0; i < 100000; i++)
-                    {
-                        var stateOption1s = StateOptions.Default;
-                        stateOption1s.RegisterProvider(new TimerService());
-                        scriptManager.CreateState(stateOption1s);
-                    }
-                }
-            }
-
-
-            var weakIsTypeEqual = state.CreateDelegate<Func<Type, Boolean>>("ScriptExample", "IsTypeEqual");
-            if (weakIsTypeEqual.TryGetTarget(out var isTypeEqual))
-            {
-                //为什么isTypeEqual(typeof(AbstractScript))就会卸载不掉  isTypeEqual(type) 就没事？？？？
-                var type = typeof(Console);
-                var bol = isTypeEqual(type);
-                Console.WriteLine(bol);
-                isTypeEqual = null;
-            }
-
-            var weakMain = state.CreateDelegate<Action>("ScriptA", "Main");
-            if (weakMain != null && weakMain.TryGetTarget(out var main))
-            {
-                using (new WatchTimer("With Call Main() x100000"))
-                {
-                    for (int i = 0; i < 10; i++)
-                    {
-                        main();
-                    }
-                }
-                main = null;
-            }
-            var weakPlayerLife = state.FirstAs<IPlayLifeEvent>();
-            if (weakPlayerLife != null && weakPlayerLife.TryGetTarget(out var lifeEvent))
-            {
-                using (new WatchTimer("With Call OnOnline()")) lifeEvent.OnOnline(null);
-                using (new WatchTimer("With Call OnOffline()")) lifeEvent.OnOffline(null);
-                lifeEvent = null;
-            }
+            CreateStates(scriptManager);
+            CallIsTypeEqual(state);
+            CallMain(state);
+            CallOnOnline(state);
             state = null;
             scriptManager.Unload(true);
-
-            using (new WatchTimer("time()"))
-            {
-                Console.WriteLine();
-            }
-
-
         }
 
         while (scriptManager.Status == ScrriptStatus.Unloading && scriptManager.IsAlive)
@@ -223,7 +231,6 @@ public static class Program
             // Trigger GC
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
-            //Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
         }
         GC.Collect();
         Console.WriteLine("=====================================================================================");
@@ -234,7 +241,6 @@ public static class Program
             var obj = new byte[1024 * 1024];
             Thread.Sleep(10);
             GC.Collect();
-            GC.WaitForPendingFinalizers();
             //Console.WriteLine($"Use Memory {GC.GetTotalMemory(false) / (1024.0 * 1024.0)}M");
         }
 

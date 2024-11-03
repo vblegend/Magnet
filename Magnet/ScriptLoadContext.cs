@@ -19,10 +19,10 @@ namespace Magnet
             {
                 return _options.AssemblyLoad(this,assemblyName);
             }
-            if (assemblyName.Name == "AllowedAssembly")
-            {
-                return LoadFromAssemblyPath("path_to_your_allowed_assembly.dll");
-            }
+            //if (assemblyName.Name == "AllowedAssembly")
+            //{
+            //    return LoadFromAssemblyPath("path_to_your_allowed_assembly.dll");
+            //}
             return null;
         }
     }
