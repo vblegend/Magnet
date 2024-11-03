@@ -141,13 +141,16 @@ namespace Magnet
                 var scriptModules = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (var assembly in scriptModules)
                 {
-                    var attrs = assembly.GetCustomAttributes(typeof(ScriptAssemblyAttribute), false);
-                    if (attrs.Length == 0) continue;
-                    foreach (var attr in attrs)
+                    if (assembly.ManifestModule.ScopeName == this.Name)
                     {
-                        if (attr is ScriptAssemblyAttribute attribute)
+                        var attrs = assembly.GetCustomAttributes(typeof(ScriptAssemblyAttribute), false);
+                        if (attrs.Length == 0) continue;
+                        foreach (var attr in attrs)
                         {
-                            if (attribute.UniqueId == this.UniqueId) return true;
+                            if (attr is ScriptAssemblyAttribute attribute)
+                            {
+                                if (attribute.UniqueId == this.UniqueId) return true;
+                            }
                         }
                     }
                 }

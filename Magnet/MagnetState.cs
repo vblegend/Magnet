@@ -224,7 +224,7 @@ namespace Magnet
     /// <summary>
     /// Script state
     /// </summary>
-    internal class MagnetState : IMagnetState
+    internal sealed class MagnetState : IMagnetState
     {
         private MagnetScript _engine;
         private MagnetStateContext _stateContext;

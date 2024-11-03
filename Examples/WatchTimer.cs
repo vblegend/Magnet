@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Magnet.Core;
+using System;
 using System.Diagnostics;
 
 namespace ScriptRuner
@@ -7,8 +8,9 @@ namespace ScriptRuner
     {
         private Int64 startTimestamp;
         private String name;
+        private IOutput _output;
 
-        public WatchTimer(String name)
+        public WatchTimer(String name, IOutput output = null)
         {
             this.name = name;
             this.startTimestamp = Stopwatch.GetTimestamp();
@@ -35,7 +37,11 @@ namespace ScriptRuner
         {
             var elapsed = Stopwatch.GetTimestamp() - startTimestamp;
             var value = ToTimeUnit(elapsed);
-
+            if (_output != null)
+            {
+                _output.Write(MessageType.Debug, "Task: {0} use {1}", name, value);
+                return;
+            }
             Console.BackgroundColor = ConsoleColor.Black;
             Console.Write("Task: ");
             Console.BackgroundColor = ConsoleColor.Red;
