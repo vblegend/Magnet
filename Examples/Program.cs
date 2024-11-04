@@ -176,7 +176,7 @@ public static class Program
         {
             using (new WatchTimer("CreateState 100000"))
             {
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < 10000; i++)
                 {
                     var stateOption1s = StateOptions.Default;
                     stateOption1s.RegisterProvider(new TimerService());

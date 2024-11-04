@@ -23,11 +23,16 @@ namespace Magnet
         /// <summary>
         /// The unique ID of MagnetState is non-repeatable
         /// </summary>
-        public Int64 Identity { get; set; } = -1;
+        public Int64 Identity { get; internal set; } = -1;
 
         internal List<ObjectProvider> Providers = [];
 
-        internal StateOptions WithIdentity(Int64 identity)
+        /// <summary>
+        /// set state Identity
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <returns></returns>
+        public StateOptions WithIdentity(Int64 identity)
         {
             this.Identity = identity;
             return this;

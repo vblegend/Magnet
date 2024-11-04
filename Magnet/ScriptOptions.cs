@@ -2,6 +2,7 @@
 using Magnet.Core;
 using Magnet.Syntax;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -88,6 +89,7 @@ namespace Magnet
 
         internal Platform TargetPlatform { get; private set; } = Platform.AnyCpu;
 
+        internal LanguageVersion LanguageVersion { get; private set; } = LanguageVersion.Latest;
         internal String AssemblyFileName { get; private set; } = null;
 
         internal Boolean AllowUnsafe { get; private set; } = false;
@@ -224,6 +226,17 @@ namespace Magnet
             return this;
         }
 
+
+        /// <summary>
+        /// set csharp language version(default: Latest)
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        public ScriptOptions WithLanguageVersion(LanguageVersion version)
+        {
+            this.LanguageVersion = version;
+            return this;
+        }
 
 
         /// <summary>

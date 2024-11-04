@@ -298,7 +298,7 @@ namespace Magnet
                     if (this.Options.Optimization == OptimizationLevel.Release) symbols.Add("RELEASE");
                     if (this.Options.UseDebugger) symbols.Add("USE_DEBUGGER");
                     foreach (var symbol in this.Options.CompileSymbols) symbols.Add(symbol);
-                    var parseOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(symbols);
+                    var parseOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(symbols).WithLanguageVersion(this.Options.LanguageVersion);
 
                     var rootDir = Path.GetFullPath(this.Options.ScanDirectory);
                     var ScanOptions = this.Options.RecursiveScanning ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
@@ -461,7 +461,7 @@ namespace Magnet
                     identity = Random.Shared.NextInt64();
                 }
 
-                options.WithIdentity(identity);
+                options.Identity =identity;
             }
             if (_survivalStates.ContainsKey(options.Identity))
             {

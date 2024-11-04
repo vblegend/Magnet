@@ -17,7 +17,7 @@ namespace Magnet.Core
         /// </summary>
         public FunctionAttribute()
         {
-   
+
         }
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Magnet.Core
         /// </summary>
         /// <param name="alias"></param>
         /// <param name="description"></param>
-        public FunctionAttribute(String alias = "",String description = "")
+        public FunctionAttribute(String alias = "", String description = "")
         {
             this.Alias = alias;
             this.Description = description;

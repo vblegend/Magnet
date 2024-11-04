@@ -74,8 +74,7 @@ namespace Magnet.Test
             var result = scriptManager.Compile();
             if (result.Success)
             {
-                var stateOptions = StateOptions.Default;
-                stateOptions.Identity = 666;
+                var stateOptions = StateOptions.Default.WithIdentity(666);
                 stateOptions.RegisterProvider(new TimerService());
                 state = scriptManager.CreateState(stateOptions);
             }
