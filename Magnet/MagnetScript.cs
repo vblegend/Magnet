@@ -84,7 +84,6 @@ namespace Magnet
         private static readonly String[] _baseUsing = ["System", "Magnet.Core"];
 
         internal ScriptOptions Options { get; private set; }
-        internal IReadOnlyList<ScriptMetaTable> scriptMetaTables = new List<ScriptMetaTable>();
         internal readonly AnalyzerCollection Analyzers;
         internal TrackerColllection ReferenceTrackers = new TrackerColllection();
 
@@ -104,6 +103,11 @@ namespace Magnet
         public readonly String Name;
 
 
+
+        /// <summary>
+        /// Gets the meta tables of all script
+        /// </summary>
+        public IReadOnlyList<ScriptMetaTable> ScriptMetaTables { get; private set; }
         /// <summary>
         /// Current status of the Magnet script
         /// </summary>
@@ -185,7 +189,7 @@ namespace Magnet
             this._compilationOptions = null;
             this.Unloading?.Invoke(this);
             this.Unloading = null;
-            this.scriptMetaTables = [];
+            this.ScriptMetaTables = [];
             this._scriptLoadContext?.Unload();
             this.Status = ScrriptStatus.Unloading;
         }
@@ -220,10 +224,10 @@ namespace Magnet
             this._scriptLoadContext = new ScriptLoadContext(options);
             this._compilationOptions = this._compilationOptions.WithAllowUnsafe(this.Options.AllowUnsafe);
             this._compilationOptions = this._compilationOptions.WithConcurrentBuild(true);
-            //this.compilationOptions = this.compilationOptions.WithDebugPlusMode(true);
+            // this.compilationOptions = this.compilationOptions.WithDebugPlusMode(true);
             this._compilationOptions = this._compilationOptions.WithPlatform(this.Options.TargetPlatform);
             this._compilationOptions = this._compilationOptions.WithOutputKind(OutputKind.DynamicallyLinkedLibrary);
-            this._compilationOptions = this._compilationOptions.WithOptimizationLevel((OptimizationLevel)this.Options.Optimization);
+            this._compilationOptions = this._compilationOptions.WithOptimizationLevel(this.Options.Optimization);
             this._compilationOptions = this._compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             this._compilationOptions = this._compilationOptions.WithModuleName(this.Name);
 
@@ -379,7 +383,7 @@ namespace Magnet
             //this.PrepareJIT(assembly);
             var types = assembly.GetTypes();
             var baseType = typeof(AbstractScript);
-            this.scriptMetaTables = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
+            this.ScriptMetaTables = types.Where(type => type.IsPublic && !type.IsAbstract && type.IsSubclassOf(baseType) && type.GetCustomAttribute<ScriptAttribute>() != null)
                                     .Select(type =>
                                     {
                                         var generater = TypeUtils.CreateDefaultConstructor<AbstractScript>(type);

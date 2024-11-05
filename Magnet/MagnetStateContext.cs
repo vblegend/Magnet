@@ -82,7 +82,7 @@ namespace Magnet
         internal MagnetStateContext(MagnetScript engine, StateOptions stateOptions)
         {
             this._engine = engine;
-            var count = engine.scriptMetaTables.Count;
+            var count = engine.ScriptMetaTables.Count;
             _cache = new InstanceCacheItem[count];
             this._referenceTrackers = engine.ReferenceTrackers;
         }

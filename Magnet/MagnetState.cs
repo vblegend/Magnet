@@ -263,7 +263,7 @@ namespace Magnet
 
         private void CreateState(DependencyInjector injector)
         {
-            foreach (var meta in this._engine.scriptMetaTables)
+            foreach (var meta in this._engine.ScriptMetaTables)
             {
                 var instance = meta.Generater();
                 instance.MetaTable = meta;
